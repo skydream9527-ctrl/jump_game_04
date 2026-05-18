@@ -84,11 +84,12 @@ export class GameScene extends Phaser.Scene {
   private jumpCount = 0;
   private isGrounded = false;
   private playerVY = 0;
+  private dead = false;
   private gameState: GameState = 'idle';
   private playerWidth = 36 * PHYSICS.WORLD_SCALE;
   private playerHeight = 44 * PHYSICS.WORLD_SCALE;
   private playerX = 80;
-  private playerY = 300;
+  private playerY = 340;
 
   // Animation
   private animFrameIndex = 0;
@@ -141,6 +142,9 @@ export class GameScene extends Phaser.Scene {
     invulnerable: boolean;
   } | null = null;
   private bossHpBar!: Phaser.GameObjects.Graphics;
+
+  // Camera
+  private hudCam: Phaser.Cameras.Scene2D.Camera | null = null;
 
   // Input
   private spaceKey!: Phaser.Input.Keyboard.Key;
@@ -219,6 +223,7 @@ export class GameScene extends Phaser.Scene {
     this.stars = [];
     this.mountainTiles = [];
     this.powerUpSprites = [];
+    this.powerUpIcons = [];
     this.weaponPickups = [];
     this.playerBullets = [];
     this.currentWeapon = 'pistol';
@@ -234,6 +239,7 @@ export class GameScene extends Phaser.Scene {
     this.boss = null;
     this.iceSlideVX = 0;
     this.lastProgressEmit = 0;
+    this.dead = false;
     this.audio.stopBGM();
   }
 
@@ -255,7 +261,7 @@ export class GameScene extends Phaser.Scene {
     this.speed = PHYSICS.STARTING_SPEED * this.config.speedMultiplier * getCharacterById(characterId).speedMultiplier;
     this.gameState = 'playing';
     this.playerX = 80;
-    this.playerY = 300;
+    this.playerY = 340;
 
     this.clearGameObjects();
     this.createBackground();
@@ -276,16 +282,18 @@ export class GameScene extends Phaser.Scene {
   // ========== Camera ==========
   private setupCamera(): void {
     const cam = this.cameras.main;
-    cam.setBounds(0, 0, Number.MAX_SAFE_INTEGER, PHYSICS.CANVAS_HEIGHT);
+    cam.setBounds(0, 0, Number.MAX_SAFE_INTEGER, PHYSICS.CANVAS_HEIGHT + Math.abs(PHYSICS.CAMERA_SCROLL_Y));
     cam.startFollow(this.player, false, 0.15, 0.08);
     cam.setFollowOffset(-PHYSICS.CANVAS_WIDTH / 2 + PLAYER_SCREEN_X, 0);
     cam.scrollX = 0;
-    cam.scrollY = 0;
+    cam.scrollY = PHYSICS.CAMERA_SCROLL_Y;
     cam.setLerp(0.15, 0);
 
-    const hudCam = this.cameras.add(0, 0, PHYSICS.CANVAS_WIDTH, PHYSICS.CANVAS_HEIGHT);
-    hudCam.setScroll(0, 0);
-    hudCam.ignore(this.children.list.filter(c => {
+    if (!this.hudCam) {
+      this.hudCam = this.cameras.add(0, 0, PHYSICS.CANVAS_WIDTH, PHYSICS.CANVAS_HEIGHT);
+    }
+    this.hudCam.setScroll(0, 0);
+    this.hudCam.ignore(this.children.list.filter(c => {
       const d = (c as any).depth;
       return d === undefined || d < HUD_DEPTH;
     }));
@@ -390,7 +398,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private generateInitialPlatforms(): void {
-    const startY = 280;
+    const startY = 350;
     this.spawnPlatform(0, startY, 400);
 
     let lastCX = 200;
@@ -523,15 +531,15 @@ export class GameScene extends Phaser.Scene {
     const difficulty = Math.min(1, platformIndex / estimatedTotal);
     const isWarmup = platformIndex < 4;
 
-    const baseGap = isWarmup ? 35 : 40 + difficulty * 120;
+    const baseGap = isWarmup ? 50 : 60 + difficulty * 100;
     const rawGap = baseGap * gapMult * (0.85 + Math.random() * 0.3);
-    const gap = Math.min(maxReach * 0.7, rawGap);
+    const gap = Math.min(maxReach * 0.75, rawGap);
 
     const baseW = isWarmup ? 220 : Math.max(90, 170 - difficulty * 50);
     const w = Math.max(70, baseW + (Math.random() - 0.5) * 40);
 
-    const maxRise = maxHeight * (isWarmup ? 0.1 : 0.35);
-    const maxDrop = isWarmup ? 30 : 100;
+    const maxRise = maxHeight * (isWarmup ? 0.15 : 0.4);
+    const maxDrop = isWarmup ? 30 : 120;
     const rawDy = (Math.random() - 0.4) * (maxRise + maxDrop) - maxDrop * 0.2;
     const dy = Phaser.Math.Clamp(rawDy, -maxDrop, maxRise);
     const y = Phaser.Math.Clamp(lastTopY + dy, PHYSICS.PLATFORM_Y_MIN, PHYSICS.PLATFORM_Y_MAX);
@@ -845,7 +853,7 @@ export class GameScene extends Phaser.Scene {
       this.playerY = found.y - found.height / 2 - this.playerHeight / 2;
     } else {
       this.playerX = this.cameraTargetX + PLAYER_SCREEN_X;
-      this.playerY = 300;
+      this.playerY = 340;
     }
     this.playerVY = 0;
     this.jumpCount = 0;
@@ -858,6 +866,7 @@ export class GameScene extends Phaser.Scene {
       this.hudNeedsUpdate = true;
       this.spawnParticles(0x4fc3f7, 8, 5, 4);
       this.respawnOnPlatform();
+      this.dead = false;
       return;
     }
 
@@ -876,6 +885,7 @@ export class GameScene extends Phaser.Scene {
       this.respawnOnPlatform();
       this.player.setScale(PHYSICS.WORLD_SCALE);
       this.updatePlayerVisuals(1);
+      this.dead = false;
     }
   }
 
@@ -950,6 +960,22 @@ export class GameScene extends Phaser.Scene {
     if (this.playerY < this.playerHeight / 2) {
       this.playerY = this.playerHeight / 2;
       this.playerVY = 0;
+    }
+
+    const deathY = PHYSICS.CANVAS_HEIGHT - PHYSICS.CAMERA_SCROLL_Y;
+    if (!this.dead && this.playerY > deathY) {
+      this.dead = true;
+      this.onPlayerFall();
+      if (this.dead && this.playerY > deathY) {
+        this.gameState = 'game_over';
+        if (this.score > this.bestScore) this.bestScore = this.score;
+        this.audio.stopBGM();
+        this.audio.gameOver();
+        EventBus.emit(EVENTS.GAME_OVER, { score: this.score, bestScore: this.bestScore });
+        EventBus.emit(EVENTS.GAME_STATE_CHANGED, 'game_over');
+        return;
+      }
+      return;
     }
 
     const speedPx = this.speed * normalized;
@@ -1096,10 +1122,6 @@ export class GameScene extends Phaser.Scene {
       } else {
         this.activePowerUps.set(type, newTime);
       }
-    }
-
-    if (this.playerY > PHYSICS.CANVAS_HEIGHT) {
-      this.onPlayerFall();
     }
 
     const cullLeft = this.cameraTargetX + PHYSICS.PLATFORM_CULL_X;
