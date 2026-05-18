@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la \"/Users/gyh/Desktop/vscode/\")",
+      "Read(//Users/gyh/Desktop/vscode/**)",
+      "Bash(npm run *)",
+      "Bash(npx tsc *)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(pkill -f \"vite\")",
+      "Bash(curl -s http://localhost:5173/)",
+      "WebSearch",
+      "Bash(xargs ls -lt)"
+    ]
+  }
+}
