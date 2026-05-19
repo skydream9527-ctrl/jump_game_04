@@ -465,17 +465,22 @@ export class GameScene extends Phaser.Scene {
 
   private generateInitialPlatforms(): void {
     const startY = 350;
+    const platformCount = this.config.initialPlatformCount ?? PHYSICS.INITIAL_PLATFORM_COUNT;
     this.spawnPlatform(0, startY, 400);
 
     let lastCX = 200;
     let lastTopY = startY;
     let lastW = 400;
 
-    for (let i = 1; i < PHYSICS.INITIAL_PLATFORM_COUNT; i++) {
+    const shardIndices = this.config.shardPlatformIndices;
+
+    for (let i = 1; i < platformCount; i++) {
       const { x, y, w } = this.calcNextPlatform(lastCX, lastTopY, lastW, i);
       this.spawnPlatform(x, y, w);
 
-      if (this.shardsSpawned < this.totalShards && Math.random() < 0.5) {
+      if (shardIndices && shardIndices.includes(i) && this.shardsSpawned < this.totalShards) {
+        this.spawnShard(x + w / 2, y - 35);
+      } else if (!shardIndices && this.shardsSpawned < this.totalShards && Math.random() < 0.5) {
         this.spawnShard(x + w / 2, y - 35);
       }
       if (Math.random() < POWER_UP_SPAWN_CHANCE) {
@@ -484,13 +489,10 @@ export class GameScene extends Phaser.Scene {
       if (Math.random() < WEAPON_SPAWN_CHANCE) {
         this.spawnWeaponPickup(x + w / 2, y - 65);
       }
-      if (i > 3 && Math.random() < ENEMY_SPAWN_CHANCE) {
-        // Warmup: only basic enemy types
-        const basicTypes = getAvailableEnemyTypes(this.config.chapter).filter(
-          t => t === 'flyer' || t === 'ground' || t === 'shooter'
-        );
-        if (basicTypes.length > 0) {
-          const et = basicTypes[Math.floor(Math.random() * basicTypes.length)];
+      if (i > 3) {
+        const spawnChance = this.config.enemySpawnChance ?? ENEMY_SPAWN_CHANCE;
+        if (Math.random() < spawnChance) {
+          const et = this.pickEnemyType();
           const ey = et === 'flyer' ? y - 50 : y - 15;
           this.spawnEnemy(x + w / 2, ey, et);
         }
@@ -519,10 +521,14 @@ export class GameScene extends Phaser.Scene {
 
       this.spawnPlatform(x, y, w);
 
-      // Shard: 30% chance, or force if level is 40%+ done and still missing shards
-      const shardUrgent = idx > estimatedTotal * 0.4 && this.shardsSpawned < this.totalShards;
-      if (this.shardsSpawned < this.totalShards && (shardUrgent || Math.random() < 0.30)) {
+      const shardIndices = this.config.shardPlatformIndices;
+      if (shardIndices && shardIndices.includes(idx) && this.shardsSpawned < this.totalShards) {
         this.spawnShard(x + w / 2, y - 35);
+      } else if (!shardIndices) {
+        const shardUrgent = idx > estimatedTotal * 0.4 && this.shardsSpawned < this.totalShards;
+        if (this.shardsSpawned < this.totalShards && (shardUrgent || Math.random() < 0.30)) {
+          this.spawnShard(x + w / 2, y - 35);
+        }
       }
       if (Math.random() < POWER_UP_SPAWN_CHANCE) {
         this.spawnPowerUp(x + w / 2, y - 50);
@@ -530,16 +536,12 @@ export class GameScene extends Phaser.Scene {
       if (Math.random() < WEAPON_SPAWN_CHANCE) {
         this.spawnWeaponPickup(x + w / 2, y - 65);
       }
-      // Normal enemies — skip during early warmup (idx < 10)
-      if (idx >= 10 && Math.random() < ENEMY_SPAWN_CHANCE) {
-        const basicTypes = getAvailableEnemyTypes(this.config.chapter).filter(
-          t => t === 'flyer' || t === 'ground' || t === 'shooter'
-        );
-        if (basicTypes.length > 0) {
-          const et = basicTypes[Math.floor(Math.random() * basicTypes.length)];
-          const ey = et === 'flyer' ? y - 50 : y - 15;
-          this.spawnEnemy(x + w / 2, ey, et);
-        }
+      // Basic enemies — config-driven or chapter-based
+      const spawnChance = this.config.enemySpawnChance ?? ENEMY_SPAWN_CHANCE;
+      if (idx >= 10 && Math.random() < spawnChance) {
+        const et = this.pickEnemyType();
+        const ey = et === 'flyer' ? y - 50 : y - 15;
+        this.spawnEnemy(x + w / 2, ey, et);
       }
       // Advanced enemies (charger/bomber) — from idx 15+
       if (idx >= 15 && Math.random() < ENEMY_SPAWN_CHANCE * 0.5) {
@@ -569,6 +571,24 @@ export class GameScene extends Phaser.Scene {
         this.spawnEnemy(x + w / 2, y - 20, 'mini_boss');
       }
     }
+  }
+
+  // ========== Enemy Type Selection ==========
+  private pickEnemyType(): EnemyType {
+    const ratio = this.config.enemyTypes;
+    if (!ratio) {
+      const eTypes = Object.keys(ENEMY_CONFIGS) as EnemyType[];
+      return eTypes[Math.floor(Math.random() * eTypes.length)];
+    }
+    const entries = Object.entries(ratio).filter(([, v]) => v > 0) as [EnemyType, number][];
+    if (entries.length === 0) return 'ground';
+    const total = entries.reduce((sum, [, v]) => sum + v, 0);
+    let roll = Math.random() * total;
+    for (const [type, weight] of entries) {
+      roll -= weight;
+      if (roll <= 0) return type;
+    }
+    return entries[0][0];
   }
 
   // ========== Player ==========

@@ -143,387 +143,593 @@ function generatePlatformTextures(scene: Phaser.Scene): void {
   }
 }
 
-// ==================== Mario-style Character ====================
+// ==================== Zelda-style Character System ====================
 function generateMarioCharacterTextures(scene: Phaser.Scene): void {
-  // Generate 3 frames: idle, run1, run2, jump
   const frames = ['idle', 'run1', 'run2', 'run3', 'run4', 'jump'];
-  const w = 32;
-  const h = 40;
+  const w = 36;
+  const h = 48;
 
-  for (const frame of frames) {
-    const g = scene.make.graphics({ x: 0, y: 0 }, false);
-    drawMarioFrame(g, frame, w, h);
-    g.generateTexture(`player-frame-${frame}`, w + 4, h + 4);
-    g.destroy();
-  }
+  const charDrawers: Record<number, (g: Phaser.GameObjects.Graphics, frame: string, w: number, h: number) => void> = {
+    0: drawLingFrame,
+    1: drawZeroFrame,
+    2: drawEchoFrame,
+    3: drawGaleFrame,
+  };
 
-  // Also generate character variants with different colors
-  const variants = [
-    { id: 0, hat: 0xe03030, shirt: 0xe03030, overalls: 0x2850a0, skin: 0xf0b080, shoes: 0x6b3300, name: 'ling' },
-    { id: 1, hat: 0x00aaff, shirt: 0x00aaff, overalls: 0x404040, skin: 0xd0d0d0, shoes: 0x333333, name: 'zero' },
-    { id: 2, hat: 0xb060e0, shirt: 0xb060e0, overalls: 0x4a2080, skin: 0xc8a0d8, shoes: 0x3a1858, name: 'echo' },
-    { id: 3, hat: 0xff6030, shirt: 0xff6030, overalls: 0x8a6820, skin: 0xd0b888, shoes: 0x3a2a10, name: 'gale' },
-  ];
-
-  for (const v of variants) {
+  for (const [id, drawer] of Object.entries(charDrawers)) {
     for (const frame of frames) {
       const g = scene.make.graphics({ x: 0, y: 0 }, false);
-      drawMarioFrame(g, frame, w, h, v);
-      g.generateTexture(`player-${v.id}-${frame}`, w + 4, h + 4);
+      drawer(g, frame, w, h);
+      g.generateTexture(`player-${id}-${frame}`, w + 4, h + 4);
       g.destroy();
     }
-    // Default texture (idle)
     const gDefault = scene.make.graphics({ x: 0, y: 0 }, false);
-    drawMarioFrame(gDefault, 'idle', w, h, v);
-    gDefault.generateTexture(`player-${v.id}`, w + 4, h + 4);
+    charDrawers[Number(id)](gDefault, 'idle', w, h);
+    gDefault.generateTexture(`player-${id}`, w + 4, h + 4);
     gDefault.destroy();
   }
 }
 
-interface CharColors {
-  hat: number;
-  shirt: number;
-  overalls: number;
-  skin: number;
-  shoes: number;
-}
+// ── 凌（Ling）— 深海蓝制服 · 钢蓝肩甲 · 天蓝能量核心 ──
+function drawLingFrame(g: Phaser.GameObjects.Graphics, frame: string, w: number, h: number): void {
+  const cx = w / 2 + 2, cy = h / 2 + 2;
+  const headR = 10, bodyW = 18, bodyH = 14, legW = 7, legH = 12;
 
-const DEFAULT_COLORS: CharColors = {
-  hat: 0xe03030,
-  shirt: 0xe03030,
-  overalls: 0x2850a0,
-  skin: 0xf0b080,
-  shoes: 0x6b3300,
-};
-
-function drawMarioFrame(
-  g: Phaser.GameObjects.Graphics,
-  frame: string,
-  w: number,
-  h: number,
-  colors: CharColors = DEFAULT_COLORS
-): void {
-  const cx = w / 2 + 2;
-  const cy = h / 2 + 2;
-
-  // All proportions relative to a 32x40 character
-  const headR = 9;        // head radius
-  const bodyW = 16;
-  const bodyH = 12;
-  const legW = 6;
-  const legH = 10;
-  const armW = 5;
-  const armH = 10;
-
-  const headY = cy - 12;
+  const headY = cy - 14;
   const bodyY = headY + headR + 2;
   const legY = bodyY + bodyH;
   const armY = bodyY + 2;
 
-  if (frame === 'idle') {
-    // === IDLE POSE ===
-    // Shoes
-    g.fillStyle(colors.shoes, 1);
-    g.fillRoundedRect(cx - 9, legY + legH - 3, legW + 2, 5, 2);
-    g.fillRoundedRect(cx + 3, legY + legH - 3, legW + 2, 5, 2);
+  const isJump = frame === 'jump';
+  const runOff = frame === 'run1' ? 4 : frame === 'run2' ? -3 : frame === 'run3' ? -4 : frame === 'run4' ? 3 : 0;
+  const armOff = frame === 'run1' ? 3 : frame === 'run2' ? -2 : frame === 'run3' ? -3 : frame === 'run4' ? 2 : 0;
+  const bodyLean = isJump ? -2 : 0;
 
-    // Legs (overalls color)
-    g.fillStyle(colors.overalls, 1);
-    g.fillRoundedRect(cx - 8, legY, legW, legH, 2);
-    g.fillRoundedRect(cx + 3, legY, legW, legH, 2);
+  // ── 能量核心光晕 ──
+  g.fillStyle(0x6bb8e8, 0.15);
+  g.fillCircle(cx, bodyY + 6, 16);
 
-    // Body / overalls
-    g.fillStyle(colors.overalls, 1);
-    g.fillRoundedRect(cx - bodyW / 2, bodyY, bodyW, bodyH, 4);
+  // ── 靴子 ──
+  g.fillStyle(0x3a4a60, 1);
+  g.fillRoundedRect(cx - 9, legY + legH - 3 + bodyLean, legW + 2, 5, 2);
+  g.fillRoundedRect(cx + 2 + runOff, legY + legH - 3 + bodyLean, legW + 2, 5, 2);
+  // 靴子高光
+  g.fillStyle(0x5a7a9a, 0.5);
+  g.fillRoundedRect(cx - 8, legY + legH - 2 + bodyLean, legW, 2, 1);
+  g.fillRoundedRect(cx + 3 + runOff, legY + legH - 2 + bodyLean, legW, 2, 1);
 
-    // Shirt (top part)
-    g.fillStyle(colors.shirt, 1);
-    g.fillRoundedRect(cx - bodyW / 2, bodyY, bodyW, 6, 3);
+  // ── 腿 ──
+  g.fillStyle(0x1e3550, 1);
+  g.fillRoundedRect(cx - 8, legY + bodyLean, legW, legH, 2);
+  g.fillRoundedRect(cx + 2 + runOff, legY + bodyLean, legW, legH, 2);
+  // 腿部条纹
+  g.fillStyle(0x2a4a68, 0.6);
+  g.fillRect(cx - 7, legY + 4 + bodyLean, legW - 2, 1);
+  g.fillRect(cx + 3 + runOff, legY + 4 + bodyLean, legW - 2, 1);
 
-    // Overall buttons
-    g.fillStyle(0xffd700, 1);
-    g.fillCircle(cx - 4, bodyY + 8, 1.5);
-    g.fillCircle(cx + 4, bodyY + 8, 1.5);
+  // ── 身体 ──
+  g.fillStyle(0x1e3550, 1);
+  g.fillRoundedRect(cx - bodyW / 2, bodyY + bodyLean, bodyW, bodyH, 4);
+  // V 形胸甲
+  g.fillStyle(0x2a5080, 1);
+  g.beginPath();
+  g.moveTo(cx, bodyY + 1 + bodyLean);
+  g.lineTo(cx - 7, bodyY + bodyH - 2 + bodyLean);
+  g.lineTo(cx + 7, bodyY + bodyH - 2 + bodyLean);
+  g.closePath();
+  g.fill();
+  // 胸甲高光
+  g.fillStyle(0x4a7aaa, 0.4);
+  g.beginPath();
+  g.moveTo(cx, bodyY + 2 + bodyLean);
+  g.lineTo(cx - 4, bodyY + bodyH / 2 + bodyLean);
+  g.lineTo(cx + 4, bodyY + bodyH / 2 + bodyLean);
+  g.closePath();
+  g.fill();
 
-    // Arms
-    g.fillStyle(colors.skin, 1);
-    g.fillRoundedRect(cx - bodyW / 2 - armW + 1, armY, armW, armH, 2);
-    g.fillRoundedRect(cx + bodyW / 2 - 1, armY, armW, armH, 2);
+  // ── 能量核心 ──
+  g.fillStyle(0x6bb8e8, 0.9);
+  g.fillCircle(cx, bodyY + 6 + bodyLean, 3);
+  g.fillStyle(0xa0d8ff, 0.6);
+  g.fillCircle(cx - 1, bodyY + 5 + bodyLean, 1.5);
 
-    // Head
-    g.fillStyle(colors.skin, 1);
-    g.fillCircle(cx, headY, headR);
+  // ── 肩甲 ──
+  g.fillStyle(0x3a5575, 1);
+  g.fillRoundedRect(cx - bodyW / 2 - 4, bodyY + bodyLean, 6, 8, 2);
+  g.fillRoundedRect(cx + bodyW / 2 - 2, bodyY + bodyLean, 6, 8, 2);
+  // 肩甲高光
+  g.fillStyle(0x5a85aa, 0.6);
+  g.fillRect(cx - bodyW / 2 - 3, bodyY + 2 + bodyLean, 4, 1);
+  g.fillRect(cx + bodyW / 2 - 1, bodyY + 2 + bodyLean, 4, 1);
 
-    // Cap
-    g.fillStyle(colors.hat, 1);
-    g.fillRoundedRect(cx - headR - 2, headY - headR, headR * 2 + 4, headR, 4);
-    // Cap brim
-    g.fillRoundedRect(cx - headR - 4, headY - 2, headR * 2 + 8, 5, 2);
+  // ── 能量臂环 ──
+  g.fillStyle(0x4a7a9f, 1);
+  g.fillRoundedRect(cx - bodyW / 2 - 3, armY + 4 + armOff + bodyLean, 4, 3, 1);
+  g.fillRoundedRect(cx + bodyW / 2 - 1, armY + 4 - armOff + bodyLean, 4, 3, 1);
+  g.fillStyle(0x6bb8e8, 0.7);
+  g.fillRect(cx - bodyW / 2 - 2, armY + 5 + armOff + bodyLean, 2, 1);
+  g.fillRect(cx + bodyW / 2, armY + 5 - armOff + bodyLean, 2, 1);
 
-    // Eyes
-    g.fillStyle(0xffffff, 1);
-    g.fillEllipse(cx - 3, headY + 1, 5, 6);
-    g.fillEllipse(cx + 4, headY + 1, 5, 6);
-    g.fillStyle(0x1a1a2e, 1);
-    g.fillCircle(cx - 2, headY + 2, 2);
-    g.fillCircle(cx + 5, headY + 2, 2);
-    // Eye highlights
-    g.fillStyle(0xffffff, 1);
-    g.fillCircle(cx - 1, headY + 1, 1);
-    g.fillCircle(cx + 6, headY + 1, 1);
+  // ── 手臂 ──
+  g.fillStyle(0xe8c8a0, 1);
+  g.fillRoundedRect(cx - bodyW / 2 - 3, armY + armOff + bodyLean, 4, 10, 2);
+  g.fillRoundedRect(cx + bodyW / 2 - 1, armY - armOff + bodyLean, 4, 10, 2);
+  // 手套
+  g.fillStyle(0x3a4a60, 1);
+  g.fillRoundedRect(cx - bodyW / 2 - 3, armY + 8 + armOff + bodyLean, 4, 3, 1);
+  g.fillRoundedRect(cx + bodyW / 2 - 1, armY + 8 - armOff + bodyLean, 4, 3, 1);
 
-    // Mustache
-    g.fillStyle(0x4a2800, 1);
-    g.fillRoundedRect(cx - 6, headY + 5, 13, 3, 1);
+  // ── 腰带 ──
+  g.fillStyle(0x3a4a60, 1);
+  g.fillRect(cx - bodyW / 2, bodyY + bodyH - 2 + bodyLean, bodyW, 3);
+  g.fillStyle(0x6bb8e8, 1);
+  g.fillRoundedRect(cx - 2, bodyY + bodyH - 2 + bodyLean, 4, 3, 1);
 
-  } else if (frame === 'run1') {
-    // === RUN FRAME 1 (left leg forward) ===
-    // Back leg (extended back)
-    g.fillStyle(colors.shoes, 1);
-    g.fillRoundedRect(cx - 10, legY + legH - 2, legW + 2, 5, 2);
-    g.fillStyle(colors.overalls, 1);
-    g.fillRoundedRect(cx - 9, legY + 2, legW, legH - 2, 2);
+  // ── 头 ──
+  const headAdj = isJump ? headY - 2 : headY;
+  g.fillStyle(0xe8c8a0, 1);
+  g.fillCircle(cx, headAdj, headR);
 
-    // Front leg (forward)
-    g.fillStyle(colors.shoes, 1);
-    g.fillRoundedRect(cx + 4, legY + legH - 5, legW + 2, 5, 2);
-    g.fillStyle(colors.overalls, 1);
-    g.fillRoundedRect(cx + 3, legY, legW, legH + 2, 2);
+  // 头发
+  g.fillStyle(0x1a2a40, 1);
+  g.beginPath();
+  g.arc(cx, headAdj - 3, headR, Math.PI, Math.PI * 2);
+  g.fill();
+  g.fillRect(cx - headR, headAdj - 3, headR * 2, 4);
+  // 刘海斜分
+  g.beginPath();
+  g.moveTo(cx - 8, headAdj - 3);
+  g.lineTo(cx - 4, headAdj - 7);
+  g.lineTo(cx + 2, headAdj - 3);
+  g.closePath();
+  g.fill();
 
-    // Body (slight lean)
-    g.fillStyle(colors.overalls, 1);
-    g.fillRoundedRect(cx - bodyW / 2, bodyY, bodyW, bodyH, 4);
-    g.fillStyle(colors.shirt, 1);
-    g.fillRoundedRect(cx - bodyW / 2, bodyY, bodyW, 6, 3);
+  // 护目镜框
+  g.fillStyle(0x3a5575, 1);
+  g.fillRoundedRect(cx - 8, headAdj - 4, 16, 5, 2);
+  // 护目镜片
+  g.fillStyle(0x6bb8e8, 0.6);
+  g.fillRoundedRect(cx - 7, headAdj - 3, 6, 3, 1);
+  g.fillRoundedRect(cx + 1, headAdj - 3, 6, 3, 1);
+  // 镜片高光
+  g.fillStyle(0xa0d8ff, 0.4);
+  g.fillRect(cx - 6, headAdj - 2, 2, 1);
+  g.fillRect(cx + 2, headAdj - 2, 2, 1);
 
-    // Buttons
-    g.fillStyle(0xffd700, 1);
-    g.fillCircle(cx - 4, bodyY + 8, 1.5);
-    g.fillCircle(cx + 4, bodyY + 8, 1.5);
+  // 眼睛
+  g.fillStyle(0xffffff, 1);
+  g.fillEllipse(cx - 3, headAdj + 2, 5, 6);
+  g.fillEllipse(cx + 4, headAdj + 2, 5, 6);
+  g.fillStyle(0x2a5580, 1);
+  g.fillCircle(cx - 2, headAdj + 3, 2);
+  g.fillCircle(cx + 5, headAdj + 3, 2);
+  g.fillStyle(0xffffff, 1);
+  g.fillCircle(cx - 1.5, headAdj + 1.5, 0.8);
+  g.fillCircle(cx + 5.5, headAdj + 1.5, 0.8);
 
-    // Arms (running pose - one back, one forward)
-    g.fillStyle(colors.skin, 1);
-    g.fillRoundedRect(cx - bodyW / 2 - armW + 1, armY - 2, armW, armH, 2);
-    g.fillRoundedRect(cx + bodyW / 2, armY + 2, armW, armH, 2);
+  // 嘴
+  g.fillStyle(0xc8a080, 1);
+  g.fillRect(cx - 2, headAdj + 6, 4, 1);
+}
 
-    // Head
-    g.fillStyle(colors.skin, 1);
-    g.fillCircle(cx, headY, headR);
+// ── 零号（Zero）— 银白外壳 · 青蓝光学眼 · 机械关节 ──
+function drawZeroFrame(g: Phaser.GameObjects.Graphics, frame: string, w: number, h: number): void {
+  const cx = w / 2 + 2, cy = h / 2 + 2;
+  const headR = 10, bodyW = 18, bodyH = 16, legW = 7, legH = 12;
 
-    // Cap
-    g.fillStyle(colors.hat, 1);
-    g.fillRoundedRect(cx - headR - 2, headY - headR, headR * 2 + 4, headR, 4);
-    g.fillRoundedRect(cx - headR - 4, headY - 2, headR * 2 + 8, 5, 2);
+  const headY = cy - 14;
+  const bodyY = headY + headR + 2;
+  const legY = bodyY + bodyH;
+  const armY = bodyY + 2;
 
-    // Eyes (looking forward)
-    g.fillStyle(0xffffff, 1);
-    g.fillEllipse(cx - 2, headY + 1, 5, 6);
-    g.fillEllipse(cx + 5, headY + 1, 5, 6);
-    g.fillStyle(0x1a1a2e, 1);
-    g.fillCircle(cx - 1, headY + 2, 2);
-    g.fillCircle(cx + 6, headY + 2, 2);
-    g.fillStyle(0xffffff, 1);
-    g.fillCircle(cx, headY + 1, 1);
-    g.fillCircle(cx + 7, headY + 1, 1);
+  const isJump = frame === 'jump';
+  const runOff = frame === 'run1' ? 4 : frame === 'run2' ? -3 : frame === 'run3' ? -4 : frame === 'run4' ? 3 : 0;
+  const armOff = frame === 'run1' ? 3 : frame === 'run2' ? -2 : frame === 'run3' ? -3 : frame === 'run4' ? 2 : 0;
+  const bodyLean = isJump ? -2 : 0;
 
-    // Mustache
-    g.fillStyle(0x4a2800, 1);
-    g.fillRoundedRect(cx - 6, headY + 5, 13, 3, 1);
+  // 光学眼发光
+  g.fillStyle(0x00ccff, 0.1);
+  g.fillCircle(cx, headY, 16);
 
-  } else if (frame === 'run2') {
-    // === RUN FRAME 2 (right leg forward, mirrored) ===
-    // Front leg
-    g.fillStyle(colors.shoes, 1);
-    g.fillRoundedRect(cx - 10, legY + legH - 5, legW + 2, 5, 2);
-    g.fillStyle(colors.overalls, 1);
-    g.fillRoundedRect(cx - 9, legY, legW, legH + 2, 2);
+  // ── 足部 ──
+  g.fillStyle(0x505a68, 1);
+  g.fillRoundedRect(cx - 9, legY + legH - 3 + bodyLean, legW + 2, 5, 2);
+  g.fillRoundedRect(cx + 2 + runOff, legY + legH - 3 + bodyLean, legW + 2, 5, 2);
+  g.fillStyle(0x00aadd, 0.4);
+  g.fillRect(cx - 7, legY + legH + bodyLean, 3, 1);
+  g.fillRect(cx + 4 + runOff, legY + legH + bodyLean, 3, 1);
 
-    // Back leg
-    g.fillStyle(colors.shoes, 1);
-    g.fillRoundedRect(cx + 4, legY + legH - 2, legW + 2, 5, 2);
-    g.fillStyle(colors.overalls, 1);
-    g.fillRoundedRect(cx + 3, legY + 2, legW, legH - 2, 2);
+  // ── 小腿 ──
+  g.fillStyle(0xc0c8d4, 1);
+  g.fillRoundedRect(cx - 8, legY + bodyLean, legW, legH, 2);
+  g.fillRoundedRect(cx + 2 + runOff, legY + bodyLean, legW, legH, 2);
+  // 膝关节
+  g.fillStyle(0x505a68, 1);
+  g.fillCircle(cx - 4, legY + bodyLean, 2.5);
+  g.fillCircle(cx + 5 + runOff, legY + bodyLean, 2.5);
 
-    // Body
-    g.fillStyle(colors.overalls, 1);
-    g.fillRoundedRect(cx - bodyW / 2, bodyY, bodyW, bodyH, 4);
-    g.fillStyle(colors.shirt, 1);
-    g.fillRoundedRect(cx - bodyW / 2, bodyY, bodyW, 6, 3);
-
-    g.fillStyle(0xffd700, 1);
-    g.fillCircle(cx - 4, bodyY + 8, 1.5);
-    g.fillCircle(cx + 4, bodyY + 8, 1.5);
-
-    // Arms (opposite)
-    g.fillStyle(colors.skin, 1);
-    g.fillRoundedRect(cx - bodyW / 2, armY + 2, armW, armH, 2);
-    g.fillRoundedRect(cx + bodyW / 2 - armW + 1, armY - 2, armW, armH, 2);
-
-    // Head
-    g.fillStyle(colors.skin, 1);
-    g.fillCircle(cx, headY, headR);
-
-    // Cap
-    g.fillStyle(colors.hat, 1);
-    g.fillRoundedRect(cx - headR - 2, headY - headR, headR * 2 + 4, headR, 4);
-    g.fillRoundedRect(cx - headR - 4, headY - 2, headR * 2 + 8, 5, 2);
-
-    // Eyes
-    g.fillStyle(0xffffff, 1);
-    g.fillEllipse(cx - 2, headY + 1, 5, 6);
-    g.fillEllipse(cx + 5, headY + 1, 5, 6);
-    g.fillStyle(0x1a1a2e, 1);
-    g.fillCircle(cx - 1, headY + 2, 2);
-    g.fillCircle(cx + 6, headY + 2, 2);
-    g.fillStyle(0xffffff, 1);
-    g.fillCircle(cx, headY + 1, 1);
-    g.fillCircle(cx + 7, headY + 1, 1);
-
-    // Mustache
-    g.fillStyle(0x4a2800, 1);
-    g.fillRoundedRect(cx - 6, headY + 5, 13, 3, 1);
-
-  } else if (frame === 'run3') {
-    // === RUN FRAME 3 (legs passing center, transition) ===
-    // Left leg (passing through center)
-    g.fillStyle(colors.shoes, 1);
-    g.fillRoundedRect(cx - 6, legY + legH - 3, legW + 2, 5, 2);
-    g.fillStyle(colors.overalls, 1);
-    g.fillRoundedRect(cx - 5, legY + 1, legW, legH - 1, 2);
-
-    // Right leg (passing through center)
-    g.fillStyle(colors.shoes, 1);
-    g.fillRoundedRect(cx + 1, legY + legH - 3, legW + 2, 5, 2);
-    g.fillStyle(colors.overalls, 1);
-    g.fillRoundedRect(cx + 0, legY + 1, legW, legH - 1, 2);
-
-    // Body
-    g.fillStyle(colors.overalls, 1);
-    g.fillRoundedRect(cx - bodyW / 2, bodyY, bodyW, bodyH, 4);
-    g.fillStyle(colors.shirt, 1);
-    g.fillRoundedRect(cx - bodyW / 2, bodyY, bodyW, 6, 3);
-    g.fillStyle(0xffd700, 1);
-    g.fillCircle(cx - 4, bodyY + 8, 1.5);
-    g.fillCircle(cx + 4, bodyY + 8, 1.5);
-
-    // Arms (centered)
-    g.fillStyle(colors.skin, 1);
-    g.fillRoundedRect(cx - bodyW / 2 - armW + 1, armY, armW, armH, 2);
-    g.fillRoundedRect(cx + bodyW / 2 - 1, armY, armW, armH, 2);
-
-    // Head
-    g.fillStyle(colors.skin, 1);
-    g.fillCircle(cx, headY, headR);
-    g.fillStyle(colors.hat, 1);
-    g.fillRoundedRect(cx - headR - 2, headY - headR, headR * 2 + 4, headR, 4);
-    g.fillRoundedRect(cx - headR - 4, headY - 2, headR * 2 + 8, 5, 2);
-    g.fillStyle(0xffffff, 1);
-    g.fillEllipse(cx - 2, headY + 1, 5, 6);
-    g.fillEllipse(cx + 5, headY + 1, 5, 6);
-    g.fillStyle(0x1a1a2e, 1);
-    g.fillCircle(cx - 1, headY + 2, 2);
-    g.fillCircle(cx + 6, headY + 2, 2);
-    g.fillStyle(0xffffff, 1);
-    g.fillCircle(cx, headY + 1, 1);
-    g.fillCircle(cx + 7, headY + 1, 1);
-    g.fillStyle(0x4a2800, 1);
-    g.fillRoundedRect(cx - 6, headY + 5, 13, 3, 1);
-
-  } else if (frame === 'run4') {
-    // === RUN FRAME 4 (right leg forward, left leg back - opposite of run1) ===
-    // Back leg (left, extended back)
-    g.fillStyle(colors.shoes, 1);
-    g.fillRoundedRect(cx + 4, legY + legH - 2, legW + 2, 5, 2);
-    g.fillStyle(colors.overalls, 1);
-    g.fillRoundedRect(cx + 3, legY + 2, legW, legH - 2, 2);
-
-    // Front leg (right, forward)
-    g.fillStyle(colors.shoes, 1);
-    g.fillRoundedRect(cx - 10, legY + legH - 5, legW + 2, 5, 2);
-    g.fillStyle(colors.overalls, 1);
-    g.fillRoundedRect(cx - 9, legY, legW, legH + 2, 2);
-
-    // Body
-    g.fillStyle(colors.overalls, 1);
-    g.fillRoundedRect(cx - bodyW / 2, bodyY, bodyW, bodyH, 4);
-    g.fillStyle(colors.shirt, 1);
-    g.fillRoundedRect(cx - bodyW / 2, bodyY, bodyW, 6, 3);
-    g.fillStyle(0xffd700, 1);
-    g.fillCircle(cx - 4, bodyY + 8, 1.5);
-    g.fillCircle(cx + 4, bodyY + 8, 1.5);
-
-    // Arms (opposite of run1)
-    g.fillStyle(colors.skin, 1);
-    g.fillRoundedRect(cx - bodyW / 2, armY + 2, armW, armH, 2);
-    g.fillRoundedRect(cx + bodyW / 2 - armW + 1, armY - 2, armW, armH, 2);
-
-    // Head
-    g.fillStyle(colors.skin, 1);
-    g.fillCircle(cx, headY, headR);
-    g.fillStyle(colors.hat, 1);
-    g.fillRoundedRect(cx - headR - 2, headY - headR, headR * 2 + 4, headR, 4);
-    g.fillRoundedRect(cx - headR - 4, headY - 2, headR * 2 + 8, 5, 2);
-    g.fillStyle(0xffffff, 1);
-    g.fillEllipse(cx - 2, headY + 1, 5, 6);
-    g.fillEllipse(cx + 5, headY + 1, 5, 6);
-    g.fillStyle(0x1a1a2e, 1);
-    g.fillCircle(cx - 1, headY + 2, 2);
-    g.fillCircle(cx + 6, headY + 2, 2);
-    g.fillStyle(0xffffff, 1);
-    g.fillCircle(cx, headY + 1, 1);
-    g.fillCircle(cx + 7, headY + 1, 1);
-    g.fillStyle(0x4a2800, 1);
-    g.fillRoundedRect(cx - 6, headY + 5, 13, 3, 1);
-
-  } else if (frame === 'jump') {
-    // === JUMP POSE (arms up, legs together) ===
-    // Legs (together, slightly bent)
-    g.fillStyle(colors.shoes, 1);
-    g.fillRoundedRect(cx - 8, legY + legH - 6, legW + 2, 5, 2);
-    g.fillRoundedRect(cx + 2, legY + legH - 6, legW + 2, 5, 2);
-    g.fillStyle(colors.overalls, 1);
-    g.fillRoundedRect(cx - 7, legY - 2, legW, legH + 2, 2);
-    g.fillRoundedRect(cx + 2, legY - 2, legW, legH + 2, 2);
-
-    // Body
-    g.fillStyle(colors.overalls, 1);
-    g.fillRoundedRect(cx - bodyW / 2, bodyY - 2, bodyW, bodyH, 4);
-    g.fillStyle(colors.shirt, 1);
-    g.fillRoundedRect(cx - bodyW / 2, bodyY - 2, bodyW, 6, 3);
-
-    g.fillStyle(0xffd700, 1);
-    g.fillCircle(cx - 4, bodyY + 6, 1.5);
-    g.fillCircle(cx + 4, bodyY + 6, 1.5);
-
-    // Arms (raised up!)
-    g.fillStyle(colors.skin, 1);
-    g.fillRoundedRect(cx - bodyW / 2 - 3, armY - 10, armW, armH, 2);
-    g.fillRoundedRect(cx + bodyW / 2 - 2, armY - 10, armW, armH, 2);
-
-    // Head (slightly tilted up)
-    g.fillStyle(colors.skin, 1);
-    g.fillCircle(cx, headY - 2, headR);
-
-    // Cap
-    g.fillStyle(colors.hat, 1);
-    g.fillRoundedRect(cx - headR - 2, headY - headR - 2, headR * 2 + 4, headR, 4);
-    g.fillRoundedRect(cx - headR - 4, headY - 4, headR * 2 + 8, 5, 2);
-
-    // Eyes (excited, looking up)
-    g.fillStyle(0xffffff, 1);
-    g.fillEllipse(cx - 3, headY - 1, 5, 7);
-    g.fillEllipse(cx + 4, headY - 1, 5, 7);
-    g.fillStyle(0x1a1a2e, 1);
-    g.fillCircle(cx - 2, headY, 2);
-    g.fillCircle(cx + 5, headY, 2);
-    g.fillStyle(0xffffff, 1);
-    g.fillCircle(cx - 1, headY - 1, 1);
-    g.fillCircle(cx + 6, headY - 1, 1);
-
-    // Mustache
-    g.fillStyle(0x4a2800, 1);
-    g.fillRoundedRect(cx - 6, headY + 3, 13, 3, 1);
+  // ── 身体 ──
+  g.fillStyle(0xc0c8d4, 1);
+  g.fillRoundedRect(cx - bodyW / 2, bodyY + bodyLean, bodyW, bodyH, 4);
+  // 能量纹路
+  g.lineStyle(1, 0x00aadd, 0.5);
+  g.beginPath();
+  g.moveTo(cx - 4, bodyY + 3 + bodyLean);
+  g.lineTo(cx, bodyY + 1 + bodyLean);
+  g.lineTo(cx + 4, bodyY + 3 + bodyLean);
+  g.stroke();
+  g.beginPath();
+  g.moveTo(cx - 6, bodyY + 7 + bodyLean);
+  g.lineTo(cx, bodyY + 5 + bodyLean);
+  g.lineTo(cx + 6, bodyY + 7 + bodyLean);
+  g.stroke();
+  // 六边形核心
+  g.fillStyle(0x00ccff, 0.8);
+  g.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const a = (i * 60 - 90) * Math.PI / 180;
+    const px = cx + Math.cos(a) * 4;
+    const py = bodyY + 8 + bodyLean + Math.sin(a) * 4;
+    if (i === 0) g.moveTo(px, py); else g.lineTo(px, py);
   }
+  g.closePath();
+  g.fill();
+
+  // ── 肩甲 ──
+  g.fillStyle(0xc0c8d4, 1);
+  g.fillRoundedRect(cx - bodyW / 2 - 4, bodyY + bodyLean, 6, 9, 2);
+  g.fillRoundedRect(cx + bodyW / 2 - 2, bodyY + bodyLean, 6, 9, 2);
+  // 散热槽
+  g.fillStyle(0xa0aab8, 0.7);
+  g.fillRect(cx - bodyW / 2 - 3, bodyY + 2 + bodyLean, 4, 1);
+  g.fillRect(cx - bodyW / 2 - 3, bodyY + 4 + bodyLean, 4, 1);
+  g.fillRect(cx + bodyW / 2 - 1, bodyY + 2 + bodyLean, 4, 1);
+  g.fillRect(cx + bodyW / 2 - 1, bodyY + 4 + bodyLean, 4, 1);
+
+  // ── 手臂（分段式）──
+  g.fillStyle(0xc0c8d4, 1);
+  g.fillRoundedRect(cx - bodyW / 2 - 3, armY + armOff + bodyLean, 4, 9, 2);
+  g.fillRoundedRect(cx + bodyW / 2 - 1, armY - armOff + bodyLean, 4, 9, 2);
+  // 关节
+  g.fillStyle(0x505a68, 1);
+  g.fillCircle(cx - bodyW / 2 - 1, armY + 9 + armOff + bodyLean, 2);
+  g.fillCircle(cx + bodyW / 2 + 1, armY + 9 - armOff + bodyLean, 2);
+  // 三指手
+  g.fillStyle(0xa0aab8, 1);
+  for (let i = -1; i <= 1; i++) {
+    g.fillRect(cx - bodyW / 2 - 3 + i * 1.5, armY + 10 + armOff + bodyLean, 1.5, 3);
+    g.fillRect(cx + bodyW / 2 - 1 + i * 1.5, armY + 10 - armOff + bodyLean, 1.5, 3);
+  }
+  // 指尖蓝光
+  g.fillStyle(0x00ccff, 0.5);
+  g.fillRect(cx - bodyW / 2 - 2, armY + 12 + armOff + bodyLean, 1, 1);
+  g.fillRect(cx + bodyW / 2, armY + 12 - armOff + bodyLean, 1, 1);
+
+  // ── 腰部球形关节 ──
+  g.fillStyle(0x505a68, 1);
+  g.fillCircle(cx, bodyY + bodyH + bodyLean, 3);
+  g.fillStyle(0xa0aab8, 1);
+  g.fillCircle(cx, bodyY + bodyH + bodyLean, 1.5);
+
+  // ── 头 ──
+  const headAdj = isJump ? headY - 2 : headY;
+  g.fillStyle(0xc0c8d4, 1);
+  g.fillRoundedRect(cx - headR, headAdj - headR, headR * 2, headR * 2, 5);
+  // 几何切面
+  g.fillStyle(0xb0b8c4, 1);
+  g.beginPath();
+  g.moveTo(cx - headR, headAdj);
+  g.lineTo(cx - 5, headAdj - headR);
+  g.lineTo(cx + 5, headAdj - headR);
+  g.lineTo(cx + headR, headAdj);
+  g.closePath();
+  g.fill();
+  // 光学传感器带
+  g.fillStyle(0x00ccff, 0.9);
+  g.fillRoundedRect(cx - 7, headAdj - 2, 14, 3, 1);
+  // 散热孔
+  g.fillStyle(0x505a68, 1);
+  g.fillRect(cx - 8, headAdj + 4, 2, 2);
+  g.fillRect(cx + 6, headAdj + 4, 2, 2);
+}
+
+// ── 艾珂（Echo）— 淡紫皮肤 · 尖耳 · 紫色能量纹路 ──
+function drawEchoFrame(g: Phaser.GameObjects.Graphics, frame: string, w: number, h: number): void {
+  const cx = w / 2 + 2, cy = h / 2 + 2;
+  const headR = 10, bodyW = 17, bodyH = 14, legW = 6, legH = 12;
+
+  const headY = cy - 14;
+  const bodyY = headY + headR + 2;
+  const legY = bodyY + bodyH;
+  const armY = bodyY + 2;
+
+  const isJump = frame === 'jump';
+  const runOff = frame === 'run1' ? 4 : frame === 'run2' ? -3 : frame === 'run3' ? -4 : frame === 'run4' ? 3 : 0;
+  const armOff = frame === 'run1' ? 3 : frame === 'run2' ? -2 : frame === 'run3' ? -3 : frame === 'run4' ? 2 : 0;
+  const bodyLean = isJump ? -2 : 0;
+  const floatY = isJump ? -3 : 0;
+
+  // 粒子光晕
+  g.fillStyle(0xb070e0, 0.1);
+  g.fillCircle(cx, bodyY + 6 + bodyLean + floatY, 18);
+
+  // ── 靴子（悬浮离地）──
+  g.fillStyle(0x4a2868, 1);
+  g.fillRoundedRect(cx - 8, legY + legH - 1 + bodyLean + floatY, legW + 1, 4, 1);
+  g.fillRoundedRect(cx + 2 + runOff, legY + legH - 1 + bodyLean + floatY, legW + 1, 4, 1);
+  // 悬浮光晕
+  g.fillStyle(0xb070e0, 0.2);
+  g.fillEllipse(cx - 5, legY + legH + 3 + bodyLean + floatY, 8, 3);
+  g.fillEllipse(cx + 5 + runOff, legY + legH + 3 + bodyLean + floatY, 8, 3);
+
+  // ── 腿 ──
+  g.fillStyle(0x4a2868, 1);
+  g.fillRoundedRect(cx - 7, legY + bodyLean + floatY, legW, legH, 2);
+  g.fillRoundedRect(cx + 2 + runOff, legY + bodyLean + floatY, legW, legH, 2);
+  // 腿部能量线
+  g.lineStyle(1, 0xb070e0, 0.6);
+  g.beginPath();
+  g.moveTo(cx - 4, legY + 2 + bodyLean + floatY);
+  g.lineTo(cx - 4, legY + 8 + bodyLean + floatY);
+  g.stroke();
+  g.beginPath();
+  g.moveTo(cx + 5 + runOff, legY + 2 + bodyLean + floatY);
+  g.lineTo(cx + 5 + runOff, legY + 8 + bodyLean + floatY);
+  g.stroke();
+
+  // ── 身体 ──
+  g.fillStyle(0x4a2868, 1);
+  g.fillRoundedRect(cx - bodyW / 2, bodyY + bodyLean + floatY, bodyW, bodyH, 4);
+  // V 领
+  g.fillStyle(0x3a1858, 1);
+  g.beginPath();
+  g.moveTo(cx, bodyY + bodyLean + floatY);
+  g.lineTo(cx - 5, bodyY + 5 + bodyLean + floatY);
+  g.lineTo(cx + 5, bodyY + 5 + bodyLean + floatY);
+  g.closePath();
+  g.fill();
+  // 能量纹路
+  g.lineStyle(1.5, 0xb070e0, 0.7);
+  g.beginPath();
+  g.moveTo(cx - 4, bodyY + 3 + bodyLean + floatY);
+  g.lineTo(cx + 4, bodyY + 3 + bodyLean + floatY);
+  g.stroke();
+  g.beginPath();
+  g.moveTo(cx - 6, bodyY + 9 + bodyLean + floatY);
+  g.lineTo(cx + 6, bodyY + 9 + bodyLean + floatY);
+  g.stroke();
+
+  // ── 悬浮能量护肩 ──
+  g.fillStyle(0x7040b0, 0.7);
+  g.fillRoundedRect(cx - bodyW / 2 - 5, bodyY - 1 + bodyLean + floatY, 5, 7, 2);
+  g.fillRoundedRect(cx + bodyW / 2, bodyY - 1 + bodyLean + floatY, 5, 7, 2);
+
+  // ── 手臂 ──
+  g.fillStyle(0xc8a0d8, 1);
+  g.fillRoundedRect(cx - bodyW / 2 - 3, armY + armOff + bodyLean + floatY, 4, 10, 2);
+  g.fillRoundedRect(cx + bodyW / 2 - 1, armY - armOff + bodyLean + floatY, 4, 10, 2);
+  // 螺旋纹路
+  g.lineStyle(1, 0xb070e0, 0.5);
+  g.beginPath();
+  g.moveTo(cx - bodyW / 2 - 1, armY + 2 + armOff + bodyLean + floatY);
+  g.lineTo(cx - bodyW / 2 - 1, armY + 8 + armOff + bodyLean + floatY);
+  g.stroke();
+  // 指尖光点
+  g.fillStyle(0xb070e0, 0.7);
+  g.fillCircle(cx - bodyW / 2 - 1, armY + 10 + armOff + bodyLean + floatY, 1);
+  g.fillCircle(cx + bodyW / 2 + 1, armY + 10 - armOff + bodyLean + floatY, 1);
+
+  // ── 腰带 ──
+  g.fillStyle(0x3a1858, 1);
+  g.fillRect(cx - bodyW / 2, bodyY + bodyH - 2 + bodyLean + floatY, bodyW, 3);
+  // 星形扣饰
+  g.fillStyle(0xb070e0, 1);
+  g.beginPath();
+  for (let i = 0; i < 5; i++) {
+    const a = (i * 72 - 90) * Math.PI / 180;
+    const px = cx + Math.cos(a) * 2.5;
+    const py = bodyY + bodyH - 0.5 + bodyLean + floatY + Math.sin(a) * 2.5;
+    if (i === 0) g.moveTo(px, py); else g.lineTo(px, py);
+    const b = (i * 72 + 36 - 90) * Math.PI / 180;
+    g.lineTo(cx + Math.cos(b) * 1, bodyY + bodyH - 0.5 + bodyLean + floatY + Math.sin(b) * 1);
+  }
+  g.closePath();
+  g.fill();
+
+  // ── 头 ──
+  const headAdj = isJump ? headY - 3 : headY;
+  g.fillStyle(0xc8a0d8, 1);
+  g.fillCircle(cx, headAdj + floatY, headR);
+
+  // 能量纹路面部
+  g.lineStyle(0.8, 0xb070e0, 0.5);
+  g.beginPath();
+  g.moveTo(cx - 6, headAdj - 2 + floatY);
+  g.lineTo(cx - 4, headAdj - 6 + floatY);
+  g.stroke();
+  g.beginPath();
+  g.moveTo(cx + 6, headAdj - 2 + floatY);
+  g.lineTo(cx + 4, headAdj - 6 + floatY);
+  g.stroke();
+
+  // 尖耳
+  g.fillStyle(0xc8a0d8, 1);
+  g.beginPath();
+  g.moveTo(cx - 9, headAdj - 8 + floatY);
+  g.lineTo(cx - 12, headAdj - 18 + floatY);
+  g.lineTo(cx - 5, headAdj - 10 + floatY);
+  g.closePath();
+  g.fill();
+  g.beginPath();
+  g.moveTo(cx + 9, headAdj - 8 + floatY);
+  g.lineTo(cx + 12, headAdj - 18 + floatY);
+  g.lineTo(cx + 5, headAdj - 10 + floatY);
+  g.closePath();
+  g.fill();
+
+  // 银紫长发
+  g.fillStyle(0xd0d0e8, 1);
+  g.beginPath();
+  g.arc(cx, headAdj - 3 + floatY, headR + 1, Math.PI, Math.PI * 2);
+  g.fill();
+  g.fillRect(cx - headR - 1, headAdj - 3 + floatY, (headR + 1) * 2, 5);
+  // 飘逸发丝
+  g.beginPath();
+  g.moveTo(cx - headR - 1, headAdj + floatY);
+  g.lineTo(cx - headR + 2, headAdj + 8 + floatY);
+  g.lineTo(cx - headR + 4, headAdj + 4 + floatY);
+  g.lineTo(cx - headR - 1, headAdj + floatY);
+  g.closePath();
+  g.fill();
+  g.beginPath();
+  g.moveTo(cx + headR + 1, headAdj + floatY);
+  g.lineTo(cx + headR - 2, headAdj + 8 + floatY);
+  g.lineTo(cx + headR - 4, headAdj + 4 + floatY);
+  g.lineTo(cx + headR + 1, headAdj + floatY);
+  g.closePath();
+  g.fill();
+
+  // 眼睛
+  g.fillStyle(0xffffff, 1);
+  g.fillEllipse(cx - 3, headAdj + 2 + floatY, 5, 6);
+  g.fillEllipse(cx + 4, headAdj + 2 + floatY, 5, 6);
+  g.fillStyle(0xa060e0, 1);
+  g.fillCircle(cx - 2, headAdj + 3 + floatY, 2.2);
+  g.fillCircle(cx + 5, headAdj + 3 + floatY, 2.2);
+  g.fillStyle(0xffffff, 1);
+  g.fillCircle(cx - 1.5, headAdj + 1.5 + floatY, 0.8);
+  g.fillCircle(cx + 5.5, headAdj + 1.5 + floatY, 0.8);
+}
+
+// ── 疾风（Gale）— 暗金装甲 · 不对称设计 · 红色光眼 ──
+function drawGaleFrame(g: Phaser.GameObjects.Graphics, frame: string, w: number, h: number): void {
+  const cx = w / 2 + 2, cy = h / 2 + 2;
+  const headR = 10, bodyW = 18, bodyH = 14, legW = 7, legH = 12;
+
+  const headY = cy - 14;
+  const bodyY = headY + headR + 2;
+  const legY = bodyY + bodyH;
+  const armY = bodyY + 2;
+
+  const isJump = frame === 'jump';
+  const runOff = frame === 'run1' ? 4 : frame === 'run2' ? -3 : frame === 'run3' ? -4 : frame === 'run4' ? 3 : 0;
+  const armOff = frame === 'run1' ? 3 : frame === 'run2' ? -2 : frame === 'run3' ? -3 : frame === 'run4' ? 2 : 0;
+  const bodyLean = isJump ? -2 : 0;
+
+  // 推进器光晕
+  g.fillStyle(0xff6020, 0.1);
+  g.fillCircle(cx, legY + legH + 4 + bodyLean, 12);
+
+  // ── 足部（流线型）──
+  g.fillStyle(0xb08840, 1);
+  g.fillRoundedRect(cx - 9, legY + legH - 3 + bodyLean, legW + 2, 5, 2);
+  g.fillRoundedRect(cx + 2 + runOff, legY + legH - 3 + bodyLean, legW + 2, 5, 2);
+  // 推进器口
+  g.fillStyle(0x8a6820, 1);
+  g.fillRect(cx - 7, legY + legH + bodyLean, 3, 2);
+  g.fillRect(cx + 4 + runOff, legY + legH + bodyLean, 3, 2);
+
+  // ── 左腿（全机械 · 暗金）──
+  g.fillStyle(0xb08840, 1);
+  g.fillRoundedRect(cx - 8, legY + bodyLean, legW, legH, 2);
+  // ── 右腿（半机械 · 暗棕）──
+  g.fillStyle(0x3a3020, 1);
+  g.fillRoundedRect(cx + 2 + runOff, legY + bodyLean, legW, legH, 2);
+  // 膝关节
+  g.fillStyle(0x8a6820, 1);
+  g.fillCircle(cx - 4, legY + bodyLean, 2.5);
+  g.fillStyle(0x2a2018, 1);
+  g.fillCircle(cx + 5 + runOff, legY + bodyLean, 2.5);
+
+  // ── 身体（暗棕装甲）──
+  g.fillStyle(0x3a3020, 1);
+  g.fillRoundedRect(cx - bodyW / 2, bodyY + bodyLean, bodyW, bodyH, 4);
+  // 装甲纹理
+  g.fillStyle(0x2a2018, 0.6);
+  g.fillRect(cx - bodyW / 2 + 2, bodyY + 2 + bodyLean, bodyW - 4, 1);
+  g.fillRect(cx - bodyW / 2 + 2, bodyY + 6 + bodyLean, bodyW - 4, 1);
+  // 左胸能量核心
+  g.fillStyle(0xff4040, 0.9);
+  g.fillCircle(cx - 4, bodyY + 6 + bodyLean, 3);
+  g.fillStyle(0xff8080, 0.5);
+  g.fillCircle(cx - 5, bodyY + 5 + bodyLean, 1.5);
+
+  // ── 左肩甲（大型 · 暗金）──
+  g.fillStyle(0xb08840, 1);
+  g.fillRoundedRect(cx - bodyW / 2 - 5, bodyY - 1 + bodyLean, 7, 10, 3);
+  g.fillStyle(0xd0a850, 0.5);
+  g.fillRect(cx - bodyW / 2 - 4, bodyY + 1 + bodyLean, 5, 1);
+  g.fillRect(cx - bodyW / 2 - 4, bodyY + 3 + bodyLean, 5, 1);
+  // ── 右肩甲（小型 · 暗棕）──
+  g.fillStyle(0x3a3020, 1);
+  g.fillRoundedRect(cx + bodyW / 2 - 2, bodyY + bodyLean, 5, 7, 2);
+
+  // ── 左臂（全机械）──
+  g.fillStyle(0xb08840, 1);
+  g.fillRoundedRect(cx - bodyW / 2 - 4, armY + armOff + bodyLean, 5, 10, 2);
+  g.fillStyle(0x8a6820, 1);
+  g.fillCircle(cx - bodyW / 2 - 1, armY + 10 + armOff + bodyLean, 2);
+  // 三指爪
+  g.fillStyle(0xd0a850, 1);
+  g.fillRect(cx - bodyW / 2 - 4, armY + 11 + armOff + bodyLean, 1.5, 3);
+  g.fillRect(cx - bodyW / 2 - 2.5, armY + 11 + armOff + bodyLean, 1.5, 3);
+  g.fillRect(cx - bodyW / 2 - 1, armY + 11 + armOff + bodyLean, 1.5, 3);
+  // ── 右臂（半机械）──
+  g.fillStyle(0xd8b890, 1);
+  g.fillRoundedRect(cx + bodyW / 2 - 1, armY - armOff + bodyLean, 4, 6, 2);
+  g.fillStyle(0x3a3020, 1);
+  g.fillRoundedRect(cx + bodyW / 2 - 1, armY + 5 - armOff + bodyLean, 4, 7, 2);
+
+  // ── 腰带 ──
+  g.fillStyle(0x3a3020, 1);
+  g.fillRect(cx - bodyW / 2, bodyY + bodyH - 2 + bodyLean, bodyW, 3);
+  g.fillStyle(0x8a6820, 1);
+  g.fillRoundedRect(cx - 2, bodyY + bodyH - 1 + bodyLean, 4, 2, 1);
+
+  // ── 头 ──
+  const headAdj = isJump ? headY - 2 : headY;
+  // 人类半脸
+  g.fillStyle(0xd8b890, 1);
+  g.fillCircle(cx, headAdj, headR);
+  // 机械半脸
+  g.fillStyle(0xb08840, 1);
+  g.beginPath();
+  g.arc(cx - 2, headAdj, headR, -Math.PI * 0.3, Math.PI * 0.8);
+  g.closePath();
+  g.fill();
+
+  // 短发（凌乱）
+  g.fillStyle(0x2a1a08, 1);
+  g.beginPath();
+  g.moveTo(cx - 8, headAdj - 8);
+  g.lineTo(cx - 6, headAdj - 12);
+  g.lineTo(cx - 2, headAdj - 8);
+  g.lineTo(cx, headAdj - 11);
+  g.lineTo(cx + 3, headAdj - 7);
+  g.lineTo(cx + 6, headAdj - 10);
+  g.lineTo(cx + 8, headAdj - 6);
+  g.lineTo(cx + headR, headAdj - 6);
+  g.lineTo(cx + headR, headAdj - 8);
+  g.lineTo(cx - 8, headAdj - 10);
+  g.closePath();
+  g.fill();
+
+  // 左眼（红色光眼）
+  g.fillStyle(0xff4040, 0.9);
+  g.fillEllipse(cx - 4, headAdj + 2, 5, 4);
+  g.fillStyle(0xff8080, 0.7);
+  g.fillCircle(cx - 4, headAdj + 2, 1.5);
+  // 右眼（人类棕色）
+  g.fillStyle(0xffffff, 1);
+  g.fillEllipse(cx + 4, headAdj + 2, 4.5, 5.5);
+  g.fillStyle(0x5a3a10, 1);
+  g.fillCircle(cx + 5, headAdj + 3, 1.8);
+  g.fillStyle(0xffffff, 1);
+  g.fillCircle(cx + 5.5, headAdj + 1.5, 0.6);
+
+  // 嘴
+  g.fillStyle(0xc8a080, 1);
+  g.fillRect(cx - 2, headAdj + 6, 4, 1);
 }
 
 // ==================== Background ====================
