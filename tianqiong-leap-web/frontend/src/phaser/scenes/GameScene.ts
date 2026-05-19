@@ -675,7 +675,7 @@ export class GameScene extends Phaser.Scene {
     const w = Math.max(70, (baseW + (Math.random() - 0.5) * 40) * widthMod);
 
     const maxRise = maxHeight * (isWarmup ? 0.15 : 0.4);
-    const maxDrop = isWarmup ? 30 : 100;
+    const maxDrop = isWarmup ? 30 : maxHeight * 0.5;
     const rawDy = (Math.random() - 0.4) * (maxRise + maxDrop) - maxDrop * 0.2;
     const dy = Phaser.Math.Clamp(rawDy, -maxDrop, maxRise);
     const y = Phaser.Math.Clamp(lastTopY + dy, PHYSICS.PLATFORM_Y_MIN, PHYSICS.PLATFORM_Y_MAX);
