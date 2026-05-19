@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>天穹跃迁 - 页面布局设计图</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a2e; color: #ece2d0; font-family: -apple-system, sans-serif; padding: 40px; }
+
+  h1 { color: #c5a45a; font-size: 28px; margin-bottom: 8px; }
+  h2 { color: #c5a45a; font-size: 20px; margin: 32px 0 12px; }
+  h3 { color: #e8d5a3; font-size: 16px; margin: 20px 0 8px; }
+  p { color: #9e9486; font-size: 14px; line-height: 1.6; margin-bottom: 8px; }
+  .subtitle { color: #9e9486; font-size: 13px; margin-bottom: 24px; }
+
+  /* ===== 设计图容器 ===== */
+  .diagram-section {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+  }
+  .diagram-box {
+    flex: 1;
+    min-width: 340px;
+  }
+  .diagram-label {
+    text-align: center;
+    color: #ffd980;
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+
+  /* ===== 当前布局模型 ===== */
+  .device-frame {
+    width: 480px;
+    height: 320px;
+    border: 2px solid #4a4050;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    background: #0f0a1a;
+    margin: 0 auto;
+  }
+
+  /* .app 层 */
+  .layer-app {
+    position: absolute;
+    inset: 0;
+    border: 1px dashed #555;
+  }
+
+  /* .game-container */
+  .layer-game-container {
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba(107, 184, 232, 0.4);
+    background: rgba(107, 184, 232, 0.05);
+  }
+  .layer-game-container::before {
+    content: '.game-container';
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    font-size: 9px;
+    color: #6bb8e8;
+  }
+
+  /* Phaser Canvas */
+  .phaser-canvas {
+    position: absolute;
+    border: 2px solid #6bb8e8;
+    background: linear-gradient(180deg, #2a1f3a 0%, #1a1520 100%);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .phaser-canvas::before {
+    content: 'Phaser Canvas 852×393';
+    font-size: 9px;
+    color: #6bb8e8;
+    padding: 2px 4px;
+  }
+
+  /* Camera 区域 */
+  .cam-main {
+    position: absolute;
+    border: 1px dashed rgba(255, 152, 0, 0.6);
+    background: rgba(255, 152, 0, 0.04);
+  }
+  .cam-main::before {
+    content: 'mainCam (跟随玩家滚动)';
+    font-size: 8px;
+    color: #ff9800;
+    position: absolute;
+    top: 1px;
+    left: 3px;
+  }
+  .cam-hud {
+    position: absolute;
+    border: 1px dashed rgba(76, 175, 80, 0.6);
+    background: rgba(76, 175, 80, 0.04);
+  }
+  .cam-hud::before {
+    content: 'hudCam (固定, scroll 0,0)';
+    font-size: 8px;
+    color: #4caf50;
+    position: absolute;
+    top: 1px;
+    left: 3px;
+  }
+
+  /* HUD 元素 */
+  .hud-element {
+    position: absolute;
+    background: rgba(76, 175, 80, 0.2);
+    border: 1px solid rgba(76, 175, 80, 0.5);
+    border-radius: 3px;
+    font-size: 8px;
+    color: #4caf50;
+    padding: 1px 3px;
+    white-space: nowrap;
+  }
+
+  /* 玩家 */
+  .player-marker {
+    position: absolute;
+    width: 12px;
+    height: 16px;
+    background: #ffd980;
+    border-radius: 3px;
+    z-index: 5;
+  }
+  .player-marker::after {
+    content: '玩家';
+    position: absolute;
+    top: -12px;
+    left: -4px;
+    font-size: 8px;
+    color: #ffd980;
+    white-space: nowrap;
+  }
+
+  /* 平台 */
+  .platform-marker {
+    position: absolute;
+    height: 6px;
+    background: rgba(197, 164, 90, 0.5);
+    border: 1px solid rgba(197, 164, 90, 0.7);
+    border-radius: 2px;
+  }
+
+  /* 死亡区域 */
+  .death-zone {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(224, 85, 85, 0.15);
+    border-top: 2px dashed #e05555;
+  }
+  .death-zone::before {
+    content: '死亡区域';
+    font-size: 9px;
+    color: #e05555;
+    position: absolute;
+    top: 2px;
+    left: 4px;
+  }
+  .death-zone-label {
+    position: absolute;
+    right: 4px;
+    font-size: 8px;
+    color: #e05555;
+  }
+
+  /* 可见边界 */
+  .visible-boundary {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+  }
+  .visible-boundary::before {
+    content: attr(data-label);
+    font-size: 8px;
+    color: rgba(255, 255, 255, 0.5);
+    position: absolute;
+    top: -10px;
+    left: 4px;
+  }
+
+  /* UI 层 */
+  .layer-ui {
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba(197, 164, 90, 0.3);
+    background: rgba(197, 164, 90, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .layer-ui::before {
+    content: '.ui-layer (菜单/选择界面)';
+    font-size: 10px;
+    color: #c5a45a;
+  }
+
+  /* Overlay */
+  .layer-overlay {
+    position: absolute;
+    border: 1px solid rgba(224, 85, 85, 0.3);
+    background: rgba(10, 6, 20, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .layer-overlay::before {
+    content: attr(data-name);
+    font-size: 10px;
+    color: #e8d5a3;
+  }
+
+  /* 返回按钮 */
+  .btn-back-marker {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    background: rgba(15, 10, 26, 0.7);
+    border: 1px solid rgba(197, 164, 90, 0.3);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 8px;
+    color: #c5a45a;
+    z-index: 10;
+  }
+
+  /* ===== Z-Index 图例 ===== */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 12px 0;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+  }
+  .legend-color {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  /* ===== 对比表格 ===== */
+  table {
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 13px;
+  }
+  th, td {
+    border: 1px solid #3a3040;
+    padding: 6px 12px;
+    text-align: left;
+  }
+  th {
+    background: rgba(197, 164, 90, 0.15);
+    color: #c5a45a;
+    font-weight: normal;
+  }
+  td { color: #ece2d0; }
+  .highlight { color: #ffd980; font-weight: bold; }
+  .problem { color: #e05555; }
+  .fix { color: #4caf50; }
+
+  /* ===== 死亡判定流程图 ===== */
+  .flow-chart {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin: 16px 0;
+    font-size: 12px;
+  }
+  .flow-box {
+    padding: 6px 16px;
+    border-radius: 6px;
+    text-align: center;
+    min-width: 200px;
+  }
+  .flow-decision {
+    padding: 6px 16px;
+    border-radius: 6px;
+    text-align: center;
+    min-width: 200px;
+    transform: rotate(0deg);
+    border-style: dashed;
+  }
+  .flow-arrow {
+    color: #9e9486;
+    font-size: 16px;
+  }
+  .flow-label {
+    font-size: 10px;
+    color: #9e9486;
+    margin: 0 8px;
+  }
+
+  .section-divider {
+    width: 100%;
+    height: 1px;
+    background: rgba(197, 164, 90, 0.2);
+    margin: 24px 0;
+  }
+</style>
+</head>
+<body>
+
+<h1>天穹跃迁 - 页面布局设计图</h1>
+<p class="subtitle">当前结构 & 问题分析 & 修复方案</p>
+
+<!-- ==================== 当前布局 ==================== -->
+<h2>一、当前页面布局</h2>
+<div class="diagram-section">
+  <div class="diagram-box">
+    <div class="diagram-label">菜单状态 (screen !== 'game')</div>
+    <div class="device-frame">
+      <div class="layer-app">
+        <div class="layer-game-container">
+          <!-- Phaser canvas 居中 -->
+          <div class="phaser-canvas" style="left:50%; top:50%; width:240px; height:113px; transform:translate(-50%,-50%);">
+          </div>
+        </div>
+        <!-- UI 层覆盖在上面 -->
+        <div class="layer-ui"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-box">
+    <div class="diagram-label">游戏状态 (screen === 'game')</div>
+    <div class="device-frame">
+      <div class="layer-app">
+        <div class="layer-game-container">
+          <!-- Phaser canvas 居中 -->
+          <div class="phaser-canvas" style="left:50%; top:50%; width:240px; height:113px; transform:translate(-50%,-50%);">
+            <!-- mainCam (整个 canvas) -->
+            <div class="cam-main" style="inset: 0;"></div>
+            <!-- hudCam (整个 canvas) -->
+            <div class="cam-hud" style="inset: 0;"></div>
+            <!-- HUD 元素 -->
+            <div class="hud-element" style="top: 6px; left: 6px;">❤❤❤</div>
+            <div class="hud-element" style="top: 6px; right: 6px;">★ 0/3</div>
+            <div class="hud-element" style="top: 18px; right: 6px;">分数</div>
+            <div class="hud-element" style="bottom: 6px; left: 6px;">🔫 手枪</div>
+            <!-- 玩家 -->
+            <div class="player-marker" style="left: 40px; top: 55px;"></div>
+            <!-- 平台 -->
+            <div class="platform-marker" style="left: 20px; top: 70px; width: 80px;"></div>
+            <div class="platform-marker" style="left: 120px; top: 65px; width: 60px;"></div>
+            <div class="platform-marker" style="left: 190px; top: 60px; width: 40px;"></div>
+          </div>
+        </div>
+        <!-- 返回按钮 -->
+        <div class="btn-back-marker">← 菜单</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-color" style="background: rgba(107,184,232,0.3); border-color: #6bb8e8;"></div> Phaser Canvas</div>
+  <div class="legend-item"><div class="legend-color" style="background: rgba(255,152,0,0.15); border-color: #ff9800;"></div> mainCam (跟随滚动)</div>
+  <div class="legend-item"><div class="legend-color" style="background: rgba(76,175,80,0.15); border-color: #4caf50;"></div> hudCam (固定)</div>
+  <div class="legend-item"><div class="legend-color" style="background: rgba(224,85,85,0.2); border-color: #e05555;"></div> 死亡区域</div>
+  <div class="legend-item"><div class="legend-color" style="background: #ffd980;"></div> 玩家</div>
+  <div class="legend-item"><div class="legend-color" style="background: rgba(197,164,90,0.5);"></div> 平台</div>
+</div>
+
+<!-- ==================== 问题分析 ==================== -->
+<h2>二、问题分析</h2>
+
+<h3>问题 1: 死亡判定失效</h3>
+<div class="diagram-section">
+  <div class="diagram-box">
+    <div class="diagram-label">当前 (问题)</div>
+    <div style="width:480px; height:200px; border:2px solid #4a4050; border-radius:8px; position:relative; overflow:hidden; background:#0f0a1a; margin:0 auto;">
+      <!-- 可见区域 -->
+      <div style="position:absolute; left:0; right:0; top:0; height:78%; background: rgba(27,21,32,0.8);">
+        <span style="font-size:10px; color:#9e9486; padding:4px;">画布可见区域 (y: 0 ~ 393)</span>
+        <!-- 玩家在可见区底部 -->
+        <div style="position:absolute; left:60px; bottom:8px; width:14px; height:18px; background:#ffd980; border-radius:3px;"></div>
+        <div style="position:absolute; left:50px; bottom:28px; font-size:9px; color:#ffd980;">玩家</div>
+        <div style="position:absolute; left:30px; bottom:4px; width:100px; height:5px; background:rgba(197,164,90,0.5); border-radius:2px;"></div>
+      </div>
+      <!-- 隐形缓冲区 -->
+      <div style="position:absolute; left:0; right:0; top:78%; height:12%; background: rgba(224,85,85,0.08); border-top: 1px dashed rgba(224,85,85,0.3);">
+        <span style="font-size:9px; color:#e05555; padding:2px 4px;">隐形缓冲区 (393 ~ 491) ← 问题!</span>
+        <!-- 玩家在这里 -->
+        <div style="position:absolute; left:120px; top:2px; width:14px; height:18px; background:#ffd980; border-radius:3px; opacity:0.5;"></div>
+        <div style="position:absolute; left:108px; top:22px; font-size:8px; color:#ffd980;">掉到这里还没死</div>
+      </div>
+      <!-- 死亡线 -->
+      <div style="position:absolute; left:0; right:0; top:90%; border-top:2px dashed #e05555; background: rgba(224,85,85,0.15);">
+        <span style="font-size:9px; color:#e05555; padding:2px 4px;">deathY = 491 才触发死亡</span>
+      </div>
+    </div>
+    <p style="margin-top:8px;">
+      <span class="problem">deathY = CANVAS_HEIGHT - CAMERA_SCROLL_Y = 393 - (-98) = 491</span><br>
+      玩家掉出画面后还有 98px 才触发死亡，感觉判定"失效"
+    </p>
+  </div>
+
+  <div class="diagram-box">
+    <div class="diagram-label">修复后 (方案)</div>
+    <div style="width:480px; height:200px; border:2px solid #4a4050; border-radius:8px; position:relative; overflow:hidden; background:#0f0a1a; margin:0 auto;">
+      <!-- 可见区域 -->
+      <div style="position:absolute; left:0; right:0; top:0; height:90%; background: rgba(27,21,32,0.8);">
+        <span style="font-size:10px; color:#9e9486; padding:4px;">画布可见区域 (y: 0 ~ 393)</span>
+        <!-- 玩家在可见区底部 -->
+        <div style="position:absolute; left:60px; bottom:8px; width:14px; height:18px; background:#ffd980; border-radius:3px;"></div>
+        <div style="position:absolute; left:50px; bottom:28px; font-size:9px; color:#ffd980;">玩家</div>
+        <div style="position:absolute; left:30px; bottom:4px; width:100px; height:5px; background:rgba(197,164,90,0.5); border-radius:2px;"></div>
+      </div>
+      <!-- 死亡线紧贴画布底部 -->
+      <div style="position:absolute; left:0; right:0; top:90%; border-top:2px solid #4caf50; background: rgba(76,175,80,0.1);">
+        <span style="font-size:9px; color:#4caf50; padding:2px 4px;">deathY = 393 ← 掉出画面即死亡 ✓</span>
+      </div>
+    </div>
+    <p style="margin-top:8px;">
+      <span class="fix">deathY = CANVAS_HEIGHT = 393</span><br>
+      玩家刚掉出画面就触发死亡，判定即时可靠
+    </p>
+  </div>
+</div>
+
+<h3>问题 2: 游戏页面不在画面中</h3>
+<div class="diagram-section">
+  <div class="diagram-box">
+    <div class="diagram-label">当前 (问题)</div>
+    <div style="width:480px; height:180px; border:2px solid #4a4050; border-radius:8px; position:relative; overflow:hidden; background:#0f0a1a; margin:0 auto;">
+      <div style="position:absolute; inset:0; border:1px dashed #555;">
+        <span style="font-size:9px; color:#555; padding:2px;">.game-container (position: absolute; inset: 0)</span>
+        <!-- canvas 可能偏移 -->
+        <div style="position:absolute; left:50%; top:40%; width:200px; height:94px; transform:translate(-50%,-50%); border:2px solid #e05555; background:rgba(224,85,85,0.05);">
+          <span style="font-size:9px; color:#e05555; padding:2px;">Canvas 可能偏移</span>
+          <span style="font-size:8px; color:#9e9486; display:block; padding:2px;">Scale.FIT + CENTER_BOTH</span>
+          <span style="font-size:8px; color:#9e9486; display:block; padding:2px;">在某些窗口尺寸下不稳定</span>
+        </div>
+      </div>
+    </div>
+    <p style="margin-top:8px;">
+      <span class="problem">Phaser Scale.FIT 的 autoCenter 行为不可控</span><br>
+      窗口尺寸变化或首次加载时 canvas 可能不在预期位置
+    </p>
+  </div>
+
+  <div class="diagram-box">
+    <div class="diagram-label">修复后 (方案)</div>
+    <div style="width:480px; height:180px; border:2px solid #4a4050; border-radius:8px; position:relative; overflow:hidden; background:#0f0a1a; margin:0 auto;">
+      <div style="position:absolute; inset:0; border:1px dashed #555; display:flex; align-items:center; justify-content:center;">
+        <span style="position:absolute; top:2px; left:4px; font-size:9px; color:#555;">.game-container (display: flex; 居中)</span>
+        <!-- canvas 稳定居中 -->
+        <div style="width:200px; height:94px; border:2px solid #4caf50; background:rgba(76,175,80,0.05); display:flex; align-items:center; justify-content:center;">
+          <span style="font-size:9px; color:#4caf50;">Canvas 稳定居中 ✓</span>
+        </div>
+      </div>
+    </div>
+    <p style="margin-top:8px;">
+      <span class="fix">CSS flex 居中 + Phaser Scale.FIT</span><br>
+      双重保障，canvas 始终在画面正中
+    </p>
+  </div>
+</div>
+
+<!-- ==================== 修复方案 ==================== -->
+<h2>三、修复方案详情</h2>
+
+<table>
+  <tr>
+    <th>项目</th>
+    <th>当前值</th>
+    <th>修复值</th>
+    <th>说明</th>
+  </tr>
+  <tr>
+    <td>deathY</td>
+    <td class="problem">CANVAS_HEIGHT - CAMERA_SCROLL_Y = 491</td>
+    <td class="fix">CANVAS_HEIGHT = 393</td>
+    <td>掉出可见画面即死亡</td>
+  </tr>
+  <tr>
+    <td>.game-container CSS</td>
+    <td class="problem">position: absolute; inset: 0</td>
+    <td class="fix">display: flex; align/justify: center</td>
+    <td>CSS 层面确保 canvas 居中</td>
+  </tr>
+  <tr>
+    <td>Phaser scale.mode</td>
+    <td>Phaser.Scale.FIT</td>
+    <td>Phaser.Scale.FIT (不变)</td>
+    <td>保持自适应缩放</td>
+  </tr>
+  <tr>
+    <td>Phaser scale.autoCenter</td>
+    <td>CENTER_BOTH</td>
+    <td>CENTER_BOTH (不变)</td>
+    <td>Phaser 内部也居中</td>
+  </tr>
+</table>
+
+<h3>死亡判定流程</h3>
+<div class="flow-chart">
+  <div class="flow-box" style="background:rgba(107,184,232,0.15); border:1px solid #6bb8e8; color:#6bb8e8;">
+    update() → 重力 + 位置更新
+  </div>
+  <div class="flow-arrow">↓</div>
+  <div class="flow-decision" style="background:rgba(255,152,0,0.1); border:1px dashed #ff9800; color:#ff9800;">
+    playerY > 393 ?
+  </div>
+  <div style="display:flex; gap:40px; align-items:flex-start;">
+    <div style="text-align:center;">
+      <div class="flow-arrow">↓ 否</div>
+      <div class="flow-box" style="background:rgba(76,175,80,0.15); border:1px solid #4caf50; color:#4caf50; font-size:11px;">
+        正常游戏继续
+      </div>
+    </div>
+    <div style="text-align:center;">
+      <div class="flow-arrow">↓ 是</div>
+      <div class="flow-decision" style="background:rgba(197,164,90,0.1); border:1px dashed #c5a45a; color:#c5a45a; font-size:11px;">
+        有护盾?
+      </div>
+      <div style="display:flex; gap:30px; margin-top:4px;">
+        <div style="text-align:center;">
+          <div class="flow-arrow" style="font-size:11px;">↓ 是</div>
+          <div class="flow-box" style="background:rgba(76,175,80,0.15); border:1px solid #4caf50; color:#4caf50; font-size:10px; min-width:100px; padding:4px 8px;">
+            护盾抵消<br>respawn + dead=false
+          </div>
+        </div>
+        <div style="text-align:center;">
+          <div class="flow-arrow" style="font-size:11px;">↓ 否</div>
+          <div class="flow-decision" style="background:rgba(224,85,85,0.1); border:1px dashed #e05555; color:#e05555; font-size:10px; min-width:100px; padding:4px 8px;">
+            lives > 0?
+          </div>
+          <div style="display:flex; gap:20px; margin-top:4px;">
+            <div style="text-align:center;">
+              <div class="flow-arrow" style="font-size:10px;">↓ 是</div>
+              <div class="flow-box" style="background:rgba(255,152,0,0.15); border:1px solid #ff9800; color:#ff9800; font-size:10px; min-width:80px; padding:3px 6px;">
+                lives--<br>respawn
+              </div>
+            </div>
+            <div style="text-align:center;">
+              <div class="flow-arrow" style="font-size:10px;">↓ 否</div>
+              <div class="flow-box" style="background:rgba(224,85,85,0.2); border:1px solid #e05555; color:#e05555; font-size:10px; min-width:80px; padding:3px 6px;">
+                GAME OVER
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Z-Index 层级 ==================== -->
+<h2>四、Z-Index 层级</h2>
+<table>
+  <tr><th>z-index</th><th>元素</th><th>说明</th></tr>
+  <tr><td>1</td><td>.game-container</td><td>Phaser canvas 容器</td></tr>
+  <tr><td>10</td><td>.ui-layer</td><td>菜单/选择界面</td></tr>
+  <tr><td>200</td><td>.btn-back-game</td><td>游戏中的返回按钮</td></tr>
+  <tr><td>500</td><td>.overlay</td><td>暂停/游戏结束/通关弹窗</td></tr>
+</table>
+
+<!-- ==================== CSS 修改 ==================== -->
+<h2>五、CSS 修改预览</h2>
+<div style="background:rgba(30,22,40,0.8); border:1px solid #3a3040; border-radius:8px; padding:16px; font-family:monospace; font-size:13px; line-height:1.8; max-width:600px;">
+  <div style="color:#9e9486;">/* 修改前 */</div>
+  <div><span style="color:#ff9800;">.game-container</span> {</div>
+  <div>&nbsp;&nbsp;<span style="color:#e05555;">position: absolute;</span></div>
+  <div>&nbsp;&nbsp;<span style="color:#e05555;">inset: 0;</span></div>
+  <div>&nbsp;&nbsp;z-index: 1;</div>
+  <div>}</div>
+  <br>
+  <div style="color:#9e9486;">/* 修改后 */</div>
+  <div><span style="color:#4caf50;">.game-container</span> {</div>
+  <div>&nbsp;&nbsp;<span style="color:#4caf50;">position: absolute;</span></div>
+  <div>&nbsp;&nbsp;<span style="color:#4caf50;">inset: 0;</span></div>
+  <div>&nbsp;&nbsp;<span style="color:#4caf50;">display: flex;</span></div>
+  <div>&nbsp;&nbsp;<span style="color:#4caf50;">align-items: center;</span></div>
+  <div>&nbsp;&nbsp;<span style="color:#4caf50;">justify-content: center;</span></div>
+  <div>&nbsp;&nbsp;z-index: 1;</div>
+  <div>}</div>
+</div>
+
+<p style="margin-top:32px; color:#c5a45a; font-size:14px;">确认方案后，我将修改以下文件：</p>
+<ul style="color:#9e9486; font-size:13px; margin:8px 0 0 20px; line-height:1.8;">
+  <li><code>App.css</code> — .game-container 添加 flex 居中</li>
+  <li><code>GameScene.ts</code> — deathY 改为 CANVAS_HEIGHT (393)</li>
+</ul>
+
+</body>
+</html>

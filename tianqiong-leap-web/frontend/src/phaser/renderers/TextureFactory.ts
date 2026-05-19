@@ -565,6 +565,10 @@ function generatePowerUpTextures(scene: Phaser.Scene): void {
     { key: 'pu-magnet', color: 0xff9800, icon: 'magnet' },
     { key: 'pu-slowtime', color: 0xce93d8, icon: 'clock' },
     { key: 'pu-boostboots', color: 0x66bb6a, icon: 'boot' },
+    { key: 'pu-xray', color: 0x7c4dff, icon: 'eye' },
+    { key: 'pu-revive', color: 0xffd700, icon: 'star' },
+    { key: 'pu-heal', color: 0xe91e63, icon: 'heart' },
+    { key: 'pu-energy', color: 0x00e676, icon: 'bolt' },
   ];
   const s = 24;
   for (const cfg of configs) {
@@ -594,6 +598,25 @@ function generatePowerUpTextures(scene: Phaser.Scene): void {
     } else if (cfg.icon === 'boot') {
       g.fillRoundedRect(s / 2 - 3, s / 2 - 5, 6, 8, 2);
       g.fillRoundedRect(s / 2 - 1, s / 2 + 3, 6, 3, 1);
+    } else if (cfg.icon === 'eye') {
+      g.fillEllipse(s / 2, s / 2, 12, 7);
+      g.fillStyle(0x1a1a2e, 1);
+      g.fillCircle(s / 2, s / 2, 3);
+    } else if (cfg.icon === 'star') {
+      const cx = s / 2, cy = s / 2, r = 5, ir = 2;
+      const starPts: Phaser.Math.Vector2[] = [];
+      for (let i = 0; i < 5; i++) {
+        starPts.push(new Phaser.Math.Vector2(cx + r * Math.cos(Phaser.Math.DegToRad(i * 72 - 90)), cy + r * Math.sin(Phaser.Math.DegToRad(i * 72 - 90))));
+        starPts.push(new Phaser.Math.Vector2(cx + ir * Math.cos(Phaser.Math.DegToRad(i * 72 + 36 - 90)), cy + ir * Math.sin(Phaser.Math.DegToRad(i * 72 + 36 - 90))));
+      }
+      g.fillPoints(starPts, true);
+    } else if (cfg.icon === 'heart') {
+      g.fillCircle(s / 2 - 2.5, s / 2 - 2, 3);
+      g.fillCircle(s / 2 + 2.5, s / 2 - 2, 3);
+      g.fillTriangle(s / 2 - 6, s / 2, s / 2 + 6, s / 2, s / 2, s / 2 + 5);
+    } else if (cfg.icon === 'bolt') {
+      g.fillTriangle(s / 2 + 1, s / 2 - 6, s / 2 - 4, s / 2 + 1, s / 2 + 2, s / 2 + 1);
+      g.fillTriangle(s / 2 - 1, s / 2 + 6, s / 2 + 4, s / 2 - 1, s / 2 - 2, s / 2 - 1);
     }
     g.generateTexture(cfg.key, s, s);
     g.destroy();
@@ -654,6 +677,170 @@ function generateEnemyTextures(scene: Phaser.Scene): void {
   gs.fillCircle(es / 2, es / 2, 1.5);
   gs.generateTexture('enemy-shooter', es, es);
   gs.destroy();
+
+  // Charger - orange rhino-like
+  const gc = scene.make.graphics({ x: 0, y: 0 }, false);
+  gc.fillStyle(0xff8c00, 1);
+  gc.fillRoundedRect(es / 2 - 12, es / 2 - 6, 24, 16, 6);
+  // Horn
+  gc.fillStyle(0xffd700, 1);
+  gc.fillTriangle(es / 2 + 12, es / 2 - 2, es / 2 + 18, es / 2 - 6, es / 2 + 12, es / 2 + 4);
+  // Eyes
+  gc.fillStyle(0xffffff, 1);
+  gc.fillCircle(es / 2 + 4, es / 2 - 2, 2.5);
+  gc.fillStyle(0xff0000, 1);
+  gc.fillCircle(es / 2 + 5, es / 2 - 2, 1.5);
+  // Legs
+  gc.fillStyle(0xcc7000, 1);
+  gc.fillRoundedRect(es / 2 - 8, es / 2 + 8, 5, 4, 1);
+  gc.fillRoundedRect(es / 2 + 3, es / 2 + 8, 5, 4, 1);
+  gc.generateTexture('enemy-charger', es, es);
+  gc.destroy();
+
+  // Bomber - dark red flying saucer
+  const gbm = scene.make.graphics({ x: 0, y: 0 }, false);
+  gbm.fillStyle(0xd32f2f, 1);
+  gbm.fillEllipse(es / 2, es / 2, 26, 14);
+  // Cockpit
+  gbm.fillStyle(0xff5252, 1);
+  gbm.fillCircle(es / 2, es / 2, 5);
+  // Eyes
+  gbm.fillStyle(0xffffff, 1);
+  gbm.fillCircle(es / 2 - 2, es / 2, 2);
+  gbm.fillCircle(es / 2 + 2, es / 2, 2);
+  gbm.fillStyle(0x000000, 1);
+  gbm.fillCircle(es / 2 - 1, es / 2, 1);
+  gbm.fillCircle(es / 2 + 3, es / 2, 1);
+  // Bottom glow
+  gbm.fillStyle(0xff8a80, 0.5);
+  gbm.fillCircle(es / 2, es / 2 + 6, 4);
+  gbm.generateTexture('enemy-bomber', es, es);
+  gbm.destroy();
+
+  // Bomb (dropped by bomber)
+  const gbb = scene.make.graphics({ x: 0, y: 0 }, false);
+  gbb.fillStyle(0x212121, 1);
+  gbb.fillCircle(6, 6, 5);
+  gbb.fillStyle(0xff5252, 1);
+  gbb.fillCircle(6, 6, 2);
+  gbb.lineStyle(1, 0xffd700, 1);
+  gbb.lineBetween(6, 1, 8, -2);
+  gbb.generateTexture('bomb', 12, 12);
+  gbb.destroy();
+
+  // Elite Charger - purple rhino
+  const gec = scene.make.graphics({ x: 0, y: 0 }, false);
+  gec.fillStyle(0xb070e0, 1);
+  gec.fillRoundedRect(es / 2 - 14, es / 2 - 8, 28, 20, 8);
+  // Horn
+  gec.fillStyle(0xd4a0ff, 1);
+  gec.fillTriangle(es / 2 + 14, es / 2 - 4, es / 2 + 22, es / 2 - 10, es / 2 + 14, es / 2 + 6);
+  // Eyes
+  gec.fillStyle(0xffffff, 1);
+  gec.fillCircle(es / 2 + 6, es / 2 - 4, 3);
+  gec.fillStyle(0xff0000, 1);
+  gec.fillCircle(es / 2 + 7, es / 2 - 4, 2);
+  // Armor plates
+  gec.fillStyle(0x9050c0, 1);
+  gec.fillRoundedRect(es / 2 - 10, es / 2 - 2, 20, 4, 2);
+  gec.generateTexture('enemy-elite_charger', es, es);
+  gec.destroy();
+
+  // Elite Fire - flame spirit
+  const gef = scene.make.graphics({ x: 0, y: 0 }, false);
+  gef.fillStyle(0xff6e40, 1);
+  gef.fillCircle(es / 2, es / 2, 10);
+  // Flame tendrils
+  gef.fillStyle(0xff9e80, 0.8);
+  for (let i = 0; i < 6; i++) {
+    const angle = (i * 60) * Math.PI / 180;
+    const tx = es / 2 + Math.cos(angle) * 12;
+    const ty = es / 2 + Math.sin(angle) * 12;
+    gef.fillCircle(tx, ty, 4);
+  }
+  // Core
+  gef.fillStyle(0xffeb3b, 1);
+  gef.fillCircle(es / 2, es / 2, 5);
+  gef.generateTexture('enemy-elite_fire', es, es);
+  gef.destroy();
+
+  // Elite Ice - ice behemoth
+  const gei = scene.make.graphics({ x: 0, y: 0 }, false);
+  gei.fillStyle(0x4fc3f7, 1);
+  gei.fillRoundedRect(es / 2 - 16, es / 2 - 12, 32, 28, 8);
+  // Ice crystals
+  gei.fillStyle(0x80d8ff, 1);
+  gei.fillTriangle(es / 2 - 8, es / 2 - 12, es / 2 - 4, es / 2 - 20, es / 2, es / 2 - 12);
+  gei.fillTriangle(es / 2 + 4, es / 2 - 12, es / 2 + 8, es / 2 - 22, es / 2 + 12, es / 2 - 12);
+  // Eyes
+  gei.fillStyle(0xffffff, 1);
+  gei.fillCircle(es / 2 - 5, es / 2 - 2, 3);
+  gei.fillCircle(es / 2 + 5, es / 2 - 2, 3);
+  gei.fillStyle(0x00bcd4, 1);
+  gei.fillCircle(es / 2 - 4, es / 2 - 2, 2);
+  gei.fillCircle(es / 2 + 6, es / 2 - 2, 2);
+  gei.generateTexture('enemy-elite_ice', es + 4, es + 4);
+  gei.destroy();
+
+  // Elite Shadow - shadow stalker
+  const ges = scene.make.graphics({ x: 0, y: 0 }, false);
+  ges.fillStyle(0x616161, 0.8);
+  ges.fillCircle(es / 2, es / 2, 12);
+  // Shadow tendrils
+  ges.fillStyle(0x424242, 0.6);
+  ges.fillRoundedRect(es / 2 - 15, es / 2 - 2, 8, 12, 4);
+  ges.fillRoundedRect(es / 2 + 7, es / 2 - 2, 8, 12, 4);
+  // Eyes
+  ges.fillStyle(0xff1744, 1);
+  ges.fillCircle(es / 2 - 4, es / 2 - 2, 3);
+  ges.fillCircle(es / 2 + 4, es / 2 - 2, 3);
+  ges.generateTexture('enemy-elite_shadow', es, es);
+  ges.destroy();
+
+  // Elite Crystal - crystal golem
+  const gecr = scene.make.graphics({ x: 0, y: 0 }, false);
+  gecr.fillStyle(0xb388ff, 1);
+  // Crystal body (hexagonal shape)
+  const cx = es / 2, cy = es / 2;
+  const crystalPts = [
+    new Phaser.Math.Vector2(cx, cy - 14),
+    new Phaser.Math.Vector2(cx + 12, cy - 7),
+    new Phaser.Math.Vector2(cx + 12, cy + 7),
+    new Phaser.Math.Vector2(cx, cy + 14),
+    new Phaser.Math.Vector2(cx - 12, cy + 7),
+    new Phaser.Math.Vector2(cx - 12, cy - 7),
+  ];
+  gecr.fillPoints(crystalPts, true);
+  // Inner glow
+  gecr.fillStyle(0xd4b0ff, 0.6);
+  gecr.fillCircle(cx, cy, 6);
+  // Eye
+  gecr.fillStyle(0xffffff, 1);
+  gecr.fillCircle(cx, cy - 3, 4);
+  gecr.fillStyle(0x7c4dff, 1);
+  gecr.fillCircle(cx, cy - 3, 2);
+  gecr.generateTexture('enemy-elite_crystal', es, es);
+  gecr.destroy();
+
+  // Mini Boss - guardian sentinel
+  const gmb = scene.make.graphics({ x: 0, y: 0 }, false);
+  const mbs = 48;
+  // Shield ring
+  gmb.lineStyle(3, 0x4fc3f7, 0.6);
+  gmb.strokeCircle(mbs / 2, mbs / 2, 20);
+  // Body
+  gmb.fillStyle(0x4fc3f7, 1);
+  gmb.fillCircle(mbs / 2, mbs / 2, 15);
+  // Core
+  gmb.fillStyle(0x81d4fa, 1);
+  gmb.fillCircle(mbs / 2, mbs / 2, 8);
+  // Eye
+  gmb.fillStyle(0xff0000, 1);
+  gmb.fillCircle(mbs / 2, mbs / 2, 4);
+  gmb.fillStyle(0xffffff, 1);
+  gmb.fillCircle(mbs / 2 + 1, mbs / 2 - 1, 2);
+  gmb.generateTexture('enemy-mini_boss', mbs, mbs);
+  gmb.destroy();
 
   // Bullet
   const gb = scene.make.graphics({ x: 0, y: 0 }, false);
@@ -778,6 +965,21 @@ function generatePlatformTypeOverlays(scene: Phaser.Scene): void {
   }
   ginv.generateTexture('overlay-invisible', w, h);
   ginv.destroy();
+
+  // Liquid metal overlay (mercury-like shimmer)
+  const glm = scene.make.graphics({ x: 0, y: 0 }, false);
+  glm.fillStyle(0xc0c8d4, 0.4);
+  glm.fillRect(0, 0, w, h);
+  glm.fillStyle(0xe0e8f0, 0.3);
+  for (let i = 0; i < 6; i++) {
+    const sx = Math.random() * w;
+    const sy = Math.random() * h;
+    glm.fillCircle(sx, sy, 2 + Math.random() * 2);
+  }
+  glm.lineStyle(1, 0xffffff, 0.2);
+  glm.lineBetween(0, h / 2, w, h / 2);
+  glm.generateTexture('overlay-liquid_metal', w, h);
+  glm.destroy();
 }
 
 // ==================== Weapon Textures ====================
@@ -789,6 +991,10 @@ function generateWeaponTextures(scene: Phaser.Scene): void {
     { key: 'bullet-laser', w: 16, h: 4, color: 0x00e5ff, shape: 'rect' },
     { key: 'bullet-machinegun', w: 4, h: 4, color: 0xe0e0e0, shape: 'circle' },
     { key: 'bullet-fireball', w: 10, h: 10, color: 0xff5722, shape: 'circle' },
+    { key: 'bullet-plasma', w: 8, h: 8, color: 0x7c4dff, shape: 'circle' },
+    { key: 'bullet-quantum', w: 12, h: 4, color: 0xe040fb, shape: 'ellipse' },
+    { key: 'bullet-gravity', w: 10, h: 10, color: 0x536dfe, shape: 'circle' },
+    { key: 'bullet-timeslow', w: 8, h: 8, color: 0xb388ff, shape: 'circle' },
   ];
 
   for (const def of bulletDefs) {
@@ -819,6 +1025,10 @@ function generateWeaponTextures(scene: Phaser.Scene): void {
     { key: 'pu-weapon-laser', color: 0x00e5ff, mark: 'L' },
     { key: 'pu-weapon-machinegun', color: 0xe0e0e0, mark: 'M' },
     { key: 'pu-weapon-fireball', color: 0xff5722, mark: 'F' },
+    { key: 'pu-weapon-plasma', color: 0x7c4dff, mark: 'Pl' },
+    { key: 'pu-weapon-quantum', color: 0xe040fb, mark: 'Q' },
+    { key: 'pu-weapon-gravity', color: 0x536dfe, mark: 'G' },
+    { key: 'pu-weapon-timeslow', color: 0xb388ff, mark: 'T' },
   ];
 
   for (const def of weaponDefs) {

@@ -1,4 +1,4 @@
-export type PlatformType = 'normal' | 'ice' | 'melting' | 'invisible';
+export type PlatformType = 'normal' | 'ice' | 'melting' | 'invisible' | 'liquid_metal';
 
 export interface PlatformTypeConfig {
   type: PlatformType;
@@ -46,5 +46,14 @@ export const PLATFORM_TYPE_CONFIGS: Record<PlatformType, PlatformTypeConfig> = {
     meltTime: 0,
     invisible: true,
     fadeDistance: 180,
+  },
+  liquid_metal: {
+    type: 'liquid_metal',
+    chapter: 4,
+    spawnChance: 0.25,
+    friction: 0.7,
+    meltTime: 0,
+    invisible: false,
+    fadeDistance: 0,
   },
 };

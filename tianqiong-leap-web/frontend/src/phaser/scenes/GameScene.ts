@@ -5,13 +5,13 @@ import { getLevelConfig, getChapterData, getLevelDisplayName, type LevelConfig, 
 import { PLATFORM_TYPE_CONFIGS, type PlatformType } from '../../constants/platformtypes';
 import { POWER_UP_CONFIGS, POWER_UP_SPAWN_CHANCE, MAGNET_RADIUS, type PowerUpType } from '../../constants/powerups';
 import { ENERGY_PER_JUMP, ENERGY_PER_SHARD, ENERGY_MAX, NINJA_ART_CONFIGS, type NinjaArtType } from '../../constants/ninjaarts';
-import { ENEMY_CONFIGS, ENEMY_SPAWN_CHANCE, SHOOTER_FIRE_INTERVAL, BULLET_SPEED, BULLET_SIZE, type EnemyType } from '../../constants/enemies';
-import { getBossConfig, type BossPhase, type BossAttack } from '../../constants/boss';
-import { WEAPON_CONFIGS, WEAPON_DROP_CHANCE, WEAPON_SPAWN_CHANCE, type WeaponType, type WeaponConfig } from '../../constants/weapons';
+import { ENEMY_CONFIGS, ENEMY_SPAWN_CHANCE, ELITE_SPAWN_CHANCE, MINI_BOSS_SPAWN_CHANCE, SHOOTER_FIRE_INTERVAL, BULLET_SPEED, BULLET_SIZE, getAvailableEnemyTypes, type EnemyType } from '../../constants/enemies';
+import { getBossConfig, getRandomMiniBoss, type BossPhase, type BossAttack } from '../../constants/boss';
+import { WEAPON_CONFIGS, WEAPON_DROP_CHANCE, WEAPON_SPAWN_CHANCE, getAvailableWeaponTypes, type WeaponType, type WeaponConfig } from '../../constants/weapons';
 import { EventBus } from '../EventBus';
 import { EVENTS, type StartLevelPayload } from '../../types/events';
 import type { GameState } from '../../types/game';
-import { isBossLevel } from '../../constants/levels';
+import { isBossLevel, isMiniBossLevel } from '../../constants/levels';
 import { generateAllTextures } from '../renderers/TextureFactory';
 import { AudioManager } from '../audio/AudioManager';
 
@@ -99,6 +99,13 @@ export class GameScene extends Phaser.Scene {
   // Ice platform sliding
   private iceSlideVX = 0;
   private lastProgressEmit = 0;
+
+  // Environment effects (chapter-specific)
+  private envOverlay: Phaser.GameObjects.Graphics | null = null;
+  private envParticles: { obj: Phaser.GameObjects.Arc; data: ParticleData }[] = [];
+  private lightningTimer = 0;
+  private vineSegments: { sprite: Phaser.GameObjects.Arc; age: number; maxHeight: number; platformX: number }[] = [];
+  private liquidMetalTimer = 0;
 
   // Power-ups
   private powerUpSprites: { sprite: Phaser.GameObjects.Image; type: PowerUpType; collected: boolean }[] = [];
@@ -215,7 +222,32 @@ export class GameScene extends Phaser.Scene {
 
   private clearGameObjects(): void {
     this.tweens.killAll();
-    this.children.removeAll(true);
+
+    // Safely destroy game objects
+    const safeDestroy = (obj: any) => {
+      try {
+        if (obj && obj.active !== false && typeof obj.destroy === 'function') {
+          obj.destroy();
+        }
+      } catch {}
+    };
+
+    // Destroy tracked objects
+    this.platforms.forEach(safeDestroy);
+    this.shardSprites.forEach(safeDestroy);
+    this.particles.forEach(p => safeDestroy(p.obj));
+    this.heartIcons.forEach(safeDestroy);
+    this.stars.forEach(safeDestroy);
+    this.mountainTiles.forEach(safeDestroy);
+    this.powerUpSprites.forEach(p => safeDestroy(p.sprite));
+    this.powerUpIcons.forEach(p => { safeDestroy(p.icon); safeDestroy(p.timer); });
+    this.weaponPickups.forEach(safeDestroy);
+    this.playerBullets.forEach(b => safeDestroy(b.sprite));
+    this.enemies.forEach(e => safeDestroy(e.sprite));
+    this.bullets.forEach(b => safeDestroy(b.sprite));
+    safeDestroy(this.bossHpBar);
+
+    // Reset arrays
     this.platforms = [];
     this.shardSprites = [];
     this.particles = [];
@@ -226,6 +258,10 @@ export class GameScene extends Phaser.Scene {
     this.powerUpIcons = [];
     this.weaponPickups = [];
     this.playerBullets = [];
+    this.enemies = [];
+    this.bullets = [];
+
+    // Reset state
     this.currentWeapon = 'pistol';
     this.lastFireTime = 0;
     this.activePowerUps.clear();
@@ -234,16 +270,37 @@ export class GameScene extends Phaser.Scene {
     this.ninjaArtActive = false;
     this.ninjaArtTimer = 0;
     this.ninjaArtType = null;
-    this.enemies = [];
-    this.bullets = [];
     this.boss = null;
     this.iceSlideVX = 0;
     this.lastProgressEmit = 0;
     this.dead = false;
     this.audio.stopBGM();
+
+    // Clean up environment effects
+    if (this.envOverlay) {
+      this.envOverlay.destroy();
+      this.envOverlay = null;
+    }
+    for (const p of this.envParticles) {
+      try { p.obj.destroy(); } catch {}
+    }
+    this.envParticles = [];
+    for (const v of this.vineSegments) {
+      try { v.sprite.destroy(); } catch {}
+    }
+    this.vineSegments = [];
+    this.lightningTimer = 0;
+    this.liquidMetalTimer = 0;
   }
 
   private startLevel(chapter: number, level: number, characterId: number): void {
+    // Guard: ensure scene is ready
+    if (!this.add || !this.children) {
+      console.warn('GameScene not ready, deferring startLevel');
+      this.time.delayedCall(100, () => this.startLevel(chapter, level, characterId));
+      return;
+    }
+
     this.characterId = characterId;
     this.config = getLevelConfig(chapter, level);
     this.chapterData = getChapterData(chapter);
@@ -270,6 +327,7 @@ export class GameScene extends Phaser.Scene {
     this.setupCamera();
     this.createHUD();
     this.audio.startBGM(chapter);
+    this.initEnvironmentEffect(chapter);
 
     const mainCam = this.cameras.main;
     const hudElements = this.children.list.filter(c => (c as any).depth >= HUD_DEPTH);
@@ -357,19 +415,21 @@ export class GameScene extends Phaser.Scene {
     // Assign platform type based on chapter
     const ch = this.config.chapter;
     let pType: PlatformType = 'normal';
-    if (ch >= 5) {
-      const iceCfg = PLATFORM_TYPE_CONFIGS.ice;
-      const meltCfg = PLATFORM_TYPE_CONFIGS.melting;
-      const invCfg = PLATFORM_TYPE_CONFIGS.invisible;
-      if (ch === 5 && Math.random() < iceCfg.spawnChance) pType = 'ice';
-      else if (ch === 6 && Math.random() < meltCfg.spawnChance) pType = 'melting';
-      else if (ch >= 7 && ch <= 8 && Math.random() < 0.15) pType = 'ice';
-      else if (ch === 9 && Math.random() < invCfg.spawnChance) pType = 'invisible';
-      else if (ch >= 10 && Math.random() < 0.2) {
-        const roll = Math.random();
-        if (roll < 0.33) pType = 'ice';
-        else if (roll < 0.66) pType = 'melting';
-        else pType = 'invisible';
+    if (ch === 4 && Math.random() < PLATFORM_TYPE_CONFIGS.liquid_metal.spawnChance) {
+      pType = 'liquid_metal';
+    } else if (ch === 5 && Math.random() < PLATFORM_TYPE_CONFIGS.ice.spawnChance) {
+      pType = 'ice';
+    } else if (ch === 6 && Math.random() < PLATFORM_TYPE_CONFIGS.melting.spawnChance) {
+      pType = 'melting';
+    } else if (ch === 9 && Math.random() < PLATFORM_TYPE_CONFIGS.invisible.spawnChance) {
+      pType = 'invisible';
+    } else if (ch === 10) {
+      const roll = Math.random();
+      if (roll < 0.25) {
+        const sub = Math.random();
+        if (sub < 0.6) pType = 'invisible';       // Dark theme: mostly invisible
+        else if (sub < 0.8) pType = 'melting';
+        else pType = 'ice';
       }
     }
     plat.platformType = pType;
@@ -391,6 +451,12 @@ export class GameScene extends Phaser.Scene {
     } else if (pType === 'invisible') {
       plat.setAlpha(0);
       if (plat.overlaySprite) plat.overlaySprite.setAlpha(0);
+    } else if (pType === 'liquid_metal') {
+      const overlay = this.add.image(plat.x, plat.y, 'overlay-liquid_metal');
+      overlay.setDisplaySize(width, h);
+      overlay.setDepth(2);
+      overlay.setAlpha(0.5);
+      plat.overlaySprite = overlay;
     }
 
     this.platforms.push(plat);
@@ -409,20 +475,25 @@ export class GameScene extends Phaser.Scene {
       const { x, y, w } = this.calcNextPlatform(lastCX, lastTopY, lastW, i);
       this.spawnPlatform(x, y, w);
 
-      if (this.shardsSpawned < this.totalShards && Math.random() < 0.3) {
-        this.spawnShard(x + w / 2, y - 30);
+      if (this.shardsSpawned < this.totalShards && Math.random() < 0.5) {
+        this.spawnShard(x + w / 2, y - 35);
       }
       if (Math.random() < POWER_UP_SPAWN_CHANCE) {
-        this.spawnPowerUp(x + w / 2, y - 40);
+        this.spawnPowerUp(x + w / 2, y - 50);
       }
       if (Math.random() < WEAPON_SPAWN_CHANCE) {
-        this.spawnWeaponPickup(x + w / 2, y - 50);
+        this.spawnWeaponPickup(x + w / 2, y - 65);
       }
       if (i > 3 && Math.random() < ENEMY_SPAWN_CHANCE) {
-        const eTypes = Object.keys(ENEMY_CONFIGS) as EnemyType[];
-        const et = eTypes[Math.floor(Math.random() * eTypes.length)];
-        const ey = et === 'flyer' ? y - 50 : y - 15;
-        this.spawnEnemy(x + w / 2, ey, et);
+        // Warmup: only basic enemy types
+        const basicTypes = getAvailableEnemyTypes(this.config.chapter).filter(
+          t => t === 'flyer' || t === 'ground' || t === 'shooter'
+        );
+        if (basicTypes.length > 0) {
+          const et = basicTypes[Math.floor(Math.random() * basicTypes.length)];
+          const ey = et === 'flyer' ? y - 50 : y - 15;
+          this.spawnEnemy(x + w / 2, ey, et);
+        }
       }
 
       lastCX = x + w / 2;
@@ -433,6 +504,7 @@ export class GameScene extends Phaser.Scene {
 
   private ensurePlatforms(): void {
     const camRight = this.cameraTargetX + PHYSICS.CANVAS_WIDTH + PHYSICS.PLATFORM_SPAWN_BUFFER;
+    const estimatedTotal = Math.max(10, this.config.targetDistance / 180);
 
     for (let safety = 0; safety < 5; safety++) {
       const last = this.platforms[this.platforms.length - 1];
@@ -447,20 +519,54 @@ export class GameScene extends Phaser.Scene {
 
       this.spawnPlatform(x, y, w);
 
-      if (this.shardsSpawned < this.totalShards && Math.random() < 0.25) {
-        this.spawnShard(x + w / 2, y - 30);
+      // Shard: 30% chance, or force if level is 40%+ done and still missing shards
+      const shardUrgent = idx > estimatedTotal * 0.4 && this.shardsSpawned < this.totalShards;
+      if (this.shardsSpawned < this.totalShards && (shardUrgent || Math.random() < 0.30)) {
+        this.spawnShard(x + w / 2, y - 35);
       }
       if (Math.random() < POWER_UP_SPAWN_CHANCE) {
-        this.spawnPowerUp(x + w / 2, y - 40);
+        this.spawnPowerUp(x + w / 2, y - 50);
       }
       if (Math.random() < WEAPON_SPAWN_CHANCE) {
-        this.spawnWeaponPickup(x + w / 2, y - 50);
+        this.spawnWeaponPickup(x + w / 2, y - 65);
       }
-      if (Math.random() < ENEMY_SPAWN_CHANCE) {
-        const eTypes = Object.keys(ENEMY_CONFIGS) as EnemyType[];
-        const et = eTypes[Math.floor(Math.random() * eTypes.length)];
-        const ey = et === 'flyer' ? y - 50 : y - 15;
-        this.spawnEnemy(x + w / 2, ey, et);
+      // Normal enemies — skip during early warmup (idx < 10)
+      if (idx >= 10 && Math.random() < ENEMY_SPAWN_CHANCE) {
+        const basicTypes = getAvailableEnemyTypes(this.config.chapter).filter(
+          t => t === 'flyer' || t === 'ground' || t === 'shooter'
+        );
+        if (basicTypes.length > 0) {
+          const et = basicTypes[Math.floor(Math.random() * basicTypes.length)];
+          const ey = et === 'flyer' ? y - 50 : y - 15;
+          this.spawnEnemy(x + w / 2, ey, et);
+        }
+      }
+      // Advanced enemies (charger/bomber) — from idx 15+
+      if (idx >= 15 && Math.random() < ENEMY_SPAWN_CHANCE * 0.5) {
+        const advTypes = getAvailableEnemyTypes(this.config.chapter).filter(
+          t => t === 'charger' || t === 'bomber'
+        );
+        if (advTypes.length > 0) {
+          const et = advTypes[Math.floor(Math.random() * advTypes.length)];
+          this.spawnEnemy(x + w / 2, y - 15, et);
+        }
+      }
+      // Elite enemies — from idx 20+
+      if (idx >= 20 && Math.random() < ELITE_SPAWN_CHANCE) {
+        const eliteTypes: EnemyType[] = ['elite_charger', 'elite_fire', 'elite_ice', 'elite_shadow', 'elite_crystal'];
+        const available = eliteTypes.filter(t => {
+          const cfg = ENEMY_CONFIGS[t];
+          return cfg && cfg.chapters.includes(this.config.chapter);
+        });
+        if (available.length > 0) {
+          const et = available[Math.floor(Math.random() * available.length)];
+          this.spawnEnemy(x + w / 2, y - 15, et);
+        }
+      }
+      // Mini boss — from idx 25+, 15% on levels 5/9, otherwise 1%
+      const miniBossChance = isMiniBossLevel(this.config.level) ? 0.15 : MINI_BOSS_SPAWN_CHANCE;
+      if (idx >= 25 && Math.random() < miniBossChance) {
+        this.spawnEnemy(x + w / 2, y - 20, 'mini_boss');
       }
     }
   }
@@ -512,10 +618,11 @@ export class GameScene extends Phaser.Scene {
   // ========== Jump Physics Helpers ==========
   private calcJumpMetrics(): { maxReach: number; maxHeight: number } {
     const char = getCharacterById(this.characterId);
+    const gravity = PHYSICS.GRAVITY * this.chapterData.gravityMultiplier;
     const jumpV = Math.abs(PHYSICS.JUMP_FORCE * char.jumpMultiplier);
-    const airTime = 2 * jumpV / PHYSICS.GRAVITY;
+    const airTime = 2 * jumpV / gravity;
     const maxReach = this.speed * airTime;
-    const maxHeight = (jumpV * jumpV) / (2 * PHYSICS.GRAVITY);
+    const maxHeight = (jumpV * jumpV) / (2 * gravity);
     return { maxReach, maxHeight };
   }
 
@@ -530,13 +637,21 @@ export class GameScene extends Phaser.Scene {
     const estimatedTotal = Math.max(10, this.config.targetDistance / 180);
     const difficulty = Math.min(1, platformIndex / estimatedTotal);
     const isWarmup = platformIndex < 4;
+    const ch = this.config.chapter;
+
+    // Chapter-specific gap/width modifiers
+    let gapMod = 1.0;
+    let widthMod = 1.0;
+    if (ch === 2) { gapMod = 1.2; }           // Low gravity: wider gaps
+    else if (ch === 5) { widthMod = 1.25; }    // Ice: wider platforms for sliding
+    else if (ch === 9) { gapMod = 0.85; }      // Invisible: tighter gaps as anchors
 
     const baseGap = isWarmup ? 50 : 60 + difficulty * 100;
-    const rawGap = baseGap * gapMult * (0.85 + Math.random() * 0.3);
-    const gap = Math.min(maxReach * 0.75, rawGap);
+    const rawGap = baseGap * gapMult * gapMod * (0.85 + Math.random() * 0.3);
+    const gap = Math.min(maxReach * 0.80, rawGap);
 
     const baseW = isWarmup ? 220 : Math.max(90, 170 - difficulty * 50);
-    const w = Math.max(70, baseW + (Math.random() - 0.5) * 40);
+    const w = Math.max(70, (baseW + (Math.random() - 0.5) * 40) * widthMod);
 
     const maxRise = maxHeight * (isWarmup ? 0.15 : 0.4);
     const maxDrop = isWarmup ? 30 : 120;
@@ -586,11 +701,39 @@ export class GameScene extends Phaser.Scene {
 
   private collectPowerUp(type: PowerUpType): void {
     const cfg = POWER_UP_CONFIGS[type];
-    if (type === 'shield') {
-      this.hasShield = true;
-    } else {
-      this.activePowerUps.set(type, cfg.duration);
+
+    switch (type) {
+      case 'shield':
+        this.hasShield = true;
+        break;
+      case 'heal':
+        // Instant heal: restore 30% life
+        if (this.lives < 3) {
+          this.lives = Math.min(3, this.lives + 1);
+          this.spawnParticles(0xff4040, 8, 3, 3);
+        }
+        break;
+      case 'energy':
+        // Instant energy restore: add 50 energy
+        this.energy = Math.min(ENERGY_MAX, this.energy + ENERGY_MAX * 0.5);
+        this.spawnParticles(0x6bb8e8, 8, 3, 3);
+        break;
+      case 'revive':
+        // Revive token: will trigger on death
+        this.activePowerUps.set(type, 0); // 0 = permanent until used
+        break;
+      case 'xray':
+        // X-ray vision: show hidden platforms
+        this.activePowerUps.set(type, cfg.duration);
+        // TODO: Implement x-ray visibility logic
+        break;
+      default:
+        // Timed power-ups
+        this.activePowerUps.set(type, cfg.duration);
+        break;
     }
+
+    this.audio.powerup();
     this.hudNeedsUpdate = true;
   }
 
@@ -838,7 +981,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private respawnOnPlatform(): void {
-    const camLeft = this.cameraTargetX;
+    const camLeft = this.cameras.main.scrollX;
     const camRight = camLeft + PHYSICS.CANVAS_WIDTH;
     let found: PlatformSprite | null = null;
     for (let i = this.platforms.length - 1; i >= 0; i--) {
@@ -852,7 +995,7 @@ export class GameScene extends Phaser.Scene {
       this.playerX = found.x;
       this.playerY = found.y - found.height / 2 - this.playerHeight / 2;
     } else {
-      this.playerX = this.cameraTargetX + PLAYER_SCREEN_X;
+      this.playerX = camLeft + PLAYER_SCREEN_X;
       this.playerY = 340;
     }
     this.playerVY = 0;
@@ -861,6 +1004,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private onPlayerFall(): void {
+    // Shield absorbs one hit — always check, even if dead is already set
     if (this.hasShield) {
       this.hasShield = false;
       this.hudNeedsUpdate = true;
@@ -869,6 +1013,22 @@ export class GameScene extends Phaser.Scene {
       this.dead = false;
       return;
     }
+
+    // Revive token — always check, even if dead is already set
+    if (this.activePowerUps.has('revive')) {
+      this.activePowerUps.delete('revive');
+      this.lives = Math.max(1, Math.floor(3 * 0.5)); // Restore 50% life
+      this.hudNeedsUpdate = true;
+      this.spawnParticles(0xffc800, 12, 5, 5);
+      this.audio.powerup();
+      this.respawnOnPlatform();
+      this.dead = false;
+      return;
+    }
+
+    // Prevent duplicate death processing in the same frame
+    if (this.dead) return;
+    this.dead = true;
 
     this.lives--;
     this.hudNeedsUpdate = true;
@@ -954,7 +1114,7 @@ export class GameScene extends Phaser.Scene {
     const maxSpeed = PHYSICS.MAX_SPEED * this.config.speedMultiplier * speedFactor;
     this.speed = Math.min(maxSpeed, this.speed + PHYSICS.SPEED_RAMP * normalized);
 
-    this.playerVY += PHYSICS.GRAVITY * normalized;
+    this.playerVY += PHYSICS.GRAVITY * this.chapterData.gravityMultiplier * normalized;
     this.playerY += this.playerVY * normalized;
 
     if (this.playerY < this.playerHeight / 2) {
@@ -962,25 +1122,20 @@ export class GameScene extends Phaser.Scene {
       this.playerVY = 0;
     }
 
-    const deathY = PHYSICS.CANVAS_HEIGHT - PHYSICS.CAMERA_SCROLL_Y;
+    const deathY = PHYSICS.CANVAS_HEIGHT;
     if (!this.dead && this.playerY > deathY) {
-      this.dead = true;
       this.onPlayerFall();
-      if (this.dead && this.playerY > deathY) {
-        this.gameState = 'game_over';
-        if (this.score > this.bestScore) this.bestScore = this.score;
-        this.audio.stopBGM();
-        this.audio.gameOver();
-        EventBus.emit(EVENTS.GAME_OVER, { score: this.score, bestScore: this.bestScore });
-        EventBus.emit(EVENTS.GAME_STATE_CHANGED, 'game_over');
-        return;
-      }
       return;
     }
 
     const speedPx = this.speed * normalized;
     this.playerX += speedPx;
     this.distance += speedPx;
+
+    // Chapter 5: Global ice inertia on all platforms
+    if (this.config.chapter === 5 && this.isGrounded) {
+      this.iceSlideVX = Math.max(this.iceSlideVX, this.speed * 0.3);
+    }
 
     if (this.isGrounded && this.iceSlideVX > 0) {
       this.playerX += this.iceSlideVX * normalized;
@@ -989,6 +1144,12 @@ export class GameScene extends Phaser.Scene {
     }
     if (!this.isGrounded) {
       this.iceSlideVX *= 0.9;
+    }
+
+    // Prevent player from going off-screen to the left
+    const camLeft = this.cameras.main.scrollX;
+    if (this.playerX < camLeft + 20) {
+      this.playerX = camLeft + 20;
     }
 
     for (const s of this.shardSprites) {
@@ -1157,7 +1318,7 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    if (this.distance < this.config.targetDistance) {
+    if (this.distance < this.config.targetDistance - 400) {
       this.ensurePlatforms();
     }
 
@@ -1189,6 +1350,13 @@ export class GameScene extends Phaser.Scene {
     this.updateBullets(normalized);
     this.updateBoss(delta, normalized);
     this.updateHUD();
+
+    // Chapter-specific environment effects
+    this.liquidMetalTimer += delta;
+    this.updateSandstorm(normalized);
+    this.updateLightning(delta);
+    this.updateVines(delta, normalized);
+    this.updateDarkness();
   }
 
   // ========== Enemies ==========
@@ -1197,12 +1365,45 @@ export class GameScene extends Phaser.Scene {
     const sprite = this.add.image(x, y, `enemy-${type}`);
     sprite.setDisplaySize(cfg.width, cfg.height);
     sprite.setDepth(10);
+
+    let vx = 0;
+    let vy = 0;
+    let hp = cfg.hp;
+
+    // Use chapter-specific mini-boss config
+    if (type === 'mini_boss') {
+      const miniBossCfg = getRandomMiniBoss(this.config.chapter);
+      if (miniBossCfg) {
+        sprite.setDisplaySize(miniBossCfg.width, miniBossCfg.height);
+        hp = miniBossCfg.hp;
+      }
+    }
+
+    switch (type) {
+      case 'ground':
+        vx = cfg.speed;
+        break;
+      case 'flyer':
+        vx = cfg.speed * 0.5;
+        vy = 0.8;
+        break;
+      case 'shooter':
+        vx = 0;
+        break;
+      case 'charger':
+        vx = cfg.speed; // Will charge when player is near
+        break;
+      case 'bomber':
+        vx = cfg.speed * 0.3;
+        break;
+    }
+
     this.enemies.push({
       sprite,
       type,
-      hp: cfg.hp,
-      vx: type === 'ground' ? cfg.speed : (type === 'flyer' ? cfg.speed * 0.5 : 0),
-      vy: type === 'flyer' ? 0.8 : 0,
+      hp,
+      vx,
+      vy,
       baseY: y,
       fireTimer: type === 'shooter' ? SHOOTER_FIRE_INTERVAL : 0,
       frozen: false,
@@ -1236,6 +1437,24 @@ export class GameScene extends Phaser.Scene {
         if (e.fireTimer <= 0) {
           e.fireTimer = SHOOTER_FIRE_INTERVAL;
           this.spawnBullet(e.sprite.x - 10, e.sprite.y);
+        }
+      } else if (e.type === 'charger') {
+        // Charger: move slowly until player is near, then charge
+        const distToPlayer = this.playerX - e.sprite.x;
+        if (distToPlayer > 0 && distToPlayer < 300) {
+          // Charge towards player
+          e.sprite.x -= (this.speed + cfg.speed * 2) * normalized;
+          this.spawnParticles(0xff6020, 2, 1, 1); // Orange trail
+        } else {
+          e.sprite.x -= this.speed * normalized;
+        }
+      } else if (e.type === 'bomber') {
+        // Bomber: slow movement, drops bombs periodically
+        e.sprite.x -= (this.speed + cfg.speed) * normalized;
+        e.fireTimer -= delta;
+        if (e.fireTimer <= 0) {
+          e.fireTimer = 3000; // Drop bomb every 3 seconds
+          this.spawnBomb(e.sprite.x, e.sprite.y + cfg.height / 2);
         }
       }
 
@@ -1286,6 +1505,18 @@ export class GameScene extends Phaser.Scene {
       sprite,
       vx: (dx / dist) * BULLET_SPEED,
       vy: (dy / dist) * BULLET_SPEED,
+    });
+  }
+
+  private spawnBomb(x: number, y: number): void {
+    const sprite = this.add.image(x, y, 'bullet');
+    sprite.setDisplaySize(BULLET_SIZE * 1.5, BULLET_SIZE * 1.5);
+    sprite.setDepth(10);
+    sprite.setTint(0xff4040); // Red tint for bombs
+    this.bullets.push({
+      sprite,
+      vx: 0,
+      vy: 2, // Fall downward
     });
   }
 
@@ -1685,12 +1916,60 @@ export class GameScene extends Phaser.Scene {
 
       let hit = false;
 
-      // Fireball: explode after traveling ~200px
+      // Fireball/Plasma: explode after traveling ~200px
       if (b.config.explosionRadius > 0 && b.age > 25) {
         this.explodeFireball(b.sprite.x, b.sprite.y, b.config);
         b.sprite.destroy();
         this.playerBullets.splice(i, 1);
         continue;
+      }
+
+      // Quantum weapon: extra damage to boss
+      if (b.config.type === 'quantum' && this.boss && !this.boss.invulnerable) {
+        const bossCfg = getBossConfig(this.config.chapter);
+        const dx = b.sprite.x - this.boss.sprite.x;
+        const dy = b.sprite.y - this.boss.sprite.y;
+        const hitW = bossCfg.width * 0.5 + b.config.bulletSize * 0.5;
+        const hitH = bossCfg.height * 0.5 + b.config.bulletSize * 0.5;
+        if (dx * dx < hitW * hitW && dy * dy < hitH * hitH) {
+          // Quantum does 50% more damage to bosses
+          const quantumDmg = Math.floor(b.config.damage * 1.5);
+          this.boss.hp -= quantumDmg;
+          this.spawnParticles(0xffa000, 5, 3, 3);
+          this.score += 100;
+          this.hudNeedsUpdate = true;
+          if (this.boss.hp <= 0) {
+            this.onBossDefeated();
+            if (b.sprite.active) b.sprite.destroy();
+            this.playerBullets.splice(i, 1);
+            continue;
+          }
+          if (!b.config.piercing) hit = true;
+        }
+      }
+
+      // Timeslow weapon: slow enemies on hit
+      if (b.config.type === 'timeslow') {
+        for (let j = this.enemies.length - 1; j >= 0; j--) {
+          const e = this.enemies[j];
+          const cfg = ENEMY_CONFIGS[e.type];
+          const dx = b.sprite.x - e.sprite.x;
+          const dy = b.sprite.y - e.sprite.y;
+          const hitW = (cfg.width * 0.5 + b.config.bulletSize * 0.5);
+          const hitH = (cfg.height * 0.5 + b.config.bulletSize * 0.5);
+          if (dx * dx < hitW * hitW && dy * dy < hitH * hitH) {
+            e.frozen = true;
+            // Slow for 3 seconds
+            this.time.delayedCall(3000, () => {
+              if (e.sprite.active) e.frozen = false;
+            });
+            this.spawnParticles(0xb088c8, 4, 2, 2);
+            if (!b.config.piercing) {
+              hit = true;
+              break;
+            }
+          }
+        }
       }
 
       // Collision vs enemies
@@ -1792,7 +2071,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private spawnWeaponPickup(x: number, y: number): void {
-    const types = Object.keys(WEAPON_CONFIGS) as WeaponType[];
+    const types = getAvailableWeaponTypes(this.config.chapter);
+    if (types.length === 0) return;
     const type = types[Math.floor(Math.random() * types.length)];
     const sprite = this.add.image(x, y, `pu-weapon-${type}`);
     sprite.setDisplaySize(20, 20);
@@ -1808,19 +2088,237 @@ export class GameScene extends Phaser.Scene {
 
   // ========== Platform Type Updates ==========
   private updatePlatformTypes(): void {
+    const xrayActive = this.activePowerUps.has('xray');
     for (const plat of this.platforms) {
-          if (plat.platformType === 'invisible') {
-        const dx = Math.abs(this.playerX - plat.x);
-        const fadeDist = PLATFORM_TYPE_CONFIGS.invisible.fadeDistance;
-        if (dx < fadeDist) {
-          const alpha = 1 - dx / fadeDist;
-          plat.setAlpha(alpha);
-          if (plat.overlaySprite) plat.overlaySprite.setAlpha(alpha * 0.5);
+      if (plat.platformType === 'invisible') {
+        if (xrayActive) {
+          plat.setAlpha(0.6);
+          if (plat.overlaySprite) plat.overlaySprite.setAlpha(0.3);
         } else {
-          plat.setAlpha(0);
-          if (plat.overlaySprite) plat.overlaySprite.setAlpha(0);
+          const dx = Math.abs(this.playerX - plat.x);
+          const fadeDist = PLATFORM_TYPE_CONFIGS.invisible.fadeDistance;
+          if (dx < fadeDist) {
+            const alpha = 1 - dx / fadeDist;
+            plat.setAlpha(alpha);
+            if (plat.overlaySprite) plat.overlaySprite.setAlpha(alpha * 0.5);
+          } else {
+            plat.setAlpha(0);
+            if (plat.overlaySprite) plat.overlaySprite.setAlpha(0);
+          }
         }
       }
+      // Liquid metal morphing
+      if (plat.platformType === 'liquid_metal') {
+        const phase = Math.sin(this.liquidMetalTimer * 0.002 + plat.x * 0.01);
+        plat.setScale(1, 0.85 + phase * 0.15);
+        plat.setAlpha(0.85 + phase * 0.15);
+        if (plat.overlaySprite) plat.overlaySprite.setAlpha(0.3 + phase * 0.2);
+      }
+    }
+  }
+
+  // ========== Environment Effects ==========
+
+  private initEnvironmentEffect(chapter: number): void {
+    if (this.envOverlay) {
+      this.envOverlay.destroy();
+      this.envOverlay = null;
+    }
+
+    switch (chapter) {
+      case 3: // Sandstorm
+        this.envOverlay = this.add.graphics();
+        this.envOverlay.setDepth(40);
+        this.envOverlay.setScrollFactor(0);
+        break;
+      case 7: // Lightning
+        this.lightningTimer = 3000 + Math.random() * 5000;
+        break;
+      case 8: // Vine growth
+        this.vineSegments = [];
+        break;
+      case 10: // Darkness
+        this.envOverlay = this.add.graphics();
+        this.envOverlay.setDepth(40);
+        this.envOverlay.setScrollFactor(0);
+        break;
+    }
+  }
+
+  private updateSandstorm(normalized: number): void {
+    if (!this.envOverlay || this.config.chapter !== 3) return;
+
+    this.envOverlay.clear();
+
+    // Semi-transparent sandy overlay that pulses
+    const pulse = 0.15 + Math.sin(this.time.now * 0.001) * 0.05;
+    this.envOverlay.fillStyle(0xbf5b3b, pulse);
+    this.envOverlay.fillRect(0, 0, PHYSICS.CANVAS_WIDTH, PHYSICS.CANVAS_HEIGHT);
+
+    // Horizontal sand streaks
+    for (let i = 0; i < 6; i++) {
+      const y = (this.time.now * 0.05 + i * 70) % PHYSICS.CANVAS_HEIGHT;
+      const alpha = 0.08 + Math.sin(this.time.now * 0.002 + i) * 0.04;
+      this.envOverlay.fillStyle(0xd4a574, alpha);
+      this.envOverlay.fillRect(0, y, PHYSICS.CANVAS_WIDTH, 3);
+    }
+
+    // Sand particle effect
+    if (Math.random() < 0.3 * normalized && this.envParticles.length < 50) {
+      const obj = this.add.circle(
+        PHYSICS.CANVAS_WIDTH + 10,
+        Math.random() * PHYSICS.CANVAS_HEIGHT,
+        1.5 + Math.random() * 1.5,
+        0xd4a574,
+        0.4
+      );
+      obj.setDepth(39);
+      obj.setScrollFactor(0);
+      this.envParticles.push({
+        obj,
+        data: { vx: -3 - Math.random() * 2, vy: 0.5 + Math.random(), life: 200 },
+      });
+    }
+
+    for (let i = this.envParticles.length - 1; i >= 0; i--) {
+      const p = this.envParticles[i];
+      p.obj.x += p.data.vx * normalized;
+      p.obj.y += p.data.vy * normalized;
+      p.data.life -= normalized;
+      if (p.data.life <= 0 || p.obj.x < -10) {
+        p.obj.destroy();
+        this.envParticles.splice(i, 1);
+      }
+    }
+  }
+
+  private updateLightning(delta: number): void {
+    if (this.config.chapter !== 7) return;
+
+    this.lightningTimer -= delta;
+    if (this.lightningTimer <= 0) {
+      this.lightningTimer = 3000 + Math.random() * 5000;
+
+      // Lightning flash
+      const flash = this.add.graphics();
+      flash.setDepth(45);
+      flash.setScrollFactor(0);
+      flash.fillStyle(0xffffff, 0.6);
+      flash.fillRect(0, 0, PHYSICS.CANVAS_WIDTH, PHYSICS.CANVAS_HEIGHT);
+      this.tweens.add({
+        targets: flash,
+        alpha: 0,
+        duration: 150,
+        onComplete: () => flash.destroy(),
+      });
+
+      // Lightning bolt visual
+      const boltX = this.cameraTargetX + Math.random() * PHYSICS.CANVAS_WIDTH;
+      const bolt = this.add.graphics();
+      bolt.setDepth(44);
+      bolt.lineStyle(3, 0xffdd00, 0.9);
+      let bx = boltX;
+      let by = 0;
+      while (by < PHYSICS.CANVAS_HEIGHT) {
+        const nextBx = bx + (Math.random() - 0.5) * 30;
+        const nextBy = by + 15 + Math.random() * 25;
+        bolt.lineBetween(bx, by, nextBx, nextBy);
+        bx = nextBx;
+        by = nextBy;
+      }
+      this.tweens.add({
+        targets: bolt,
+        alpha: 0,
+        duration: 200,
+        onComplete: () => bolt.destroy(),
+      });
+
+      // Damage check
+      const boltScreenX = boltX - this.cameraTargetX;
+      const playerScreenX = this.playerX - this.cameraTargetX;
+      if (Math.abs(boltScreenX - playerScreenX) < 40) {
+        if (!this.hasShield && !this.activePowerUps.has('shield')) {
+          this.onPlayerFall();
+        }
+      }
+
+      this.audio.lightningStrike();
+    }
+  }
+
+  private updateVines(delta: number, normalized: number): void {
+    if (this.config.chapter !== 8) return;
+
+    // Spawn new vines periodically
+    if (Math.random() < 0.005 * normalized && this.vineSegments.length < 20) {
+      const camLeft = this.cameraTargetX;
+      const camRight = camLeft + PHYSICS.CANVAS_WIDTH;
+      const candidates = this.platforms.filter(p =>
+        p.x > camLeft && p.x < camRight && p.platformType === 'normal'
+      );
+      if (candidates.length > 0) {
+        const plat = candidates[Math.floor(Math.random() * candidates.length)];
+        const platTop = plat.y - plat.height / 2;
+        const vine = this.add.circle(plat.x, platTop, 3, 0x2d8a2d, 0.8);
+        vine.setDepth(8);
+        this.vineSegments.push({
+          sprite: vine,
+          age: 0,
+          maxHeight: 40 + Math.random() * 30,
+          platformX: plat.x,
+        });
+      }
+    }
+
+    for (let i = this.vineSegments.length - 1; i >= 0; i--) {
+      const v = this.vineSegments[i];
+      v.age += delta;
+
+      if (v.age < 3000) {
+        // Growing phase
+        const growProgress = v.age / 3000;
+        v.sprite.setRadius(3 + growProgress * 2);
+        v.sprite.y -= 0.3 * normalized;
+
+        // Vine collision with player
+        const dx = Math.abs(this.playerX - v.platformX);
+        const currentHeight = v.maxHeight * growProgress;
+        if (dx < 15 && this.playerY > v.sprite.y - currentHeight && this.playerY < v.sprite.y + 10) {
+          this.playerX -= this.speed * 0.5 * normalized;
+        }
+      } else if (v.age > 8000) {
+        // Decay phase
+        const decayProgress = (v.age - 8000) / 2000;
+        v.sprite.setAlpha(1 - decayProgress);
+        if (decayProgress >= 1) {
+          v.sprite.destroy();
+          this.vineSegments.splice(i, 1);
+        }
+      }
+    }
+  }
+
+  private updateDarkness(): void {
+    if (!this.envOverlay || this.config.chapter !== 10) return;
+
+    this.envOverlay.clear();
+
+    const playerScreenX = this.playerX - this.cameraTargetX;
+    const playerScreenY = this.playerY - PHYSICS.CAMERA_SCROLL_Y;
+    const radius = 90;
+
+    // Dark edges
+    this.envOverlay.fillStyle(0x000000, 0.85);
+    this.envOverlay.fillRect(0, 0, PHYSICS.CANVAS_WIDTH, Math.max(0, playerScreenY - radius));
+    this.envOverlay.fillRect(0, playerScreenY + radius, PHYSICS.CANVAS_WIDTH, PHYSICS.CANVAS_HEIGHT - playerScreenY - radius);
+    this.envOverlay.fillRect(0, 0, Math.max(0, playerScreenX - radius), PHYSICS.CANVAS_HEIGHT);
+    this.envOverlay.fillRect(playerScreenX + radius, 0, PHYSICS.CANVAS_WIDTH - playerScreenX - radius, PHYSICS.CANVAS_HEIGHT);
+
+    // Gradient ring
+    for (let r = radius; r > 20; r -= 10) {
+      const alpha = 0.85 * (1 - (r / radius));
+      this.envOverlay.fillStyle(0x000000, alpha);
+      this.envOverlay.fillCircle(playerScreenX, playerScreenY, r);
     }
   }
 }

@@ -1,4 +1,4 @@
-export type PowerUpType = 'shield' | 'magnet' | 'slowtime' | 'boostboots';
+export type PowerUpType = 'shield' | 'magnet' | 'slowtime' | 'boostboots' | 'xray' | 'revive' | 'heal' | 'energy';
 
 export interface PowerUpConfig {
   type: PowerUpType;
@@ -36,6 +36,34 @@ export const POWER_UP_CONFIGS: Record<PowerUpType, PowerUpConfig> = {
     duration: 8000,
     color: 0x66bb6a,
     description: '跳跃力 ×1.5',
+  },
+  xray: {
+    type: 'xray',
+    name: '透视镜',
+    duration: 15000,
+    color: 0x80ff80,
+    description: '显示隐藏平台和道具',
+  },
+  revive: {
+    type: 'revive',
+    name: '复活币',
+    duration: 0,           // instant, triggers on death
+    color: 0xffc800,
+    description: '死亡时自动复活，恢复50%生命',
+  },
+  heal: {
+    type: 'heal',
+    name: '生命药剂',
+    duration: 0,           // instant
+    color: 0xff4040,
+    description: '恢复30%生命值',
+  },
+  energy: {
+    type: 'energy',
+    name: '能量电池',
+    duration: 0,           // instant
+    color: 0x6bb8e8,
+    description: '恢复50%能量',
   },
 };
 

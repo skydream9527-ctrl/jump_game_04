@@ -13,6 +13,8 @@ import { MainMenu } from './components/screens/MainMenu';
 import { PlanetSelect } from './components/screens/PlanetSelect';
 import { LevelSelect } from './components/screens/LevelSelect';
 import { CharacterSelect } from './components/screens/CharacterSelect';
+import { Shop } from './components/screens/Shop';
+import type { ShopItem } from './constants/shop';
 import { PauseOverlay } from './components/overlays/PauseOverlay';
 import { GameOverOverlay } from './components/overlays/GameOverOverlay';
 import { LevelCompleteOverlay } from './components/overlays/LevelCompleteOverlay';
@@ -112,6 +114,21 @@ export default function App() {
     EventBus.emit(EVENTS.PAUSE);
   }, []);
 
+  const handlePurchase = useCallback((item: ShopItem) => {
+    if (item.price === 0) {
+      alert(`${item.name} 是免费物品！`);
+      return;
+    }
+
+    if (save.saveData.totalShards < item.price) {
+      alert(`星核碎片不足！需要 ${item.price}，当前 ${save.saveData.totalShards}`);
+      return;
+    }
+
+    save.purchaseItem(item.id, item.price);
+    alert(`成功购买 ${item.name}！`);
+  }, [save]);
+
   const handleBackToLevels = useCallback(() => {
     save.refresh();
     setScreen('level_select');
@@ -136,7 +153,15 @@ export default function App() {
               totalShards={save.saveData.totalShards}
               onStartGame={() => { save.refresh(); setScreen('planet_select'); }}
               onCharacterSelect={() => { save.refresh(); setScreen('character_select'); }}
+              onShop={() => { save.refresh(); setScreen('shop'); }}
               onLeaderboard={() => setShowLeaderboard(true)}
+            />
+          )}
+          {screen === 'shop' && (
+            <Shop
+              totalShards={save.saveData.totalShards}
+              onBack={() => setScreen('menu')}
+              onPurchase={handlePurchase}
             />
           )}
           {screen === 'planet_select' && (

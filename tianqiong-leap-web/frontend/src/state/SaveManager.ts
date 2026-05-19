@@ -127,3 +127,29 @@ export function getChapterStars(data: SaveData, chapter: number): number {
   }
   return total;
 }
+
+export function purchaseItem(data: SaveData, itemId: string, price: number): SaveData | null {
+  if (data.totalShards < price) return null;
+
+  const newData: SaveData = {
+    ...data,
+    totalShards: data.totalShards - price,
+  };
+
+  // Track purchased items in localStorage separately
+  const purchasedKey = 'tianqiong_purchased';
+  const purchased: string[] = JSON.parse(localStorage.getItem(purchasedKey) ?? '[]');
+  if (!purchased.includes(itemId)) {
+    purchased.push(itemId);
+    localStorage.setItem(purchasedKey, JSON.stringify(purchased));
+  }
+
+  saveSave(newData);
+  return newData;
+}
+
+export function isItemPurchased(itemId: string): boolean {
+  const purchasedKey = 'tianqiong_purchased';
+  const purchased: string[] = JSON.parse(localStorage.getItem(purchasedKey) ?? '[]');
+  return purchased.includes(itemId);
+}

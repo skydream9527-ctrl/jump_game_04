@@ -21,15 +21,21 @@ export function useSaveData() {
     setSaveData(prev => SaveManager.selectCharacter(prev, id));
   }, []);
 
+  const purchaseItem = useCallback((itemId: string, price: number) => {
+    setSaveData(prev => SaveManager.purchaseItem(prev, itemId, price) ?? prev);
+  }, []);
+
   return {
     saveData,
     refresh,
     recordResult,
     unlockChar,
     selectChar,
+    purchaseItem,
     isLevelUnlocked: (ch: number, lv: number) => SaveManager.isLevelUnlocked(saveData, ch, lv),
     isChapterUnlocked: (ch: number) => SaveManager.isChapterUnlocked(saveData, ch),
     isCharacterUnlocked: (id: number) => SaveManager.isCharacterUnlocked(saveData, id),
+    isItemPurchased: (itemId: string) => SaveManager.isItemPurchased(itemId),
     getRecord: (ch: number, lv: number) => SaveManager.getRecord(saveData, ch, lv),
     getChapterStars: (ch: number) => SaveManager.getChapterStars(saveData, ch),
   };

@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天穹跃迁 - 物品道具设计</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #0a0a1a 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        /* 头部导航 */
+        .header {
+            background: rgba(20, 20, 40, 0.9);
+            border-bottom: 1px solid rgba(128, 255, 128, 0.2);
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn {
+            color: #80ff80;
+            text-decoration: none;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            color: #a0ffa0;
+            transform: translateX(-5px);
+        }
+
+        .page-title {
+            font-size: 1.3rem;
+            color: #fff;
+            letter-spacing: 2px;
+        }
+
+        /* 分类标签 */
+        .category-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 25px 20px;
+            background: rgba(10, 10, 26, 0.5);
+            position: sticky;
+            top: 60px;
+            z-index: 99;
+            flex-wrap: wrap;
+        }
+
+        .category-btn {
+            padding: 12px 25px;
+            background: rgba(30, 30, 50, 0.8);
+            border: 2px solid rgba(128, 255, 128, 0.3);
+            border-radius: 25px;
+            color: #808090;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .category-btn:hover {
+            border-color: #80ff80;
+            color: #80ff80;
+        }
+
+        .category-btn.active {
+            background: linear-gradient(135deg, #103010, #204020);
+            border-color: #80ff80;
+            color: #80ff80;
+            box-shadow: 0 0 15px rgba(128, 255, 128, 0.2);
+        }
+
+        /* 主内容区 */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* 分类面板 */
+        .category-panel {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .category-panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 物品网格 */
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .item-card {
+            background: linear-gradient(145deg, rgba(30, 30, 50, 0.9), rgba(20, 20, 40, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .item-card:hover {
+            border-color: var(--item-color);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3),
+                        0 0 20px var(--item-glow);
+            transform: translateY(-5px);
+        }
+
+        .item-preview {
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .item-icon {
+            font-size: 70px;
+            animation: itemFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes itemFloat {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.1); }
+        }
+
+        .item-content {
+            padding: 25px;
+        }
+
+        .item-rarity {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .rarity-common {
+            background: rgba(128, 128, 128, 0.3);
+            color: #a0a0a0;
+        }
+
+        .rarity-uncommon {
+            background: rgba(0, 200, 0, 0.3);
+            color: #40ff40;
+        }
+
+        .rarity-rare {
+            background: rgba(0, 100, 255, 0.3);
+            color: #4080ff;
+        }
+
+        .rarity-epic {
+            background: rgba(160, 0, 255, 0.3);
+            color: #a040ff;
+        }
+
+        .rarity-legendary {
+            background: rgba(255, 160, 0, 0.3);
+            color: #ffa000;
+        }
+
+        .item-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .item-desc {
+            font-size: 0.9rem;
+            color: #808090;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        /* 物品属性 */
+        .item-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stat-icon {
+            font-size: 1.1rem;
+        }
+
+        .stat-info {
+            flex: 1;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #606070;
+            margin-bottom: 3px;
+        }
+
+        .stat-value {
+            font-size: 0.9rem;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        /* 特殊效果 */
+        .item-effect {
+            padding: 12px;
+            background: rgba(128, 255, 128, 0.1);
+            border-radius: 10px;
+            border-left: 3px solid var(--item-color);
+        }
+
+        .effect-title {
+            font-size: 0.8rem;
+            color: var(--item-color);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .effect-text {
+            font-size: 0.85rem;
+            color: #b0b0c0;
+        }
+
+        /* 星核碎片特殊区域 */
+        .star-core-section {
+            margin-top: 40px;
+            padding: 30px;
+            background: linear-gradient(145deg, rgba(255, 217, 128, 0.1), rgba(255, 200, 0, 0.05));
+            border-radius: 20px;
+            border: 1px solid rgba(255, 217, 128, 0.3);
+        }
+
+        .star-core-title {
+            font-size: 1.5rem;
+            color: #ffd980;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .star-core-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .star-core-card {
+            background: rgba(30, 30, 50, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 217, 128, 0.2);
+            text-align: center;
+        }
+
+        .star-core-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .star-core-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #ffd980;
+            margin-bottom: 10px;
+        }
+
+        .star-core-desc {
+            font-size: 0.9rem;
+            color: #808090;
+            line-height: 1.6;
+        }
+
+        /* 获取方式 */
+        .obtain-methods {
+            margin-top: 20px;
+        }
+
+        .method-title {
+            font-size: 1rem;
+            color: #fff;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .method-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .method-tag {
+            padding: 8px 15px;
+            background: rgba(128, 255, 128, 0.1);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #80ff80;
+            border: 1px solid rgba(128, 255, 128, 0.2);
+        }
+
+        /* 配色展示 */
+        .color-showcase {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .color-dot {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .color-dot:hover {
+            transform: scale(1.2);
+            border-color: #fff;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .items-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .category-tabs {
+                padding: 15px 10px;
+            }
+
+            .category-btn {
+                padding: 10px 18px;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 头部 -->
+    <header class="header">
+        <a href="index.html" class="back-btn">
+            ← 返回设计中心
+        </a>
+        <h1 class="page-title">物品道具设计</h1>
+        <div style="width: 100px;"></div>
+    </header>
+
+    <!-- 分类标签 -->
+    <nav class="category-tabs">
+        <button class="category-btn active" data-category="consumable">消耗品</button>
+        <button class="category-btn" data-category="buff">增益道具</button>
+        <button class="category-btn" data-category="special">特殊物品</button>
+        <button class="category-btn" data-category="collectible">收集品</button>
+    </nav>
+
+    <!-- 主内容 -->
+    <main class="main-content">
+        <!-- 消耗品 -->
+        <section class="category-panel active" id="consumable">
+            <div class="items-grid">
+                <!-- 生命恢复药剂 -->
+                <div class="item-card" style="--item-color: #ff4040; --item-glow: rgba(255, 64, 64, 0.3);">
+                    <div class="item-preview" style="background: linear-gradient(145deg, #3a1010, #4a2020);">
+                        <span class="item-icon">❤️</span>
+                    </div>
+                    <div class="item-content">
+                        <span class="item-rarity rarity-common">普通</span>
+                        <h3 class="item-name">生命恢复药剂</h3>
+                        <p class="item-desc">恢复一定比例的生命值。基础消耗品，在关卡中常见。</p>
+                        <div class="item-stats">
+                            <div class="stat-item">
+                                <span class="stat-icon">❤️</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">恢复量</div>
+                                    <div class="stat-value">30%</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">⏱️</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">使用时间</div>
+                                    <div class="stat-value">即时</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">📦</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">堆叠上限</div>
+                                    <div class="stat-value">5</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">💰</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">价值</div>
+                                    <div class="stat-value">50</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item-effect">
+                            <div class="effect-title">效果</div>
+                            <div class="effect-text">立即恢复 30% 最大生命值</div>
+                        </div>
+                        <div class="obtain-methods">
+                            <div class="method-title">获取方式</div>
+                            <div class="method-list">
+                                <span class="method-tag">关卡掉落</span>
+                                <span class="method-tag">商店购买</span>
+                                <span class="method-tag">敌人掉落</span>
+                            </div>
+                        </div>
+                        <div class="color-showcase">
+                            <div class="color-dot" style="background: #ff4040;" title="主色"></div>
+                            <div class="color-dot" style="background: #ff8080;" title="辅色"></div>
+                            <div class="color-dot" style="background: #fff;" title="高光"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 完全恢复药剂 -->
+                <div class="item-card" style="--item-color: #ff8080; --item-glow: rgba(255, 128, 128, 0.3);">
+                    <div class="item-preview" style="background: linear-gradient(145deg, #3a1010, #4a2020);">
+                        <span class="item-icon">💖</span>
+                    </div>
+                    <div class="item-content">
+                        <span class="item-rarity rarity-rare">稀有</span>
+                        <h3 class="item-name">完全恢复药剂</h3>
+                        <p class="item-desc">完全恢复生命值。珍贵的消耗品，仅在关键时刻使用。</p>
+                        <div class="item-stats">
+                            <div class="stat-item">
+                                <span class="stat-icon">❤️</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">恢复量</div>
+                                    <div class="stat-value">100%</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">⏱️</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">使用时间</div>
+                                    <div class="stat-value">即时</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">📦</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">堆叠上限</div>
+                                    <div class="stat-value">2</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">💰</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">价值</div>
+                                    <div class="stat-value">200</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item-effect">
+                            <div class="effect-title">效果</div>
+                            <div class="effect-text">立即恢复 100% 最大生命值</div>
+                        </div>
+                        <div class="obtain-methods">
+                            <div class="method-title">获取方式</div>
+                            <div class="method-list">
+                                <span class="method-tag">Boss掉落</span>
+                                <span class="method-tag">隐藏宝箱</span>
+                                <span class="method-tag">商店稀有</span>
+                            </div>
+                        </div>
+                        <div class="color-showcase">
+                            <div class="color-dot" style="background: #ff8080;" title="主色"></div>
+                            <div class="color-dot" style="background: #ffb0b0;" title="辅色"></div>
+                            <div class="color-dot" style="background: #fff;" title="高光"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 能量电池 -->
+                <div class="item-card" style="--item-color: #6bb8e8; --item-glow: rgba(107, 184, 232, 0.3);">
+                    <div class="item-preview" style="background: linear-gradient(145deg, #1e3550, #2a4060);">
+                        <span class="item-icon">🔋</span>
+                    </div>
+                    <div class="item-content">
+                        <span class="item-rarity rarity-common">普通</span>
+                        <h3 class="item-name">能量电池</h3>
+                        <p class="item-desc">恢复武器能量。使用能量武器时的重要补给品。</p>
+                        <div class="item-stats">
+                            <div class="stat-item">
+                                <span class="stat-icon">⚡</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">恢复量</div>
+                                    <div class="stat-value">50%</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">⏱️</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">使用时间</div>
+                                    <div class="stat-value">即时</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">📦</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">堆叠上限</div>
+                                    <div class="stat-value">10</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">💰</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">价值</div>
+                                    <div class="stat-value">30</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item-effect">
+                            <div class="effect-title">效果</div>
+                            <div class="effect-text">立即恢复 50% 武器能量</div>
+                        </div>
+                        <div class="obtain-methods">
+                            <div class="method-title">获取方式</div>
+                            <div class="method-list">
+                                <span class="method-tag">关卡掉落</span>
+                                <span class="method-tag">商店购买</span>
+                                <span class="method-tag">敌人掉落</span>
+                            </div>
+                        </div>
+                        <div class="color-showcase">
+                            <div class="color-dot" style="background: #6bb8e8;" title="主色"></div>
+                            <div class="color-dot" style="background: #a0d8ff;" title="辅色"></div>
+                            <div class="color-dot" style="background: #fff;" title="高光"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 增益道具 -->
+        <section class="category-panel" id="buff">
+            <div class="items-grid">
+                <!-- 能量护盾 -->
+                <div class="item-card" style="--item-color: #6bb8e8; --item-glow: rgba(107, 184, 232, 0.3);">
+                    <div class="item-preview" style="background: linear-gradient(145deg, #1e3550, #2a4060);">
+                        <span class="item-icon">🛡️</span>
+                    </div>
+                    <div class="item-content">
+                        <span class="item-rarity rarity-rare">稀有</span>
+                        <h3 class="item-name">能量护盾</h3>
+                        <p class="item-desc">生成一个能量护盾，抵挡一次伤害。关键时刻的救命道具。</p>
+                        <div class="item-stats">
+                            <div class="stat-item">
+                                <span class="stat-icon">🛡️</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">护盾值</div>
+                                    <div class="stat-value">1次</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">⏱️</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">持续时间</div>
+                                    <div class="stat-value">30秒</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">📦</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">堆叠上限</div>
+                                    <div class="stat-value">3</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">💰</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">价值</div>
+                                    <div class="stat-value">150</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item-effect">
+                            <div class="effect-title">效果</div>
+                            <div class="effect-text">生成蓝色能量护盾，抵挡一次伤害后消失，持续 30 秒</div>
+                        </div>
+                        <div class="color-showcase">
+                            <div class="color-dot" style="background: #6bb8e8;" title="主色"></div>
+                            <div class="color-dot" style="background: #a0d8ff;" title="辅色"></div>
+                            <div class="color-dot" style="background: #fff;" title="高光"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 碎片磁铁 -->
+                <div class="item-card" style="--item-color: #ffd980; --item-glow: rgba(255, 217, 128, 0.3);">
+                    <div class="item-preview" style="background: linear-gradient(145deg, #3a3010, #4a4020);">
+                        <span class="item-icon">🧲</span>
+                    </div>
+                    <div class="item-content">
+                        <span class="item-rarity rarity-uncommon">优秀</span>
+                        <h3 class="item-name">碎片磁铁</h3>
+                        <p class="item-desc">自动吸引周围一定范围内的星核碎片。收集爱好者的必备道具。</p>
+                        <div class="item-stats">
+                            <div class="stat-item">
+                                <span class="stat-icon">📏</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">吸引范围</div>
+                                    <div class="stat-value">200pt</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">⏱️</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">持续时间</div>
+                                    <div class="stat-value">20秒</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">📦</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">堆叠上限</div>
+                                    <div class="stat-value">5</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">💰</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">价值</div>
+                                    <div class="stat-value">100</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item-effect">
+                            <div class="effect-title">效果</div>
+                            <div class="effect-text">激活后 20 秒内，自动吸引 200pt 范围内的星核碎片</div>
+                        </div>
+                        <div class="color-showcase">
+                            <div class="color-dot" style="background: #ffd980;" title="主色"></div>
+                            <div class="color-dot" style="background: #ffe8a0;" title="辅色"></div>
+                            <div class="color-dot" style="background: #fff;" title="高光"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 缓时装置 -->
+                <div class="item-card" style="--item-color: #b088c8; --item-glow: rgba(176, 136, 200, 0.3);">
+                    <div class="item-preview" style="background: linear-gradient(145deg, #2a1848, #3a2858);">
+                        <span class="item-icon">⏳</span>
+                    </div>
+                    <div class="item-content">
+                        <span class="item-rarity rarity-epic">史诗</span>
+                        <h3 class="item-name">缓时装置</h3>
+                        <p class="item-desc">减慢周围时间流速，让玩家有更多反应时间。在困难关卡中非常有用。</p>
+                        <div class="item-stats">
+                            <div class="stat-item">
+                                <span class="stat-icon">⏳</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">减速效果</div>
+                                    <div class="stat-value">50%</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">⏱️</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">持续时间</div>
+                                    <div class="stat-value">10秒</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">📦</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">堆叠上限</div>
+                                    <div class="stat-value">2</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">💰</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">价值</div>
+                                    <div class="stat-value">300</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item-effect">
+                            <div class="effect-title">效果</div>
+                            <div class="effect-text">激活后 10 秒内，周围敌人和障碍物速度 -50%，玩家速度不变</div>
+                        </div>
+                        <div class="color-showcase">
+                            <div class="color-dot" style="background: #b088c8;" title="主色"></div>
+                            <div class="color-dot" style="background: #d0a0ff;" title="辅色"></div>
+                            <div class="color-dot" style="background: #fff;" title="高光"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 强化靴 -->
+                <div class="item-card" style="--item-color: #ff8040; --item-glow: rgba(255, 128, 64, 0.3);">
+                    <div class="item-preview" style="background: linear-gradient(145deg, #3a2010, #4a3020);">
+                        <span class="item-icon">👢</span>
+                    </div>
+                    <div class="item-content">
+                        <span class="item-rarity rarity-rare">稀有</span>
+                        <h3 class="item-name">强化靴</h3>
+                        <p class="item-desc">增强跳跃能力，跳得更高更远。探索隐藏区域的必备道具。</p>
+                        <div class="item-stats">
+                            <div class="stat-item">
+                                <span class="stat-icon">⬆️</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">跳跃增强</div>
+                                    <div class="stat-value">+30%</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">⏱️</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">持续时间</div>
+                                    <div class="stat-value">30秒</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">📦</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">堆叠上限</div>
+                                    <div class="stat-value">3</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">💰</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">价值</div>
+                                    <div class="stat-value">200</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item-effect">
+                            <div class="effect-title">效果</div>
+                            <div class="effect-text">激活后 30 秒内，跳跃高度 +30%，二段跳高度 +20%</div>
+                        </div>
+                        <div class="color-showcase">
+                            <div class="color-dot" style="background: #ff8040;" title="主色"></div>
+                            <div class="color-dot" style="background: #ffa060;" title="辅色"></div>
+                            <div class="color-dot" style="background: #fff;" title="高光"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 透视镜 -->
+                <div class="item-card" style="--item-color: #80ff80; --item-glow: rgba(128, 255, 128, 0.3);">
+                    <div class="item-preview" style="background: linear-gradient(145deg, #103010, #204020);">
+                        <span class="item-icon">👓</span>
+                    </div>
+                    <div class="item-content">
+                        <span class="item-rarity rarity-epic">史诗</span>
+                        <h3 class="item-name">透视镜</h3>
+                        <p class="item-desc">显示隐藏的平台、道具和秘密通道。探索型玩家的最爱。</p>
+                        <div class="item-stats">
+                            <div class="stat-item">
+                                <span class="stat-icon">👁️</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">透视范围</div>
+                                    <div class="stat-value">500pt</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">⏱️</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">持续时间</div>
+                                    <div class="stat-value">15秒</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">📦</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">堆叠上限</div>
+                                    <div class="stat-value">2</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">💰</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">价值</div>
+                                    <div class="stat-value">250</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item-effect">
+                            <div class="effect-title">效果</div>
+                            <div class="effect-text">激活后 15 秒内，显示 500pt 范围内所有隐藏元素</div>
+                        </div>
+                        <div class="color-showcase">
+                            <div class="color-dot" style="background: #80ff80;" title="主色"></div>
+                            <div class="color-dot" style="background: #a0ffa0;" title="辅色"></div>
+                            <div class="color-dot" style="background: #fff;" title="高光"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 特殊物品 -->
+        <section class="category-panel" id="special">
+            <div class="items-grid">
+                <!-- 关卡传送门 -->
+                <div class="item-card" style="--item-color: #a040ff; --item-glow: rgba(160, 64, 255, 0.3);">
+                    <div class="item-preview" style="background: linear-gradient(145deg, #2a1050, #3a2060);">
+                        <span class="item-icon">🌀</span>
+                    </div>
+                    <div class="item-content">
+                        <span class="item-rarity rarity-legendary">传说</span>
+                        <h3 class="item-name">关卡传送门</h3>
+                        <p class="item-desc">直接传送到任意已解锁的关卡起点。节省时间的便捷道具。</p>
+                        <div class="item-stats">
+                            <div class="stat-item">
+                                <span class="stat-icon">📍</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">传送目标</div>
+                                    <div class="stat-value">已解锁关卡</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">⏱️</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">使用时间</div>
+                                    <div class="stat-value">3秒施法</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">📦</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">堆叠上限</div>
+                                    <div class="stat-value">1</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">💰</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">价值</div>
+                                    <div class="stat-value">500</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item-effect">
+                            <div class="effect-title">效果</div>
+                            <div class="effect-text">使用后 3 秒施法，传送至选择的已解锁关卡起点</div>
+                        </div>
+                        <div class="color-showcase">
+                            <div class="color-dot" style="background: #a040ff;" title="主色"></div>
+                            <div class="color-dot" style="background: #c080ff;" title="辅色"></div>
+                            <div class="color-dot" style="background: #fff;" title="高光"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 复活币 -->
+                <div class="item-card" style="--item-color: #ffc800; --item-glow: rgba(255, 200, 0, 0.3);">
+                    <div class="item-preview" style="background: linear-gradient(145deg, #3a3000, #4a4000);">
+                        <span class="item-icon">🪙</span>
+                    </div>
+                    <div class="item-content">
+                        <span class="item-rarity rarity-legendary">传说</span>
+                        <h3 class="item-name">复活币</h3>
+                        <p class="item-desc">死亡后自动复活，恢复 50% 生命值。极其珍贵的保命道具。</p>
+                        <div class="item-stats">
+                            <div class="stat-item">
+                                <span class="stat-icon">❤️</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">复活生命</div>
+                                    <div class="stat-value">50%</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">⏱️</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">触发方式</div>
+                                    <div class="stat-value">自动</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">📦</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">堆叠上限</div>
+                                    <div class="stat-value">1</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">💰</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">价值</div>
+                                    <div class="stat-value">1000</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item-effect">
+                            <div class="effect-title">效果</div>
+                            <div class="effect-text">死亡时自动触发，原地复活并恢复 50% 生命值，无敌 3 秒</div>
+                        </div>
+                        <div class="color-showcase">
+                            <div class="color-dot" style="background: #ffc800;" title="主色"></div>
+                            <div class="color-dot" style="background: #ffe040;" title="辅色"></div>
+                            <div class="color-dot" style="background: #fff;" title="高光"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 地图碎片 -->
+                <div class="item-card" style="--item-color: #c0a080; --item-glow: rgba(192, 160, 128, 0.3);">
+                    <div class="item-preview" style="background: linear-gradient(145deg, #2a2018, #3a3028);">
+                        <span class="item-icon">🗺️</span>
+                    </div>
+                    <div class="item-content">
+                        <span class="item-rarity rarity-rare">稀有</span>
+                        <h3 class="item-name">地图碎片</h3>
+                        <p class="item-desc">收集一定数量可以解锁完整地图，显示关卡全貌和隐藏区域。</p>
+                        <div class="item-stats">
+                            <div class="stat-item">
+                                <span class="stat-icon">📄</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">收集需求</div>
+                                    <div class="stat-value">5个/关</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">🗺️</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">解锁内容</div>
+                                    <div class="stat-value">完整地图</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">📦</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">堆叠上限</div>
+                                    <div class="stat-value">无限</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">💰</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">价值</div>
+                                    <div class="stat-value">50</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item-effect">
+                            <div class="effect-title">效果</div>
+                            <div class="effect-text">收集 5 个同关卡碎片后，解锁该关卡完整地图，显示所有平台和隐藏区域</div>
+                        </div>
+                        <div class="color-showcase">
+                            <div class="color-dot" style="background: #c0a080;" title="主色"></div>
+                            <div class="color-dot" style="background: #d0b090;" title="辅色"></div>
+                            <div class="color-dot" style="background: #a08060;" title="暗色"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 收集品 -->
+        <section class="category-panel" id="collectible">
+            <!-- 星核碎片 -->
+            <div class="star-core-section">
+                <h3 class="star-core-title">⭐ 星核碎片</h3>
+                <p style="color: #808090; margin-bottom: 20px; line-height: 1.6;">
+                    星核碎片是游戏中的主要收集品，散落在各个关卡中。收集足够的碎片可以解锁新角色、新武器和隐藏内容。
+                </p>
+                <div class="star-core-grid">
+                    <div class="star-core-card">
+                        <div class="star-core-icon">⭐</div>
+                        <h4 class="star-core-name">普通碎片</h4>
+                        <p class="star-core-desc">最常见的星核碎片，散落在关卡各处。每关约 20-30 个。</p>
+                    </div>
+                    <div class="star-core-card">
+                        <div class="star-core-icon">🌟</div>
+                        <h4 class="star-core-name">稀有碎片</h4>
+                        <p class="star-core-desc">隐藏在秘密区域的碎片，需要探索才能发现。每关约 5-10 个。</p>
+                    </div>
+                    <div class="star-core-card">
+                        <div class="star-core-icon">✨</div>
+                        <h4 class="star-core-name">传说碎片</h4>
+                        <p class="star-core-desc">极其稀有的碎片，通常需要完成特殊挑战才能获得。每关仅 1-2 个。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="items-grid" style="margin-top: 30px;">
+                <!-- 收集品展示 -->
+                <div class="item-card" style="--item-color: #ffd980; --item-glow: rgba(255, 217, 128, 0.3);">
+                    <div class="item-preview" style="background: linear-gradient(145deg, #3a3010, #4a4020);">
+                        <span class="item-icon">🏆</span>
+                    </div>
+                    <div class="item-content">
+                        <span class="item-rarity rarity-epic">史诗</span>
+                        <h3 class="item-name">成就奖杯</h3>
+                        <p class="item-desc">完成特定挑战后获得的奖杯，展示玩家的成就。</p>
+                        <div class="item-stats">
+                            <div class="stat-item">
+                                <span class="stat-icon">🏆</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">类型</div>
+                                    <div class="stat-value">收集品</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">📊</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">总数</div>
+                                    <div class="stat-value">50个</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item-effect">
+                            <div class="effect-title">效果</div>
+                            <div class="effect-text">纯展示物品，收集一定数量可解锁特殊奖励</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="item-card" style="--item-color: #a080e0; --item-glow: rgba(160, 128, 224, 0.3);">
+                    <div class="item-preview" style="background: linear-gradient(145deg, #2a1848, #3a2858);">
+                        <span class="item-icon">📜</span>
+                    </div>
+                    <div class="item-content">
+                        <span class="item-rarity rarity-rare">稀有</span>
+                        <h3 class="item-name">古代文献</h3>
+                        <p class="item-desc">记录天穹跃迁世界历史的古代文献，揭示游戏背景故事。</p>
+                        <div class="item-stats">
+                            <div class="stat-item">
+                                <span class="stat-icon">📜</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">类型</div>
+                                    <div class="stat-value">收集品</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">📊</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">总数</div>
+                                    <div class="stat-value">30个</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item-effect">
+                            <div class="effect-title">效果</div>
+                            <div class="effect-text">解锁游戏背景故事，了解天穹跃迁的世界观</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="item-card" style="--item-color: #ff6060; --item-glow: rgba(255, 96, 96, 0.3);">
+                    <div class="item-preview" style="background: linear-gradient(145deg, #3a1010, #4a2020);">
+                        <span class="item-icon">🎵</span>
+                    </div>
+                    <div class="item-content">
+                        <span class="item-rarity rarity-uncommon">优秀</span>
+                        <h3 class="item-name">音乐唱片</h3>
+                        <p class="item-desc">收集后可在音乐播放器中播放的背景音乐唱片。</p>
+                        <div class="item-stats">
+                            <div class="stat-item">
+                                <span class="stat-icon">🎵</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">类型</div>
+                                    <div class="stat-value">收集品</div>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-icon">📊</span>
+                                <div class="stat-info">
+                                    <div class="stat-label">总数</div>
+                                    <div class="stat-value">20个</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item-effect">
+                            <div class="effect-title">效果</div>
+                            <div class="effect-text">解锁游戏背景音乐，可在主菜单音乐播放器中播放</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // 分类切换功能
+        const categoryBtns = document.querySelectorAll('.category-btn');
+        const categoryPanels = document.querySelectorAll('.category-panel');
+
+        categoryBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const category = btn.dataset.category;
+
+                // 更新按钮状态
+                categoryBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // 更新面板显示
+                categoryPanels.forEach(panel => {
+                    panel.classList.remove('active');
+                    if (panel.id === category) {
+                        panel.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

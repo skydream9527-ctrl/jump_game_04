@@ -75,3 +75,7 @@ export function getLevelDisplayName(chapter: number, level: number): string {
 export function isBossLevel(level: number): boolean {
   return level === 10;
 }
+
+export function isMiniBossLevel(level: number): boolean {
+  return level === 5 || level === 9;
+}
