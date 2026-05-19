@@ -14,6 +14,7 @@ import { PlanetSelect } from './components/screens/PlanetSelect';
 import { LevelSelect } from './components/screens/LevelSelect';
 import { CharacterSelect } from './components/screens/CharacterSelect';
 import { Shop } from './components/screens/Shop';
+import { ItemSelect } from './components/screens/ItemSelect';
 import type { ShopItem } from './constants/shop';
 import { PauseOverlay } from './components/overlays/PauseOverlay';
 import { GameOverOverlay } from './components/overlays/GameOverOverlay';
@@ -80,7 +81,7 @@ export default function App() {
     };
   }, [currentChapter, currentLevel, save]);
 
-  const startLevel = useCallback((chapter: number, level: number) => {
+  const startLevel = useCallback((chapter: number, level: number, items: string[] = []) => {
     setCurrentChapter(chapter);
     setCurrentLevel(level);
     setGameState('playing');
@@ -94,6 +95,7 @@ export default function App() {
           chapter,
           level,
           characterId: save.saveData.selectedCharacter,
+          equippedItems: items,
         });
       });
     });
@@ -102,11 +104,15 @@ export default function App() {
   const handleNextLevel = useCallback(() => {
     save.refresh();
     if (currentLevel < 10) {
-      startLevel(currentChapter, currentLevel + 1);
+      // Go to item select for next level
+      setCurrentLevel(currentLevel + 1);
+      setScreen('item_select');
     } else if (currentChapter < 10) {
-      startLevel(currentChapter + 1, 1);
+      setCurrentChapter(currentChapter + 1);
+      setCurrentLevel(1);
+      setScreen('item_select');
     }
-  }, [currentChapter, currentLevel, startLevel, save]);
+  }, [currentChapter, currentLevel, save]);
 
   const handleBackToMenu = useCallback(() => {
     setScreen('menu');
@@ -177,8 +183,18 @@ export default function App() {
               chapter={selectedChapter}
               isLevelUnlocked={save.isLevelUnlocked}
               getRecord={save.getRecord}
-              onSelect={startLevel}
+              onSelect={(ch, lv) => { setCurrentChapter(ch); setCurrentLevel(lv); setScreen('item_select'); }}
               onBack={() => setScreen('planet_select')}
+            />
+          )}
+          {screen === 'item_select' && (
+            <ItemSelect
+              inventory={save.saveData.inventory}
+              equippedItems={save.saveData.equippedItems}
+              chapter={currentChapter}
+              level={currentLevel}
+              onConfirm={(items) => { save.setEquippedItems(items); startLevel(currentChapter, currentLevel, items); }}
+              onBack={() => setScreen('level_select')}
             />
           )}
           {screen === 'character_select' && (

@@ -25,6 +25,26 @@ export function useSaveData() {
     setSaveData(prev => SaveManager.purchaseItem(prev, itemId, price) ?? prev);
   }, []);
 
+  const purchaseItemToInventory = useCallback((itemId: string) => {
+    setSaveData(prev => SaveManager.purchaseItemToInventory(prev, itemId) ?? prev);
+  }, []);
+
+  const equipItem = useCallback((itemId: string) => {
+    setSaveData(prev => SaveManager.equipItem(prev, itemId));
+  }, []);
+
+  const unequipItem = useCallback((itemId: string) => {
+    setSaveData(prev => SaveManager.unequipItem(prev, itemId));
+  }, []);
+
+  const setEquippedItems = useCallback((itemIds: string[]) => {
+    setSaveData(prev => SaveManager.setEquippedItems(prev, itemIds));
+  }, []);
+
+  const useConsumableItem = useCallback((itemId: string) => {
+    setSaveData(prev => SaveManager.useConsumableItem(prev, itemId));
+  }, []);
+
   return {
     saveData,
     refresh,
@@ -32,6 +52,11 @@ export function useSaveData() {
     unlockChar,
     selectChar,
     purchaseItem,
+    purchaseItemToInventory,
+    equipItem,
+    unequipItem,
+    setEquippedItems,
+    useConsumableItem,
     isLevelUnlocked: (ch: number, lv: number) => SaveManager.isLevelUnlocked(saveData, ch, lv),
     isChapterUnlocked: (ch: number) => SaveManager.isChapterUnlocked(saveData, ch),
     isCharacterUnlocked: (id: number) => SaveManager.isCharacterUnlocked(saveData, id),
