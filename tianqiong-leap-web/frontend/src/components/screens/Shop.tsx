@@ -62,7 +62,7 @@ export function Shop({ totalShards, onBack, onPurchase }: ShopProps) {
                 <span className="free-badge">免费</span>
               ) : (
                 <button
-                  className={`btn btn-purchase ${canAfford(item.price) ? '' : 'disabled'}`}
+                  className={`btn-purchase ${canAfford(item.price) ? '' : 'disabled'}`}
                   onClick={() => canAfford(item.price) && onPurchase(item)}
                   disabled={!canAfford(item.price)}
                 >

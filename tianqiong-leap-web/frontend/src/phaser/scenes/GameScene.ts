@@ -642,7 +642,8 @@ export class GameScene extends Phaser.Scene {
     const jumpV = Math.abs(PHYSICS.JUMP_FORCE * char.jumpMultiplier);
     const airTime = 2 * jumpV / gravity;
     const maxReach = this.speed * airTime;
-    const maxHeight = (jumpV * jumpV) / (2 * gravity);
+    // Apply 0.85 safety factor: discrete Euler integration produces ~85% of continuous height
+    const maxHeight = (jumpV * jumpV) / (2 * gravity) * 0.85;
     return { maxReach, maxHeight };
   }
 
@@ -674,7 +675,7 @@ export class GameScene extends Phaser.Scene {
     const w = Math.max(70, (baseW + (Math.random() - 0.5) * 40) * widthMod);
 
     const maxRise = maxHeight * (isWarmup ? 0.15 : 0.4);
-    const maxDrop = isWarmup ? 30 : 120;
+    const maxDrop = isWarmup ? 30 : 100;
     const rawDy = (Math.random() - 0.4) * (maxRise + maxDrop) - maxDrop * 0.2;
     const dy = Phaser.Math.Clamp(rawDy, -maxDrop, maxRise);
     const y = Phaser.Math.Clamp(lastTopY + dy, PHYSICS.PLATFORM_Y_MIN, PHYSICS.PLATFORM_Y_MAX);
