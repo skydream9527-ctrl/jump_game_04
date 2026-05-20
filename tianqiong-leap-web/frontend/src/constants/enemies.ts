@@ -156,9 +156,9 @@ export function getAvailableEnemyTypes(chapter: number): EnemyType[] {
   );
 }
 
-export const ENEMY_SPAWN_CHANCE = 0.08;
-export const ELITE_SPAWN_CHANCE = 0.03;  // 3% chance for elite
-export const MINI_BOSS_SPAWN_CHANCE = 0.01;  // 1% chance for mini-boss
-export const SHOOTER_FIRE_INTERVAL = 2500; // ms
+export const ENEMY_SPAWN_CHANCE = 0.30;
+export const ELITE_SPAWN_CHANCE = 0.08;  // 8% chance for elite
+export const MINI_BOSS_SPAWN_CHANCE = 0.03;  // 3% chance for mini-boss
+export const SHOOTER_FIRE_INTERVAL = 1800; // ms
 export const BULLET_SPEED = 3;
 export const BULLET_SIZE = 6;

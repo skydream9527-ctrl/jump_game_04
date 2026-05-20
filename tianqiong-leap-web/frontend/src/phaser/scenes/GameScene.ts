@@ -50,6 +50,7 @@ export class GameScene extends Phaser.Scene {
   private skyBg!: Phaser.GameObjects.Graphics;
   private stars: Phaser.GameObjects.Image[] = [];
   private mountainTiles: Phaser.GameObjects.TileSprite[] = [];
+  private bgDecor: Phaser.GameObjects.GameObject[] = [];
 
   // HUD
   private heartIcons: Phaser.GameObjects.Image[] = [];
@@ -269,6 +270,7 @@ export class GameScene extends Phaser.Scene {
     this.heartIcons.forEach(safeDestroy);
     this.stars.forEach(safeDestroy);
     this.mountainTiles.forEach(safeDestroy);
+    this.bgDecor.forEach(safeDestroy);
     this.powerUpSprites.forEach(p => safeDestroy(p.sprite));
     this.powerUpIcons.forEach(p => { safeDestroy(p.icon); safeDestroy(p.timer); });
     this.weaponPickups.forEach(safeDestroy);
@@ -284,6 +286,7 @@ export class GameScene extends Phaser.Scene {
     this.heartIcons = [];
     this.stars = [];
     this.mountainTiles = [];
+    this.bgDecor = [];
     this.powerUpSprites = [];
     this.powerUpIcons = [];
     this.weaponPickups = [];
@@ -414,12 +417,12 @@ export class GameScene extends Phaser.Scene {
   // ========== Camera ==========
   private setupCamera(): void {
     const cam = this.cameras.main;
-    cam.setBounds(0, 0, Number.MAX_SAFE_INTEGER, PHYSICS.CANVAS_HEIGHT + Math.abs(PHYSICS.CAMERA_SCROLL_Y));
-    cam.startFollow(this.player, false, 0.15, 0.08);
-    cam.setFollowOffset(-PHYSICS.CANVAS_WIDTH / 2 + PLAYER_SCREEN_X, 0);
+    cam.setBounds(0, 0, Number.MAX_SAFE_INTEGER, PHYSICS.CANVAS_HEIGHT + Math.abs(PHYSICS.CAMERA_SCROLL_Y) + 200);
+    cam.startFollow(this.player, false, 0.15, 0.1);
+    cam.setFollowOffset(-PHYSICS.CANVAS_WIDTH / 2 + PLAYER_SCREEN_X, Math.round(PHYSICS.CANVAS_HEIGHT * 0.3));
     cam.scrollX = 0;
     cam.scrollY = PHYSICS.CAMERA_SCROLL_Y;
-    cam.setLerp(0.15, 0);
+    cam.setLerp(0.15, 0.1);
 
     if (!this.hudCam) {
       this.hudCam = this.cameras.add(0, 0, PHYSICS.CANVAS_WIDTH, PHYSICS.CANVAS_HEIGHT);
@@ -434,8 +437,10 @@ export class GameScene extends Phaser.Scene {
   // ========== Background ==========
   private createBackground(): void {
     const { CANVAS_WIDTH, CANVAS_HEIGHT } = PHYSICS;
+    const ch = this.config.chapter;
     const colors = this.chapterData.skyColors;
 
+    // Sky gradient (all chapters)
     this.skyBg = this.add.graphics();
     const c1 = Phaser.Display.Color.HexStringToColor(colors[0]);
     const c2 = Phaser.Display.Color.HexStringToColor(colors[1]);
@@ -450,10 +455,12 @@ export class GameScene extends Phaser.Scene {
     this.skyBg.setDepth(-10);
     this.skyBg.setScrollFactor(0);
 
+    // Stars (all chapters, colored per chapter)
     this.stars = [];
-    for (let i = 0; i < 40; i++) {
+    const starCount = ch === 2 || ch === 10 ? 60 : 40;
+    for (let i = 0; i < starCount; i++) {
       const star = this.add.image(
-        Math.random() * CANVAS_WIDTH * 2,
+        Math.random() * CANVAS_WIDTH * 3,
         Math.random() * CANVAS_HEIGHT * 0.6,
         'star-dot'
       );
@@ -461,20 +468,266 @@ export class GameScene extends Phaser.Scene {
       star.setScale(0.5 + Math.random() * 0.5);
       star.setDepth(-9);
       star.setScrollFactor(0.08);
+      if (this.chapterData.starColor !== 0xffffff) {
+        star.setTint(this.chapterData.starColor);
+      }
       this.stars.push(star);
     }
 
+    // Chapter-specific mountain/terrain layers
     this.mountainTiles = [];
-    for (let i = 0; i < 2; i++) {
-      const factor = i === 0 ? PHYSICS.PARALLAX_MOUNTAINS : PHYSICS.PARALLAX_CLOUDS;
-      const tile = this.add.tileSprite(
-        CANVAS_WIDTH / 2, CANVAS_HEIGHT * 0.7 + i * 20,
-        CANVAS_WIDTH, 200, 'mountain-layer'
-      );
-      tile.setAlpha(0.6 - i * 0.2);
-      tile.setDepth(-8 + i);
-      tile.setScrollFactor(factor);
-      this.mountainTiles.push(tile);
+    const mtKey = `bg-mountain-${ch}`;
+    if (this.textures.exists(mtKey)) {
+      // 3 mountain layers with different parallax
+      const layers = [
+        { factor: 0.15, alpha: 0.35, yOffset: 30 },
+        { factor: PHYSICS.PARALLAX_MOUNTAINS, alpha: 0.55, yOffset: 15 },
+        { factor: PHYSICS.PARALLAX_CLOUDS, alpha: 0.75, yOffset: 0 },
+      ];
+      for (const l of layers) {
+        const tile = this.add.tileSprite(
+          CANVAS_WIDTH / 2, CANVAS_HEIGHT * 0.7 + l.yOffset,
+          CANVAS_WIDTH, 200, mtKey
+        );
+        tile.setAlpha(l.alpha);
+        tile.setDepth(-8);
+        tile.setScrollFactor(l.factor);
+        this.mountainTiles.push(tile);
+      }
+    }
+
+    // Chapter-specific decorative elements
+    this.createChapterDecor(ch, CANVAS_WIDTH, CANVAS_HEIGHT);
+  }
+
+  private createChapterDecor(ch: number, W: number, H: number): void {
+    this.bgDecor = [];
+
+    switch (ch) {
+      case 1: { // 废弃地球 - ruins, dead trees, rain
+        // Ruins
+        for (let i = 0; i < 3; i++) {
+          const ruin = this.add.image(120 + i * 280, H * 0.58, 'bg-ruin');
+          ruin.setDepth(-7);
+          ruin.setScrollFactor(0.35);
+          ruin.setAlpha(0.5 - i * 0.1);
+          this.bgDecor.push(ruin);
+        }
+        // Clouds
+        for (let i = 0; i < 4; i++) {
+          const cloud = this.add.image(80 + i * 220, 30 + Math.random() * 40, 'bg-cloud');
+          cloud.setDepth(-6);
+          cloud.setScrollFactor(0.12);
+          cloud.setAlpha(0.2 + Math.random() * 0.15);
+          cloud.setScale(0.8 + Math.random() * 0.5);
+          cloud.setTint(this.chapterData.cloudColor || 0x6b7280);
+          this.bgDecor.push(cloud);
+        }
+        break;
+      }
+      case 2: { // 月球基地 - dome, earth, craters
+        // Earth in sky
+        const earth = this.add.graphics();
+        earth.fillStyle(0x3a7ac0, 1);
+        earth.fillCircle(W - 60, 40, 28);
+        earth.fillStyle(0x4a9ae0, 0.6);
+        earth.fillCircle(W - 65, 35, 12);
+        earth.setDepth(-6);
+        earth.setScrollFactor(0.05);
+        this.bgDecor.push(earth);
+        // Dome
+        const dome = this.add.image(200, H * 0.55, 'bg-dome');
+        dome.setDepth(-7);
+        dome.setScrollFactor(0.3);
+        dome.setAlpha(0.6);
+        this.bgDecor.push(dome);
+        break;
+      }
+      case 3: { // 火星殖民地 - dunes, habitat, sun
+        // Sun
+        const sun = this.add.graphics();
+        sun.fillStyle(0xffcc80, 1);
+        sun.fillCircle(0, 0, 18);
+        sun.fillStyle(0xffcc80, 0.15);
+        sun.fillCircle(0, 0, 35);
+        sun.setPosition(W - 80, 35);
+        sun.setDepth(-6);
+        sun.setScrollFactor(0.05);
+        this.bgDecor.push(sun);
+        // Habitats
+        for (let i = 0; i < 2; i++) {
+          const hab = this.add.image(160 + i * 200, H * 0.58, 'bg-habitat');
+          hab.setDepth(-7);
+          hab.setScrollFactor(0.35);
+          hab.setAlpha(0.6);
+          this.bgDecor.push(hab);
+        }
+        break;
+      }
+      case 4: { // 水银星 - pillars, gears
+        // Metallic pillars (drawn with graphics for variety)
+        const pillarData = [
+          { x: 80, h: 120 }, { x: 200, h: 90 },
+          { x: 350, h: 105 }, { x: 500, h: 80 },
+        ];
+        for (const p of pillarData) {
+          const pillar = this.add.graphics();
+          pillar.fillStyle(0x4a5262, 1);
+          pillar.fillRect(-8, 0, 16, p.h);
+          pillar.fillStyle(0x6a7282, 1);
+          pillar.fillRect(-12, -6, 24, 8);
+          pillar.setPosition(p.x, H * 0.55 - p.h);
+          pillar.setDepth(-7);
+          pillar.setScrollFactor(0.3);
+          pillar.setAlpha(0.6);
+          this.bgDecor.push(pillar);
+        }
+        // Gear decorations
+        const gear = this.add.graphics();
+        gear.lineStyle(2, 0x8a92a2, 0.2);
+        gear.strokeCircle(0, 0, 15);
+        gear.strokeCircle(0, 0, 10);
+        gear.setPosition(280, H * 0.4);
+        gear.setDepth(-6);
+        gear.setScrollFactor(0.25);
+        this.bgDecor.push(gear);
+        break;
+      }
+      case 5: { // 冰封星 - ice spikes, aurora
+        // Ice spikes
+        const spikeData = [
+          { x: 50, h: 80 }, { x: 150, h: 60 }, { x: 280, h: 100 },
+          { x: 400, h: 70 }, { x: 520, h: 95 }, { x: 600, h: 55 },
+        ];
+        for (const s of spikeData) {
+          const spike = this.add.graphics();
+          spike.fillStyle(0x3a6898, 0.5);
+          const sp = new Phaser.Curves.Path(-10, 0);
+          sp.lineTo(0, -s.h);
+          sp.lineTo(10, 0);
+          spike.fillPoints(sp.getPoints(8), true);
+          spike.setPosition(s.x, H * 0.6);
+          spike.setDepth(-7);
+          spike.setScrollFactor(0.3);
+          this.bgDecor.push(spike);
+        }
+        // Aurora
+        const aurora = this.add.graphics();
+        aurora.fillStyle(0x64ffda, 0.04);
+        aurora.fillRect(0, 0, W, 50);
+        aurora.fillStyle(0x46ffc8, 0.03);
+        aurora.fillRect(20, 10, W - 40, 30);
+        aurora.setDepth(-5);
+        aurora.setScrollFactor(0);
+        this.bgDecor.push(aurora);
+        break;
+      }
+      case 6: { // 火焰星球 - volcanoes, lava
+        // Volcano 1 (active)
+        const v1 = this.add.image(100, H * 0.52, 'bg-volcano');
+        v1.setDepth(-7);
+        v1.setScrollFactor(0.3);
+        v1.setAlpha(0.7);
+        v1.setScale(1.2);
+        this.bgDecor.push(v1);
+        // Volcano 2 (dormant, smaller)
+        const v2 = this.add.image(450, H * 0.55, 'bg-volcano');
+        v2.setDepth(-7);
+        v2.setScrollFactor(0.25);
+        v2.setAlpha(0.45);
+        v2.setScale(0.9);
+        v2.setTint(0x2a1008);
+        this.bgDecor.push(v2);
+        // Lava glow at bottom
+        const lava = this.add.graphics();
+        lava.fillStyle(0xff6020, 0.12);
+        lava.fillRect(0, H * 0.75, W, H * 0.25);
+        lava.setDepth(-5);
+        lava.setScrollFactor(0);
+        this.bgDecor.push(lava);
+        break;
+      }
+      case 7: { // 雷电星球 - storm clouds
+        // Storm cloud layers
+        for (let i = 0; i < 3; i++) {
+          const cloud = this.add.graphics();
+          cloud.fillStyle(0x1a1a45, 0.5 - i * 0.12);
+          cloud.fillRect(0, 0, W, 25 + i * 12);
+          cloud.setPosition(0, 5 + i * 18);
+          cloud.setDepth(-6);
+          cloud.setScrollFactor(0);
+          this.bgDecor.push(cloud);
+        }
+        break;
+      }
+      case 8: { // 丛林星 - giant trees, canopy
+        // Canopy layer
+        const canopy = this.add.graphics();
+        canopy.fillStyle(0x0c1a0c, 0.6);
+        canopy.fillRect(0, 0, W, H * 0.25);
+        canopy.setDepth(-6);
+        canopy.setScrollFactor(0.15);
+        this.bgDecor.push(canopy);
+        // Giant trees
+        const treePositions = [60, 220, 400, 550];
+        for (let i = 0; i < treePositions.length; i++) {
+          const tree = this.add.image(treePositions[i], H * 0.45, 'bg-tree');
+          tree.setDepth(-7);
+          tree.setScrollFactor(0.28);
+          tree.setAlpha(0.55 - i * 0.05);
+          tree.setScale(0.8 + Math.random() * 0.4);
+          this.bgDecor.push(tree);
+        }
+        break;
+      }
+      case 9: { // 晶体星 - crystal pillars, prisms
+        // Crystal pillars
+        const crystalPositions = [
+          { x: 70, s: 1.2 }, { x: 180, s: 0.9 },
+          { x: 320, s: 1.0 }, { x: 460, s: 1.1 },
+          { x: 570, s: 0.8 },
+        ];
+        for (const c of crystalPositions) {
+          const cp = this.add.image(c.x, H * 0.5, 'bg-crystal-pillar');
+          cp.setDepth(-7);
+          cp.setScrollFactor(0.3);
+          cp.setAlpha(0.5);
+          cp.setScale(c.s);
+          this.bgDecor.push(cp);
+        }
+        // Prism beams
+        const beam = this.add.graphics();
+        beam.fillStyle(0xb388ff, 0.03);
+        beam.fillRect(0, 0, W * 0.6, 3);
+        beam.setPosition(W * 0.1, H * 0.25);
+        beam.setRotation(0.15);
+        beam.setDepth(-5);
+        beam.setScrollFactor(0.1);
+        this.bgDecor.push(beam);
+        break;
+      }
+      case 10: { // 暗物质领域 - portal, void pulse
+        // Portal (top-right)
+        const portal = this.add.graphics();
+        portal.lineStyle(2, 0xa050ff, 0.25);
+        portal.strokeCircle(0, 0, 25);
+        portal.lineStyle(2, 0x6030a0, 0.15);
+        portal.strokeCircle(0, 0, 18);
+        portal.fillStyle(0xa050ff, 0.15);
+        portal.fillCircle(0, 0, 8);
+        portal.setPosition(W - 100, 50);
+        portal.setDepth(-6);
+        portal.setScrollFactor(0.05);
+        this.bgDecor.push(portal);
+        // Void pulse overlay
+        const voidPulse = this.add.graphics();
+        voidPulse.fillStyle(0x6030a0, 0.04);
+        voidPulse.fillEllipse(W / 2, H * 0.4, W * 0.6, H * 0.5);
+        voidPulse.setDepth(-5);
+        voidPulse.setScrollFactor(0);
+        this.bgDecor.push(voidPulse);
+        break;
+      }
     }
   }
 
@@ -563,8 +816,8 @@ export class GameScene extends Phaser.Scene {
       if (Math.random() < WEAPON_SPAWN_CHANCE) {
         this.spawnWeaponPickup(x + w / 2, y - 65);
       }
-      if (i > 3) {
-        const spawnChance = this.config.enemySpawnChance ?? ENEMY_SPAWN_CHANCE;
+      if (i > 1) {
+        const spawnChance = Math.max(this.config.enemySpawnChance ?? 0, ENEMY_SPAWN_CHANCE);
         if (Math.random() < spawnChance) {
           const et = this.pickEnemyType();
           const ey = et === 'flyer' ? y - 50 : y - 15;
@@ -611,14 +864,14 @@ export class GameScene extends Phaser.Scene {
         this.spawnWeaponPickup(x + w / 2, y - 65);
       }
       // Basic enemies — config-driven or chapter-based
-      const spawnChance = this.config.enemySpawnChance ?? ENEMY_SPAWN_CHANCE;
-      if (idx >= 10 && Math.random() < spawnChance) {
+      const spawnChance = Math.max(this.config.enemySpawnChance ?? 0, ENEMY_SPAWN_CHANCE);
+      if (idx >= 5 && Math.random() < spawnChance) {
         const et = this.pickEnemyType();
         const ey = et === 'flyer' ? y - 50 : y - 15;
         this.spawnEnemy(x + w / 2, ey, et);
       }
-      // Advanced enemies (charger/bomber) — from idx 15+
-      if (idx >= 15 && Math.random() < ENEMY_SPAWN_CHANCE * 0.5) {
+      // Advanced enemies (charger/bomber) — from idx 8+
+      if (idx >= 8 && Math.random() < ENEMY_SPAWN_CHANCE * 0.4) {
         const advTypes = getAvailableEnemyTypes(this.config.chapter).filter(
           t => t === 'charger' || t === 'bomber'
         );
@@ -627,8 +880,8 @@ export class GameScene extends Phaser.Scene {
           this.spawnEnemy(x + w / 2, y - 15, et);
         }
       }
-      // Elite enemies — from idx 20+
-      if (idx >= 20 && Math.random() < ELITE_SPAWN_CHANCE) {
+      // Elite enemies — from idx 12+
+      if (idx >= 12 && Math.random() < ELITE_SPAWN_CHANCE) {
         const eliteTypes: EnemyType[] = ['elite_charger', 'elite_fire', 'elite_ice', 'elite_shadow', 'elite_crystal'];
         const available = eliteTypes.filter(t => {
           const cfg = ENEMY_CONFIGS[t];
@@ -639,9 +892,9 @@ export class GameScene extends Phaser.Scene {
           this.spawnEnemy(x + w / 2, y - 15, et);
         }
       }
-      // Mini boss — from idx 25+, 15% on levels 5/9, otherwise 1%
+      // Mini boss — from idx 18+, 15% on levels 5/9, otherwise 3%
       const miniBossChance = isMiniBossLevel(this.config.level) ? 0.15 : MINI_BOSS_SPAWN_CHANCE;
-      if (idx >= 25 && Math.random() < miniBossChance) {
+      if (idx >= 18 && Math.random() < miniBossChance) {
         this.spawnEnemy(x + w / 2, y - 20, 'mini_boss');
       }
     }
@@ -1012,9 +1265,9 @@ export class GameScene extends Phaser.Scene {
     else if (ch === 5) { widthMod = 1.25; }    // Ice: wider platforms for sliding
     else if (ch === 9) { gapMod = 0.85; }      // Invisible: tighter gaps as anchors
 
-    const baseGap = isWarmup ? 50 : 60 + difficulty * 100;
+    const baseGap = isWarmup ? 50 : 60 + difficulty * 60;
     const rawGap = baseGap * gapMult * gapMod * (0.85 + Math.random() * 0.3);
-    const gap = Math.min(maxReach * 0.80, rawGap);
+    const gap = Math.min(maxReach * 0.65, rawGap);
 
     const baseW = isWarmup ? 220 : Math.max(90, 170 - difficulty * 50);
     const w = Math.max(70, (baseW + (Math.random() - 0.5) * 40) * widthMod);
@@ -1911,8 +2164,12 @@ export class GameScene extends Phaser.Scene {
     // Chapter-specific environment effects
     this.liquidMetalTimer += delta;
     this.updateSandstorm(normalized);
+    this.updateCh4Shimmer(delta);
+    this.updateCh5Snow(normalized);
+    this.updateCh6Embers(normalized);
     this.updateLightning(delta);
     this.updateVines(delta, normalized);
+    this.updateCh9Sparkles(normalized);
     this.updateDarkness();
   }
 
@@ -2700,11 +2957,31 @@ export class GameScene extends Phaser.Scene {
         this.envOverlay.setDepth(40);
         this.envOverlay.setScrollFactor(0);
         break;
+      case 4: // Liquid metal shimmer
+        this.envOverlay = this.add.graphics();
+        this.envOverlay.setDepth(40);
+        this.envOverlay.setScrollFactor(0);
+        break;
+      case 5: // Snowfall + aurora
+        this.envOverlay = this.add.graphics();
+        this.envOverlay.setDepth(40);
+        this.envOverlay.setScrollFactor(0);
+        break;
+      case 6: // Embers + heat haze
+        this.envOverlay = this.add.graphics();
+        this.envOverlay.setDepth(40);
+        this.envOverlay.setScrollFactor(0);
+        break;
       case 7: // Lightning
         this.lightningTimer = 3000 + Math.random() * 5000;
         break;
       case 8: // Vine growth
         this.vineSegments = [];
+        break;
+      case 9: // Crystal sparkles
+        this.envOverlay = this.add.graphics();
+        this.envOverlay.setDepth(40);
+        this.envOverlay.setScrollFactor(0);
         break;
       case 10: // Darkness
         this.envOverlay = this.add.graphics();
@@ -2889,5 +3166,125 @@ export class GameScene extends Phaser.Scene {
       this.envOverlay.fillStyle(0x000000, alpha);
       this.envOverlay.fillCircle(playerScreenX, playerScreenY, r);
     }
+  }
+
+  private updateCh4Shimmer(delta: number): void {
+    if (!this.envOverlay || this.config.chapter !== 4) return;
+    this.liquidMetalTimer += delta;
+
+    this.envOverlay.clear();
+
+    // Pulsing metallic shimmer overlay
+    const pulse = 0.02 + Math.sin(this.liquidMetalTimer * 0.001) * 0.015;
+    this.envOverlay.fillStyle(0xb8c0d0, pulse);
+    this.envOverlay.fillRect(0, 0, PHYSICS.CANVAS_WIDTH, PHYSICS.CANVAS_HEIGHT);
+
+    // Random sparkle points
+    if (Math.random() < 0.05) {
+      const sx = Math.random() * PHYSICS.CANVAS_WIDTH;
+      const sy = Math.random() * PHYSICS.CANVAS_HEIGHT * 0.6 + PHYSICS.CANVAS_HEIGHT * 0.2;
+      this.envOverlay.fillStyle(0xd0d8e8, 0.3);
+      this.envOverlay.fillCircle(sx, sy, 2);
+    }
+  }
+
+  private updateCh5Snow(normalized: number): void {
+    if (!this.envOverlay || this.config.chapter !== 5) return;
+
+    this.envOverlay.clear();
+
+    // Aurora glow
+    const auroraAlpha = 0.015 + Math.sin(this.time.now * 0.0005) * 0.01;
+    this.envOverlay.fillStyle(0x64ffda, auroraAlpha);
+    this.envOverlay.fillRect(0, 10, PHYSICS.CANVAS_WIDTH, 40);
+
+    // Snowfall particles
+    if (Math.random() < 0.25 * normalized && this.envParticles.length < 40) {
+      const obj = this.add.circle(
+        Math.random() * PHYSICS.CANVAS_WIDTH,
+        -5,
+        1.5 + Math.random() * 1.5,
+        0xffffff,
+        0.5
+      );
+      obj.setDepth(39);
+      obj.setScrollFactor(0);
+      this.envParticles.push({
+        obj,
+        data: { vx: -0.3 + Math.random() * 0.6, vy: 0.8 + Math.random() * 0.5, life: 300 },
+      });
+    }
+
+    for (let i = this.envParticles.length - 1; i >= 0; i--) {
+      const p = this.envParticles[i];
+      p.obj.x += p.data.vx * normalized;
+      p.obj.y += p.data.vy * normalized;
+      p.data.life -= normalized;
+      if (p.data.life <= 0 || p.obj.y > PHYSICS.CANVAS_HEIGHT) {
+        p.obj.destroy();
+        this.envParticles.splice(i, 1);
+      }
+    }
+  }
+
+  private updateCh6Embers(normalized: number): void {
+    if (!this.envOverlay || this.config.chapter !== 6) return;
+
+    this.envOverlay.clear();
+
+    // Heat haze pulse
+    const hazeAlpha = 0.02 + Math.sin(this.time.now * 0.0008) * 0.015;
+    this.envOverlay.fillStyle(0xff6020, hazeAlpha);
+    this.envOverlay.fillRect(0, PHYSICS.CANVAS_HEIGHT * 0.6, PHYSICS.CANVAS_WIDTH, PHYSICS.CANVAS_HEIGHT * 0.4);
+
+    // Ember particles rising
+    if (Math.random() < 0.15 * normalized && this.envParticles.length < 30) {
+      const obj = this.add.circle(
+        Math.random() * PHYSICS.CANVAS_WIDTH,
+        PHYSICS.CANVAS_HEIGHT + 5,
+        1 + Math.random() * 2,
+        0xff6020,
+        0.6
+      );
+      obj.setDepth(39);
+      obj.setScrollFactor(0);
+      this.envParticles.push({
+        obj,
+        data: { vx: -0.5 + Math.random(), vy: -1.5 - Math.random(), life: 250 },
+      });
+    }
+
+    for (let i = this.envParticles.length - 1; i >= 0; i--) {
+      const p = this.envParticles[i];
+      p.obj.x += p.data.vx * normalized;
+      p.obj.y += p.data.vy * normalized;
+      p.data.life -= normalized;
+      p.obj.setAlpha(p.data.life / 250);
+      if (p.data.life <= 0 || p.obj.y < -10) {
+        p.obj.destroy();
+        this.envParticles.splice(i, 1);
+      }
+    }
+  }
+
+  private updateCh9Sparkles(normalized: number): void {
+    if (!this.envOverlay || this.config.chapter !== 9) return;
+
+    this.envOverlay.clear();
+
+    // Random crystal sparkle flashes
+    if (Math.random() < 0.08 * normalized) {
+      const sx = Math.random() * PHYSICS.CANVAS_WIDTH;
+      const sy = Math.random() * PHYSICS.CANVAS_HEIGHT * 0.7;
+      this.envOverlay.fillStyle(0xb388ff, 0.4);
+      this.envOverlay.fillCircle(sx, sy, 2);
+      this.envOverlay.fillStyle(0xe0c0ff, 0.15);
+      this.envOverlay.fillCircle(sx, sy, 6);
+    }
+
+    // Slow-moving prism beam
+    const beamY = PHYSICS.CANVAS_HEIGHT * 0.25 + Math.sin(this.time.now * 0.0003) * 20;
+    this.envOverlay.fillStyle(0xb388ff, 0.02);
+    this.envOverlay.fillRect(0, beamY, PHYSICS.CANVAS_WIDTH, 2);
   }
 }

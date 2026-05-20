@@ -7,9 +7,10 @@ interface Props {
   selectedPet: string | null;
   onSelect: (petId: string | null) => void;
   onBack: () => void;
+  standalone?: boolean;
 }
 
-export function PetSelect({ ownedPets, selectedPet, onSelect, onBack }: Props) {
+export function PetSelect({ ownedPets, selectedPet, onSelect, onBack, standalone }: Props) {
   const [selected, setSelected] = useState<string | null>(selectedPet);
 
   const hexColor = (n: number) => '#' + n.toString(16).padStart(6, '0');
@@ -29,10 +30,12 @@ export function PetSelect({ ownedPets, selectedPet, onSelect, onBack }: Props) {
       color: '#e0dcd4', overflow: 'auto', padding: '20px 0',
     }}>
       <h2 style={{ color: '#c8aa6e', fontSize: 20, fontWeight: 400, letterSpacing: 4, margin: '0 0 4px' }}>
-        选择同行宠物
+        {standalone ? '宠物' : '选择同行宠物'}
       </h2>
       <p style={{ color: '#7a7060', fontSize: 12, margin: '0 0 20px' }}>
-        宠物会跟随你进入关卡，提供被动增益和主动技能
+        {standalone
+          ? '查看你的宠物伙伴'
+          : '宠物会跟随你进入关卡，提供被动增益和主动技能'}
       </p>
 
       {/* 已拥有宠物 */}
@@ -140,7 +143,7 @@ export function PetSelect({ ownedPets, selectedPet, onSelect, onBack }: Props) {
           background: selected ? 'rgba(107,184,232,0.15)' : 'rgba(255,255,255,0.03)',
           color: selected ? '#6bb8e8' : '#5a5a60', fontSize: 12,
           cursor: selected ? 'pointer' : 'default', fontFamily: 'inherit',
-        }}>{selected ? '确认选择' : '不带宠物'}</button>
+        }}>{standalone ? '保存选择' : selected ? '确认选择' : '不带宠物'}</button>
       </div>
     </div>
   );

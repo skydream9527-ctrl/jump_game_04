@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>天穹跃迁 — 10章节场景设计 v3</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#080810;color:#e0dcd4;font-family:'Georgia','Noto Serif SC',serif;padding-bottom:80px}
+h1{text-align:center;color:#c8aa6e;font-size:28px;letter-spacing:6px;padding:40px 0 8px;font-weight:400}
+.sub{text-align:center;color:#7a7060;font-size:13px;margin-bottom:50px}
+.ch{max-width:900px;margin:0 auto 70px;padding:0 20px}
+.ch-h{display:flex;align-items:center;gap:16px;margin-bottom:16px}
+.ch-n{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:#000;flex-shrink:0}
+.ch-t{font-size:22px;color:#c8aa6e;font-weight:400;letter-spacing:3px}
+.ch-th{color:#7a7060;font-size:12px;margin-left:8px}
+.sb{width:100%;aspect-ratio:852/393;border-radius:12px;overflow:hidden;position:relative;border:1px solid rgba(200,170,110,0.15)}
+.sl{position:absolute;top:10px;left:14px;font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:2px;z-index:10}
+.desc{margin-top:14px;font-size:13px;color:#a09880;line-height:1.9}
+.desc strong{color:#c8aa6e;font-weight:normal}
+.desc em{color:#6bb8e8;font-style:normal}
+.pal{display:flex;gap:6px;margin-top:10px}
+.pal span{width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,0.08)}
+.tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.tag{padding:3px 10px;border-radius:12px;font-size:11px;border:1px solid rgba(200,170,110,0.2);color:#a09880}
+.pd{position:absolute;width:8px;height:12px;background:#ffd980;border-radius:2px;z-index:5;box-shadow:0 0 6px rgba(255,217,128,0.6)}
+.abs{position:absolute}
+/* shared animations */
+@keyframes tw{0%,100%{opacity:.3}50%{opacity:1}}
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
+@keyframes pulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.15)}}
+@keyframes drift{0%,100%{transform:translateX(0)}50%{transform:translateX(-30px)}}
+@keyframes fall{0%{transform:translateY(-20px);opacity:0}15%{opacity:1}100%{transform:translateY(400px);opacity:0}}
+
+/* ===== CH1 荒废地球 ===== */
+.c1{background:linear-gradient(180deg,#3a4050 0%,#4a5568 12%,#5a6578 30%,#6b7280 50%,#5a6578 70%,#4a5568 85%,#374151 100%)}
+.c1 .sky-glow{position:absolute;top:0;left:25%;width:50%;height:35%;background:radial-gradient(ellipse,rgba(200,180,140,0.1),transparent 70%)}
+.c1 .cloud{position:absolute;background:rgba(100,116,139,0.22);border-radius:50%;filter:blur(5px)}
+.c1 .mt{position:absolute;bottom:0;border-left:solid transparent;border-right:solid transparent;border-bottom:solid}
+.c1 .mt-f{border-bottom-color:#2d3748;opacity:.45}
+.c1 .mt-m{border-bottom-color:#374151;opacity:.65}
+.c1 .mt-n{border-bottom-color:#4b5563;opacity:.85}
+.c1 .ruin{position:absolute;bottom:0;background:#4b5563}
+.c1 .rw{transform:skewX(-3deg)}
+.c1 .rw::before{content:'';position:absolute;top:-25px;left:0;width:110%;height:25px;background:#4b5563;clip-path:polygon(0 100%,15% 0,85% 0,100% 100%)}
+.c1 .rt{border-radius:2px 2px 0 0}
+.c1 .rt::before{content:'';position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-bottom:14px solid #4b5563}
+.c1 .rl{border-radius:2px 2px 0 0}
+.c1 .debris{position:absolute;background:#5a6578;border-radius:1px}
+.c1 .ground{position:absolute;bottom:0;width:100%;height:18%;background:linear-gradient(180deg,#374151,#2d3748 40%,#1f2937)}
+.c1 .gl{position:absolute;width:100%;height:1px;background:rgba(107,114,128,.3)}
+.c1 .dust{position:absolute;width:5px;height:5px;background:rgba(156,163,175,.25);border-radius:50%;animation:drift 6s ease-in-out infinite}
+.c1 .weed{position:absolute;bottom:18%;width:3px;height:14px;background:#4a5a3a;border-radius:1px;transform-origin:bottom;animation:sway 3s ease-in-out infinite}
+@keyframes sway{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+.c1 .plat{position:absolute;background:linear-gradient(180deg,#6b7280,#5a6578 60%,#4b5563);border-radius:3px;border-top:2px solid #8a9aaa}
+.c1 .bird{position:absolute;width:12px;height:3px;background:transparent;border-top:2px solid rgba(100,116,139,.35);border-radius:50% 50% 0 0;animation:birdF 10s linear infinite}
+@keyframes birdF{0%{transform:translateX(-60px)}100%{transform:translateX(920px)}}
+.c1 .rain{position:absolute;width:1px;height:10px;background:linear-gradient(180deg,transparent,rgba(150,170,200,.15));animation:rainA 1.2s linear infinite}
+@keyframes rainA{0%{transform:translateY(-20px);opacity:0}20%{opacity:1}100%{transform:translateY(400px);opacity:0}}
+.c1 .river{position:absolute;bottom:16%;height:6px;background:linear-gradient(90deg,transparent,rgba(100,130,170,.15),rgba(100,130,170,.2),rgba(100,130,170,.15),transparent);border-radius:3px}
+.c1 .statue{position:absolute;bottom:18%;background:#4b5563;border-radius:2px}
+.c1 .statue::before{content:'';position:absolute;top:-20px;left:50%;transform:translateX(-50%);width:14px;height:14px;background:#4b5563;border-radius:50%}
+.c1 .tree-dead{position:absolute;bottom:18%;width:6px;background:#3a3a3a;border-radius:2px}
+.c1 .tree-dead::before{content:'';position:absolute;top:-5px;left:-8px;width:22px;height:8px;background:#3a3a3a;border-radius:50%;opacity:.5}
+
+/* ===== CH2 月球基地 ===== */
+.c2{background:linear-gradient(180deg,#000 0%,#030308 20%,#08081a 50%,#0c0c22 80%,#10102a 100%)}
+.c2 .star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;animation:tw 3s ease-in-out infinite}
+.c2 .star-lg{width:3px;height:3px;box-shadow:0 0 4px rgba(255,255,255,.3)}
+.c2 .nebula{position:absolute;border-radius:50%;filter:blur(25px);opacity:.12}
+.c2 .planet-far{position:absolute;border-radius:50%}
+.c2 .earth{position:absolute;top:6%;right:8%;width:58px;height:58px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#5a9ae0,#3a7ac0 40%,#2a5a90 70%,#1a3a60);box-shadow:0 0 30px rgba(90,154,224,.25),inset -8px -5px 18px rgba(0,0,0,.4)}
+.c2 .earth::before{content:'';position:absolute;top:12px;left:8px;width:22px;height:14px;background:rgba(80,180,80,.35);border-radius:50%;filter:blur(2px)}
+.c2 .earth::after{content:'';position:absolute;top:28px;right:6px;width:16px;height:10px;background:rgba(80,180,80,.25);border-radius:50%;filter:blur(2px)}
+.c2 .moon-sf{position:absolute;bottom:0;width:100%;height:38%;background:linear-gradient(180deg,#222235,#1c1c2e 30%,#16162a 60%,#10102a);border-radius:55% 42% 0 0 / 14% 10% 0 0}
+.c2 .crater{position:absolute;border-radius:50%;background:rgba(0,0,0,.22);box-shadow:inset 1px 1px 4px rgba(255,255,255,.04)}
+.c2 .dome{position:absolute;border-radius:50px 50px 0 0;background:rgba(100,180,255,.05);border:1px solid rgba(100,180,255,.1)}
+.c2 .dome-g{position:absolute;border-radius:30px 30px 0 0;background:rgba(100,180,255,.025);border:1px solid rgba(100,180,255,.05)}
+.c2 .win{position:absolute;background:rgba(150,200,255,.18);border-radius:2px}
+.c2 .ant{position:absolute;bottom:34%;width:3px;background:linear-gradient(180deg,#888,#555)}
+.c2 .ant::before{content:'';position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:12px;height:12px;border-radius:50%;border:2px solid #666}
+.c2 .ant::after{content:'';position:absolute;top:-3px;left:50%;transform:translateX(-50%);width:6px;height:6px;background:rgba(255,50,50,.6);border-radius:50%;animation:blink 2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.c2 .solar{position:absolute;background:linear-gradient(135deg,#2a4a7a,#1a3a6a);border:1px solid #3a5a8a}
+.c2 .rover{position:absolute;width:32px;height:14px;background:#666;border-radius:4px}
+.c2 .rover::before,.c2 .rover::after{content:'';position:absolute;bottom:-5px;width:9px;height:9px;background:#555;border-radius:50%}
+.c2 .rover::before{left:4px}
+.c2 .rover::after{right:4px}
+.c2 .footprint{position:absolute;width:6px;height:4px;background:rgba(0,0,0,.12);border-radius:50%}
+.c2 .satellite{position:absolute;width:20px;height:8px;background:#888;border-radius:2px}
+.c2 .satellite::before,.c2 .satellite::after{content:'';position:absolute;top:-2px;width:12px;height:12px;background:linear-gradient(135deg,#2a4a7a,#1a3a6a);border:1px solid #3a5a8a}
+.c2 .satellite::before{left:-14px}
+.c2 .satellite::after{right:-14px}
+.c2 .plat{position:absolute;background:linear-gradient(180deg,#d0d0d0,#b0b0b0 50%,#909090);border-radius:2px;border-top:2px solid #e0e0e0}
+
+/* ===== CH3 火星殖民地 ===== */
+.c3{background:linear-gradient(180deg,#903018 0%,#b05028 12%,#c06030 25%,#d07040 40%,#bf5b3b 55%,#a05030 72%,#8a4020 100%)}
+.c3 .dust-l{position:absolute;inset:0;background:linear-gradient(90deg,rgba(200,120,60,.18),rgba(180,100,50,.04),rgba(200,120,60,.25));animation:drift 8s ease-in-out infinite}
+.c3 .sun{position:absolute;top:6%;right:12%;width:35px;height:35px;background:radial-gradient(circle,#ffcc80,#ff9040);border-radius:50%;box-shadow:0 0 50px rgba(255,180,80,.3)}
+.c3 .sun::before{content:'';position:absolute;inset:-8px;border-radius:50%;background:radial-gradient(circle,rgba(255,200,100,.1),transparent 70%)}
+.c3 .dune{position:absolute;background:#a05030;border-radius:50% 50% 0 0}
+.c3 .mars-g{position:absolute;bottom:0;width:100%;height:28%;background:linear-gradient(180deg,#8a4020,#6a3018 40%,#5a2810)}
+.c3 .gt{position:absolute;bottom:0;width:100%;height:28%;background:repeating-linear-gradient(90deg,transparent,rgba(100,50,25,.15) 2px,transparent 4px)}
+.c3 .hab{position:absolute;background:linear-gradient(180deg,#c07040,#a05830);border:2px solid #d08050;border-radius:4px}
+.c3 .hw{position:absolute;background:rgba(255,200,100,.32);border-radius:2px;box-shadow:0 0 6px rgba(255,200,100,.18)}
+.c3 .ha{position:absolute;width:2px;background:#b06838}
+.c3 .ha::before{content:'';position:absolute;top:-4px;left:-3px;width:8px;height:8px;border-radius:50%;border:1px solid #c07848}
+.c3 .solar{position:absolute;background:linear-gradient(180deg,#2a5a8a,#1a4a7a);border:1px solid #3a6a9a}
+.c3 .rock{position:absolute;background:#6a3018}
+.c3 .sp{position:absolute;width:3px;height:3px;background:rgba(220,160,100,.35);border-radius:50%;animation:spA 4s linear infinite}
+@keyframes spA{0%{transform:translate(0);opacity:0}20%{opacity:1}100%{transform:translate(-100px,20px);opacity:0}}
+.c3 .cactus{position:absolute;bottom:26%;width:8px;background:#4a6a2a;border-radius:4px}
+.c3 .cactus::before{content:'';position:absolute;top:5px;left:-8px;width:12px;height:6px;background:#4a6a2a;border-radius:4px 0 0 4px}
+.c3 .cactus::after{content:'';position:absolute;top:12px;right:-8px;width:10px;height:5px;background:#4a6a2a;border-radius:0 4px 4px 0}
+.c3 .plat{position:absolute;background:linear-gradient(180deg,#d08050,#b06838 50%,#905028);border-radius:3px;border-top:2px solid #e09060}
+
+/* ===== CH4 水银星 ===== */
+.c4{background:linear-gradient(180deg,#151520 0%,#222230 18%,#303040 38%,#3e3e50 55%,#303040 75%,#222230 100%)}
+.c4 .neb{position:absolute;border-radius:50%;filter:blur(30px);opacity:.08}
+.c4 .msf{position:absolute;bottom:0;width:100%;height:42%;background:linear-gradient(180deg,#6a7282 0%,#5a6272 25%,#4a5262 55%,#3a4252 100%)}
+.c4 .mp{position:absolute;bottom:6%;background:linear-gradient(90deg,#8a92a2,#b8c0d0,#98a0b0,#c8d0e0,#8a92a2);border-radius:50%;animation:metalSh 3.5s ease-in-out infinite}
+@keyframes metalSh{0%,100%{opacity:.65;filter:brightness(1)}50%{opacity:1;filter:brightness(1.25)}}
+.c4 .md{position:absolute;width:5px;background:linear-gradient(180deg,#a8b0c0,transparent);border-radius:3px 3px 0 0;animation:dripA 2.5s ease-in infinite}
+@keyframes dripA{0%{transform:translateY(0);opacity:1}100%{transform:translateY(90px);opacity:0}}
+.c4 .pillar{position:absolute;background:linear-gradient(90deg,#4a5262,#6a7282,#5a6272,#4a5262);border-radius:4px 4px 0 0}
+.c4 .pillar::before{content:'';position:absolute;top:-10px;left:-6px;right:-6px;height:10px;background:linear-gradient(90deg,#5a6272,#7a8292,#5a6272);border-radius:3px}
+.c4 .rivet{position:absolute;width:6px;height:6px;background:radial-gradient(circle,#8a92a2,#5a6272);border-radius:50%;border:1px solid rgba(100,108,120,.25)}
+.c4 .pipe{position:absolute;background:linear-gradient(90deg,#4a5262,#6a7282,#4a5262);border-radius:3px}
+.c4 .gear{position:absolute;border-radius:50%;border:3px solid rgba(120,128,140,.2);animation:gearSpin 12s linear infinite}
+@keyframes gearSpin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+.c4 .refl{position:absolute;bottom:0;width:100%;height:10%;background:linear-gradient(180deg,rgba(150,158,170,.12),rgba(80,88,100,.04))}
+.c4 .glow{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(190,200,220,.2),transparent);filter:blur(12px);animation:pulse 4s ease-in-out infinite}
+.c4 .plat{position:absolute;background:linear-gradient(180deg,#c0c8d8,#a0a8b8 50%,#808898);border-radius:2px;border-top:2px solid #d0d8e8}
+
+/* ===== CH5 冰封星 ===== */
+.c5{background:linear-gradient(180deg,#040c18 0%,#081828 15%,#0e2540 32%,#153050 50%,#0e2238 72%,#081525 100%)}
+.c5 .aurora{position:absolute;top:2%;left:3%;width:94%;height:22%;background:linear-gradient(90deg,transparent,rgba(70,255,170,.05),rgba(70,200,255,.08),rgba(140,70,255,.05),rgba(70,255,170,.03),transparent);filter:blur(14px);animation:aurA 8s ease-in-out infinite}
+.c5 .aurora2{position:absolute;top:7%;left:12%;width:76%;height:12%;background:linear-gradient(90deg,transparent,rgba(90,200,255,.04),rgba(180,90,255,.03),transparent);filter:blur(18px);animation:aurA 11s ease-in-out infinite reverse}
+@keyframes aurA{0%,100%{transform:translateX(0) scaleY(1)}50%{transform:translateX(25px) scaleY(1.3)}}
+.c5 .ig{position:absolute;bottom:0;width:100%;height:32%;background:linear-gradient(180deg,#3a6898,#2a5078 30%,#1a3860 60%,#142a48)}
+.c5 .spike{position:absolute;bottom:28%;width:0;height:0;border-left:solid transparent;border-right:solid transparent;border-bottom:solid rgba(150,205,235,.45)}
+.c5 .shard{position:absolute;bottom:30%;background:linear-gradient(180deg,rgba(170,215,250,.55),rgba(110,175,215,.15));clip-path:polygon(50% 0%,100% 100%,0% 100%)}
+.c5 .frost{position:absolute;bottom:28%;width:100%;height:28px;background:linear-gradient(0deg,rgba(170,215,250,.12),transparent)}
+.c5 .snow{position:absolute;width:3px;height:3px;background:rgba(255,255,255,.45);border-radius:50%;animation:fall 5s linear infinite}
+.c5 .snow-lg{width:4px;height:4px;background:rgba(255,255,255,.55)}
+.c5 .snow-sm{width:2px;height:2px;background:rgba(255,255,255,.3)}
+.c5 .ibridge{position:absolute;height:5px;background:linear-gradient(90deg,transparent,rgba(150,205,235,.25),rgba(150,205,235,.25),transparent);border-radius:3px}
+.c5 .wolf{position:absolute;bottom:30%;width:20px;height:12px;background:rgba(180,200,220,.15);border-radius:40% 60% 0 0}
+.c5 .wolf::before{content:'';position:absolute;top:-5px;left:2px;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:6px solid rgba(180,200,220,.12)}
+.c5 .plat{position:absolute;background:linear-gradient(180deg,#c0e8ff,#90c8e8 50%,#60a0c8);border-radius:2px;border-top:2px solid #e0f0ff}
+
+/* ===== CH6 火焰星球 ===== */
+.c6{background:linear-gradient(180deg,#1a0800 0%,#2a1008 15%,#3a1810 30%,#4a2018 50%,#3a1510 70%,#2a0c08 100%)}
+.c6 .smoke{position:absolute;background:rgba(80,60,40,.2);border-radius:50%;filter:blur(8px);animation:drift 10s ease-in-out infinite}
+.c6 .ember{position:absolute;bottom:25%;width:4px;height:4px;background:#ff6020;border-radius:50%;box-shadow:0 0 8px rgba(255,96,32,.6);animation:emberA 2.5s ease-in infinite}
+@keyframes emberA{0%{transform:translateY(0) translateX(0);opacity:1}100%{transform:translateY(-120px) translateX(-30px);opacity:0}}
+.c6 .volcano{position:absolute;bottom:18%;background:linear-gradient(180deg,#3a1810,#2a1008 60%,#1a0800);clip-path:polygon(15% 0,35% 0,40% 10%,50% 0,60% 0,65% 10%,85% 0,100% 40%,100% 100%,0 100%,0 40%)}
+.c6 .volcano-d{background:linear-gradient(180deg,#2a1008,#1a0800 60%,#100500);clip-path:polygon(20% 0,40% 0,45% 8%,55% 0,80% 0,100% 50%,100% 100%,0 100%,0 50%)}
+.c6 .crater-glow{position:absolute;top:5%;left:40%;width:20%;height:12%;background:radial-gradient(ellipse,rgba(255,120,30,.5),rgba(255,60,10,.2) 60%,transparent);animation:pulse 2s ease-in-out infinite}
+.c6 .lava-flow{position:absolute;top:15%;background:linear-gradient(180deg,rgba(255,100,20,.7),rgba(255,60,10,.3) 60%,transparent);border-radius:0 0 50% 50%;animation:lavaF 3s ease-in-out infinite}
+@keyframes lavaF{0%,100%{opacity:.7}50%{opacity:1}}
+.c6 .f6{position:absolute;bottom:18%;background:linear-gradient(180deg,#2a1008,#1a0800);border-radius:40% 45% 0 0}
+.c6 .lava-r{position:absolute;height:8px;background:linear-gradient(90deg,transparent,rgba(255,80,20,.3),rgba(255,120,40,.4),rgba(255,80,20,.3),transparent);border-radius:4px;animation:lavaP 3s ease-in-out infinite}
+.c6 .lava-p{position:absolute;bottom:18%;background:radial-gradient(ellipse,rgba(255,100,30,.4),rgba(255,60,10,.2) 60%,transparent);border-radius:50%;animation:lavaP 2.5s ease-in-out infinite}
+@keyframes lavaP{0%,100%{opacity:.6;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
+.c6 .srock{position:absolute;background:linear-gradient(180deg,#3a2018,#2a1510);border-radius:30% 50% 40% 60%}
+.c6 .ctree{position:absolute;bottom:20%;width:5px;background:#1a1008;border-radius:2px}
+.c6 .ctree::before{content:'';position:absolute;top:-4px;left:-6px;width:16px;height:6px;background:#1a1008;border-radius:50%;opacity:.5}
+.c6 .fwisp{position:absolute;width:6px;height:6px;background:radial-gradient(circle,rgba(255,150,50,.6),transparent);border-radius:50%;animation:fwispA 2s ease-in-out infinite}
+@keyframes fwispA{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(-12px);opacity:.8}}
+.c6 .heat-haze{position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(255,60,10,.03) 80%,rgba(255,80,20,.06));animation:hazeA 4s ease-in-out infinite}
+@keyframes hazeA{0%,100%{opacity:.5}50%{opacity:1}}
+.c6 .lava-g{position:absolute;bottom:0;width:100%;height:18%;background:linear-gradient(180deg,#3a1510,#2a0c08 40%,#1a0500)}
+.c6 .plat{position:absolute;background:linear-gradient(180deg,#8a4020,#6a3018 50%,#4a2010);border-radius:3px;border-top:2px solid #a05030}
+
+/* ===== CH7 雷电星球 ===== */
+.c7{background:linear-gradient(180deg,#080818 0%,#0c0c28 18%,#141438 40%,#1a1a45 60%,#12123a 80%,#0a0a25 100%)}
+.c7 .scloud{position:absolute;background:linear-gradient(180deg,rgba(30,30,60,.7),rgba(20,20,45,.5));border-radius:0 0 50% 50% / 0 0 20% 20%}
+.c7 .scloud-l{background:linear-gradient(180deg,rgba(40,40,70,.5),rgba(25,25,50,.3));filter:blur(2px)}
+.c7 .scloud-d{background:linear-gradient(180deg,rgba(20,20,50,.8),rgba(15,15,40,.6))}
+.c7 .bolt{position:absolute;width:3px;background:linear-gradient(180deg,rgba(160,200,255,.9),rgba(100,160,255,.4) 40%,transparent);animation:boltA 4s ease-in-out infinite;filter:blur(1px)}
+.c7 .bolt-faint{opacity:.4;width:2px}
+@keyframes boltA{0%,5%,15%,100%{opacity:0}6%,14%{opacity:1}}
+.c7 .lglow{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(120,170,255,.15),transparent);filter:blur(15px);animation:lglowA 4s ease-in-out infinite}
+@keyframes lglowA{0%,5%,15%,100%{opacity:0}6%,14%{opacity:1}}
+.c7 .m7{position:absolute;bottom:18%;background:linear-gradient(180deg,#1a1a3a,#0c0c25);border-radius:40% 45% 0 0}
+.c7 .rain7{position:absolute;width:1px;height:15px;background:linear-gradient(180deg,transparent,rgba(120,160,220,.2));animation:rain7A .8s linear infinite}
+@keyframes rain7A{0%{transform:translateY(-20px) translateX(0);opacity:0}20%{opacity:1}100%{transform:translateY(400px) translateX(-20px);opacity:0}}
+.c7 .tower{position:absolute;width:6px;background:linear-gradient(180deg,#4a4a6a,#3a3a5a);border-radius:2px}
+.c7 .tower-arm{position:absolute;height:3px;background:#4a4a6a;border-radius:1px}
+.c7 .tower-spark{position:absolute;width:4px;height:4px;background:rgba(150,200,255,.5);border-radius:50%;box-shadow:0 0 8px rgba(150,200,255,.3);animation:blink 1.5s ease-in-out infinite}
+.c7 .arc{position:absolute;height:2px;background:linear-gradient(90deg,transparent,rgba(150,200,255,.1),rgba(150,200,255,.15),rgba(150,200,255,.1),transparent);animation:arcA 3s ease-in-out infinite}
+@keyframes arcA{0%,100%{opacity:.3}50%{opacity:.8}}
+.c7 .tground{position:absolute;bottom:0;width:100%;height:18%;background:linear-gradient(180deg,#1a1a35,#0c0c20 40%,#080818)}
+.c7 .tpuddle{position:absolute;bottom:18%;background:linear-gradient(90deg,transparent,rgba(100,140,200,.12),rgba(100,140,200,.12),transparent);border-radius:50%;animation:puddle 4s ease-in-out infinite}
+@keyframes puddle{0%,100%{opacity:.5}50%{opacity:1}}
+.c7 .wind{position:absolute;width:80px;height:1px;background:linear-gradient(90deg,transparent,rgba(150,170,200,.1),transparent);animation:windA 3s linear infinite}
+@keyframes windA{0%{transform:translateX(-100px);opacity:0}30%{opacity:1}100%{transform:translateX(900px);opacity:0}}
+.c7 .plat{position:absolute;background:linear-gradient(180deg,#4a5a7a,#3a4a6a 50%,#2a3a5a);border-radius:2px;border-top:2px solid #5a6a8a}
+
+/* ===== CH8 丛林星 ===== */
+.c8{background:linear-gradient(180deg,#040a04 0%,#081208 20%,#0c1a0c 40%,#102010 60%,#0a150a 80%,#060e06 100%)}
+.c8 .star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;animation:tw 3s ease-in-out infinite}
+.c8s{opacity:.5}
+.c8 .jmoon{position:absolute;top:5%;right:12%;width:30px;height:30px;background:radial-gradient(circle at 40% 40%,#e0e8d0,#b0b890);border-radius:50%;box-shadow:0 0 20px rgba(200,210,180,.15)}
+.c8 .jmoon::before{content:'';position:absolute;top:5px;left:8px;width:8px;height:8px;background:rgba(0,0,0,.08);border-radius:50%}
+.c8 .canopy{position:absolute;background:linear-gradient(180deg,#0c1a0c,#0a150a 40%,transparent);border-radius:0 0 40% 40% / 0 0 100% 100%}
+.c8 .gtree{position:absolute;bottom:20%;background:linear-gradient(90deg,#1a2a1a,#2a3a2a,#1a2a1a);border-radius:3px}
+.c8 .gtree-top{position:absolute;background:radial-gradient(ellipse,rgba(30,70,30,.7),rgba(20,50,20,.3) 70%,transparent);border-radius:50%}
+.c8 .vine{position:absolute;width:3px;background:linear-gradient(180deg,#2a5a2a,#3a6a3a 50%,#2a5a2a);border-radius:2px;animation:vineSway 5s ease-in-out infinite;transform-origin:top}
+@keyframes vineSway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+.c8 .jflower{position:absolute;width:8px;height:8px;background:radial-gradient(circle,#ff60a0,#d04080);border-radius:50%;box-shadow:0 0 6px rgba(255,96,160,.3)}
+.c8 .mush{position:absolute;width:16px;height:10px;background:radial-gradient(ellipse,rgba(100,255,100,.3),rgba(50,180,50,.15));border-radius:50% 50% 0 0;box-shadow:0 0 10px rgba(100,255,100,.15)}
+.c8 .mush::before{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:4px;height:8px;background:#3a5a3a;border-radius:1px}
+.c8 .firefly{position:absolute;width:4px;height:4px;background:radial-gradient(circle,rgba(200,255,100,.8),rgba(150,255,50,.2));border-radius:50%;box-shadow:0 0 8px rgba(200,255,100,.4);animation:flyA 6s ease-in-out infinite}
+@keyframes flyA{0%{transform:translate(0,0);opacity:.3}25%{transform:translate(15px,-10px);opacity:.8}50%{transform:translate(-8px,-20px);opacity:.5}75%{transform:translate(12px,-5px);opacity:.9}100%{transform:translate(0,0);opacity:.3}}
+.c8 .jground{position:absolute;bottom:0;width:100%;height:20%;background:linear-gradient(180deg,#1a3a1a,#0c1a0c 40%,#060e06)}
+.c8 .grass{position:absolute;background:#2a5a2a;border-radius:1px;transform-origin:bottom;animation:sway 3s ease-in-out infinite}
+.c8 .plat{position:absolute;background:linear-gradient(180deg,#3a6a3a,#2a5a2a 50%,#1a4a1a);border-radius:3px;border-top:2px solid #4a8a4a}
+
+/* ===== CH9 晶体星 ===== */
+.c9{background:linear-gradient(180deg,#08081a 0%,#0c0c28 18%,#141438 38%,#1a1848 55%,#12103a 75%,#0a0825 100%)}
+.c9 .star{position:absolute;width:2px;height:2px;background:#d0c0ff;border-radius:50%;animation:tw 3s ease-in-out infinite}
+.c9s{opacity:.4}
+.c9 .cneb{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(120,60,200,.15),transparent);filter:blur(20px)}
+.c9 .gcrystal{position:absolute;background:linear-gradient(180deg,rgba(160,100,255,.35),rgba(120,60,200,.15) 60%,transparent);clip-path:polygon(50% 0%,85% 25%,100% 70%,70% 100%,30% 100%,0% 70%,15% 25%);animation:crystalGlow 4s ease-in-out infinite}
+@keyframes crystalGlow{0%,100%{opacity:.6;filter:brightness(1)}50%{opacity:1;filter:brightness(1.3)}}
+.c9 .beam{position:absolute;height:2px;background:linear-gradient(90deg,transparent,rgba(200,150,255,.06),rgba(150,200,255,.04),transparent);filter:blur(1px)}
+.c9 .cshard{position:absolute;background:linear-gradient(180deg,rgba(180,136,255,.5),rgba(140,100,220,.2));clip-path:polygon(50% 0%,100% 100%,0% 100%);animation:floatA 5s ease-in-out infinite}
+@keyframes floatA{0%,100%{transform:translateY(0) rotate(var(--rot,0deg))}50%{transform:translateY(-12px) rotate(var(--rot,0deg))}}
+.c9 .cform{position:absolute;bottom:20%;background:linear-gradient(180deg,rgba(160,120,255,.3),rgba(120,80,200,.15));clip-path:polygon(30% 0,70% 0,100% 40%,80% 100%,20% 100%,0 40%);animation:crystalGlow 5s ease-in-out infinite}
+.c9 .cground{position:absolute;bottom:0;width:100%;height:20%;background:linear-gradient(180deg,#1a153a,#0c0a25 40%,#08081a)}
+.c9 .crefl{position:absolute;bottom:0;height:8%;background:linear-gradient(180deg,rgba(160,120,255,.06),transparent);filter:blur(3px)}
+.c9 .sparkle{position:absolute;width:4px;height:4px;background:#fff;border-radius:50%;box-shadow:0 0 6px rgba(200,180,255,.4);animation:sparkleA 2s ease-in-out infinite}
+@keyframes sparkleA{0%,100%{opacity:0;transform:scale(.5)}50%{opacity:1;transform:scale(1.2)}}
+.c9 .plat{position:absolute;background:linear-gradient(180deg,#8a6ac0,#6a4aa0 50%,#4a3080);border-radius:2px;border-top:2px solid #a080e0}
+
+/* ===== CH10 暗物质领域 ===== */
+.c10{background:linear-gradient(180deg,#020005 0%,#050010 18%,#0a0020 38%,#0e0030 55%,#08001a 75%,#030008 100%)}
+.c10 .void-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 60% 40%,rgba(60,20,100,.08),transparent 60%);animation:voidPulse 8s ease-in-out infinite}
+@keyframes voidPulse{0%,100%{opacity:.4}50%{opacity:.8}}
+.c10 .portal{position:absolute;width:60px;height:60px}
+.c10 .portal-ring{position:absolute;inset:0;border:2px solid rgba(160,80,255,.2);border-radius:50%;animation:portalSpin 6s linear infinite}
+@keyframes portalSpin{0%{transform:rotate(0);border-color:rgba(160,80,255,.2)}50%{border-color:rgba(100,160,255,.3)}100%{transform:rotate(360deg);border-color:rgba(160,80,255,.2)}}
+.c10 .portal-core{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:16px;height:16px;background:radial-gradient(circle,rgba(180,120,255,.4),rgba(100,60,200,.15) 60%,transparent);border-radius:50%;animation:pulse 3s ease-in-out infinite}
+.c10 .dgal{position:absolute;background:radial-gradient(ellipse,rgba(120,80,200,.12),transparent);filter:blur(3px)}
+.c10 .tendril{position:absolute;height:3px;background:linear-gradient(90deg,transparent,rgba(80,40,140,.15),rgba(60,30,120,.1),transparent);border-radius:2px;animation:tendrilA 10s ease-in-out infinite}
+@keyframes tendrilA{0%,100%{transform:translateX(0) scaleX(1)}50%{transform:translateX(20px) scaleX(1.1)}}
+.c10 .deye{position:absolute;width:12px;height:6px;background:radial-gradient(ellipse,rgba(200,50,50,.3),transparent);border-radius:50%;animation:eyeA 6s ease-in-out infinite}
+@keyframes eyeA{0%,40%,60%,100%{opacity:0}45%,55%{opacity:1}}
+.c10 .dpart{position:absolute;width:3px;height:3px;background:rgba(120,80,200,.25);border-radius:50%;animation:dpartA 5s ease-in-out infinite}
+@keyframes dpartA{0%{transform:translate(0);opacity:0}30%{opacity:.5}100%{transform:translate(-40px,-60px);opacity:0}}
+.c10 .crack{position:absolute;height:2px;background:linear-gradient(90deg,transparent,rgba(160,100,255,.12),rgba(200,150,255,.08),transparent);animation:crackA 5s ease-in-out infinite}
+@keyframes crackA{0%,100%{opacity:.3}50%{opacity:.7}}
+.c10 .debris10{position:absolute;background:rgba(80,50,140,.15);border-radius:2px;animation:floatA 7s ease-in-out infinite}
+.c10 .avoid{position:absolute;bottom:18%;left:10%;width:80%;height:3px;background:linear-gradient(90deg,transparent,rgba(100,60,180,.06),transparent);filter:blur(2px)}
+.c10 .plat{position:absolute;background:linear-gradient(180deg,#4a3070,#3a2060 50%,#2a1550);border-radius:2px;border-top:2px solid #5a4080}
+</style>
+</head>
+<body>
+<h1>天穹跃迁 — 章节场景设计 v3</h1>
+<p class="sub">参考风格：塞尔达传说（远景层次感 × 环境叙事） × 空洞骑士（暗色调氛围 × 生物与雕塑细节）</p>
+
+<!-- ===== CH1 荒废地球 ===== -->
+<div class="ch">
+<div class="ch-h"><div class="ch-n" style="background:#6b7280">1</div><span class="ch-t">荒废地球</span><span class="ch-th">教学关 · 废墟荒原</span></div>
+<div class="sb c1">
+<span class="sl">CH.1 — RUINED EARTH</span>
+<div class="sky-glow"></div>
+<!-- Clouds - 5 layers -->
+<div class="cloud" style="top:4%;left:3%;width:140px;height:28px"></div>
+<div class="cloud" style="top:10%;left:22%;width:100px;height:22px;opacity:.5"></div>
+<div class="cloud" style="top:7%;left:50%;width:120px;height:25px;opacity:.7"></div>
+<div class="cloud" style="top:14%;right:12%;width:160px;height:30px"></div>
+<div class="cloud" style="top:18%;left:38%;width:80px;height:18px;opacity:.4"></div>
+<!-- Birds -->
+<div class="bird" style="top:16%;left:0;animation-delay:0s"></div>
+<div class="bird" style="top:12%;left:0;animation-delay:3.5s;width:10px"></div>
+<div class="bird" style="top:20%;left:0;animation-delay:7s;width:8px"></div>
+<!-- Far mountains -->
+<div class="mt mt-f" style="left:-5%;border-left-width:220px;border-right-width:220px;border-bottom-width:190px"></div>
+<div class="mt mt-f" style="left:28%;border-left-width:260px;border-right-width:260px;border-bottom-width:230px"></div>
+<div class="mt mt-f" style="right:-3%;border-left-width:200px;border-right-width:200px;border-bottom-width:170px"></div>
+<!-- Mid mountains -->
+<div class="mt mt-m" style="left:8%;border-left-width:160px;border-right-width:160px;border-bottom-width:155px"></div>
+<div class="mt mt-m" style="left:40%;border-left-width:140px;border-right-width:140px;border-bottom-width:140px"></div>
+<div class="mt mt-m" style="right:3%;border-left-width:190px;border-right-width:190px;border-bottom-width:175px"></div>
+<!-- Near mountains -->
+<div class="mt mt-n" style="left:18%;border-left-width:130px;border-right-width:130px;border-bottom-width:135px"></div>
+<div class="mt mt-n" style="right:15%;border-left-width:110px;border-right-width:110px;border-bottom-width:120px"></div>
+<!-- Ruins cluster 1 -->
+<div class="ruin" style="left:10%;bottom:18%"><div class="rw" style="width:42px;height:85px"></div></div>
+<div class="ruin" style="left:16%;bottom:18%"><div class="rt" style="width:28px;height:125px"></div></div>
+<div class="ruin" style="left:22%;bottom:18%;width:55px;height:40px;border-radius:2px 2px 0 0"></div>
+<!-- Ruins cluster 2 -->
+<div class="ruin" style="right:18%;bottom:18%"><div class="rl" style="width:70px;height:48px"></div></div>
+<div class="ruin" style="right:28%;bottom:18%"><div class="rw" style="width:32px;height:65px"></div></div>
+<!-- Broken pillar -->
+<div class="statue" style="left:48%;width:12px;height:35px;bottom:18%"></div>
+<div class="statue" style="right:38%;width:10px;height:25px;bottom:18%;opacity:.7"></div>
+<!-- Dead trees -->
+<div class="tree-dead" style="left:35%;height:40px"></div>
+<div class="tree-dead" style="right:25%;height:30px;opacity:.6"></div>
+<!-- River -->
+<div class="river" style="left:15%;width:70%"></div>
+<!-- Debris -->
+<div class="debris" style="left:38%;bottom:22%;width:10px;height:7px;transform:rotate(15deg)"></div>
+<div class="debris" style="left:52%;bottom:19%;width:14px;height:5px;transform:rotate(-20deg)"></div>
+<div class="debris" style="right:32%;bottom:21%;width:8px;height:11px;transform:rotate(30deg)"></div>
+<div class="debris" style="left:62%;bottom:20%;width:6px;height:6px;transform:rotate(45deg)"></div>
+<div class="debris" style="left:72%;bottom:18%;width:12px;height:4px;transform:rotate(-10deg)"></div>
+<!-- Weeds -->
+<div class="weed" style="left:43%"></div>
+<div class="weed" style="left:50%;animation-delay:1s"></div>
+<div class="weed" style="right:26%;animation-delay:.5s"></div>
+<div class="weed" style="left:58%;animation-delay:1.5s;height:10px"></div>
+<!-- Rain -->
+<div class="rain" style="left:8%;animation-delay:0s"></div>
+<div class="rain" style="left:22%;animation-delay:.3s"></div>
+<div class="rain" style="left:42%;animation-delay:.6s"></div>
+<div class="rain" style="left:62%;animation-delay:.2s"></div>
+<div class="rain" style="left:78%;animation-delay:.5s"></div>
+<div class="rain" style="left:90%;animation-delay:.8s"></div>
+<!-- Dust -->
+<div class="dust" style="bottom:24%;left:28%;animation-delay:0s"></div>
+<div class="dust" style="bottom:27%;left:48%;animation-delay:2s"></div>
+<div class="dust" style="bottom:21%;right:22%;animation-delay:4s"></div>
+<!-- Ground -->
+<div class="ground"><div class="gl" style="top:0"></div><div class="gl" style="top:12%;opacity:.4"></div><div class="gl" style="top:25%;opacity:.2"></div></div>
+<!-- Platforms -->
+<div class="plat" style="bottom:32%;left:16%;width:130px;height:16px"></div>
+<div class="plat" style="bottom:42%;left:40%;width:112px;height:16px"></div>
+<div class="plat" style="bottom:50%;right:13%;width:120px;height:16px"></div>
+<div class="pd" style="bottom:35%;left:18%"></div>
+</div>
+<div class="desc">
+<strong>背景层次（7层）：</strong><em>天空</em>灰蓝微光 + 5层云 → <em>远山</em>3座暗灰剪影 → <em>中山</em>3座 → <em>近山</em>2座 → <em>建筑废墟</em>断壁×2 + 塔楼 + 矮墙 + 断柱×2 → <em>地面</em>死树×2 + 小河 + 碎石 + 杂草 → <em>前景</em>细雨 + 风沙 + 飞鸟。<br>
+<strong>新增细节：</strong>断柱雕塑、枯树剪影、小河流淌、地面纹理层、飞鸟群、更多碎石。<br>
+<strong>参考：</strong>《空洞骑士》遗忘十字区废墟 × 《塞尔达》旷野之息海拉尔平原。
+</div>
+<div class="pal"><span style="background:#2d3748"></span><span style="background:#4a5568"></span><span style="background:#6b7280"></span><span style="background:#374151"></span><span style="background:#9ca3af"></span></div>
+<div class="tags"><span class="tag">7层远景</span><span class="tag">废墟建筑群</span><span class="tag">断柱雕塑</span><span class="tag">枯树剪影</span><span class="tag">小河流淌</span><span class="tag">碎石杂草</span><span class="tag">细雨飞鸟</span><span class="tag">风沙粒子</span></div>
+</div>
+
+<!-- ===== CH2 月球基地 ===== -->
+<div class="ch">
+<div class="ch-h"><div class="ch-n" style="background:#c0c0c0">2</div><span class="ch-t">月球基地</span><span class="ch-th">低重力 · 太空寂静</span></div>
+<div class="sb c2">
+<span class="sl">CH.2 — MOON BASE</span>
+<!-- Stars - 12 stars with varying sizes -->
+<div class="star" style="top:3%;left:6%"></div>
+<div class="star star-lg" style="top:8%;left:18%;animation-delay:.5s"></div>
+<div class="star" style="top:5%;left:32%;animation-delay:1s"></div>
+<div class="star star-lg" style="top:12%;left:45%;animation-delay:1.5s"></div>
+<div class="star" style="top:4%;left:58%;animation-delay:2s"></div>
+<div class="star" style="top:15%;left:70%;animation-delay:.3s"></div>
+<div class="star star-lg" style="top:6%;left:82%;animation-delay:2.5s"></div>
+<div class="star" style="top:18%;left:10%;animation-delay:.8s"></div>
+<div class="star" style="top:10%;left:52%;animation-delay:1.2s"></div>
+<div class="star star-lg" style="top:22%;left:35%;animation-delay:1.8s"></div>
+<div class="star" style="top:14%;left:90%;animation-delay:.6s"></div>
+<div class="star" style="top:2%;left:75%;animation-delay:2.2s"></div>
+<!-- Nebula -->
+<div class="nebula" style="top:3%;left:55%;width:140px;height:90px;background:radial-gradient(circle,rgba(90,70,180,.3),transparent)"></div>
+<div class="nebula" style="top:15%;left:10%;width:100px;height:60px;background:radial-gradient(circle,rgba(180,70,70,.15),transparent)"></div>
+<!-- Other planets -->
+<div class="planet-far" style="top:12%;left:5%;width:12px;height:12px;background:radial-gradient(circle,#d0a060,#a08040);opacity:.5"></div>
+<div class="planet-far" style="top:20%;right:30%;width:8px;height:8px;background:radial-gradient(circle,#80a0d0,#5070a0);opacity:.4"></div>
+<!-- Earth -->
+<div class="earth"></div>
+<!-- Moon surface -->
+<div class="moon-sf"></div>
+<!-- Craters -->
+<div class="crater" style="bottom:32%;left:12%;width:50px;height:20px"></div>
+<div class="crater" style="bottom:20%;left:35%;width:65px;height:25px"></div>
+<div class="crater" style="bottom:15%;right:18%;width:38px;height:15px"></div>
+<div class="crater" style="bottom:26%;right:32%;width:28px;height:11px"></div>
+<div class="crater" style="bottom:10%;left:55%;width:45px;height:16px"></div>
+<!-- Main dome -->
+<div class="dome" style="left:20%;bottom:30%;width:135px;height:68px"></div>
+<div class="dome-g" style="left:22%;bottom:31%;width:95px;height:38px"></div>
+<div class="win" style="bottom:33%;left:24%;width:11px;height:8px"></div>
+<div class="win" style="bottom:33%;left:30%;width:11px;height:8px;opacity:.7"></div>
+<div class="win" style="bottom:33%;left:36%;width:11px;height:8px;opacity:.5"></div>
+<!-- Antenna -->
+<div class="ant" style="left:40%;height:50px"></div>
+<!-- Solar panels -->
+<div class="solar" style="bottom:36%;left:46%;width:48px;height:20px;transform:rotate(-10deg)"></div>
+<div class="solar" style="bottom:34%;left:52%;width:48px;height:20px;transform:rotate(-10deg)"></div>
+<!-- Rover -->
+<div class="rover" style="bottom:28%;left:62%"></div>
+<!-- Footprints -->
+<div class="footprint" style="bottom:26%;left:58%"></div>
+<div class="footprint" style="bottom:26%;left:60%;margin-top:2px"></div>
+<div class="footprint" style="bottom:26%;left:62%"></div>
+<!-- Satellite in sky -->
+<div class="satellite" style="top:8%;left:40%"></div>
+<!-- Platforms -->
+<div class="plat" style="bottom:38%;left:10%;width:112px;height:14px"></div>
+<div class="plat" style="bottom:50%;left:36%;width:102px;height:14px"></div>
+<div class="plat" style="bottom:44%;right:10%;width:118px;height:14px"></div>
+<div class="pd" style="bottom:41%;left:12%"></div>
+</div>
+<div class="desc">
+<strong>背景层次（8层）：</strong><em>深空</em>12颗闪烁星 + 双星云 + 远处2颗行星 → <em>地球</em>云层+大陆纹理 → <em>月面</em>5个陨石坑 → <em>基地</em>穹顶+窗户灯光+天线红灯+太阳能板阵列 → <em>设备</em>月球车+脚印+卫星。<br>
+<strong>新增细节：</strong>远处行星（橙色+蓝色）、卫星过境、窗户灯光渐变、更多陨石坑、脚印轨迹。<br>
+<strong>参考：</strong>《塞尔达》天空之城太空感 × 《空洞骑士》深邃巢穴绝对黑暗。
+</div>
+<div class="pal"><span style="background:#000"></span><span style="background:#1a1a2e"></span><span style="background:#2a2a3e"></span><span style="background:#c0c0c0"></span><span style="background:#4a90d9"></span></div>
+<div class="tags"><span class="tag">8层深空</span><span class="tag">双星云</span><span class="tag">远处行星</span><span class="tag">卫星过境</span><span class="tag">穹顶基地</span><span class="tag">月球车</span><span class="tag">脚印轨迹</span><span class="tag">5个陨石坑</span></div>
+</div>
+
+<!-- ===== CH3 火星殖民地 ===== -->
+<div class="ch">
+<div class="ch-h"><div class="ch-n" style="background:#bf5b3b">3</div><span class="ch-t">火星殖民地</span><span class="ch-th">沙尘暴 · 赤红荒漠</span></div>
+<div class="sb c3">
+<span class="sl">CH.3 — MARS COLONY</span>
+<div class="dust-l"></div>
+<!-- Sun with halo -->
+<div class="sun"></div>
+<!-- Dunes -->
+<div class="dune" style="left:2%;bottom:22%;width:300px;height:38px"></div>
+<div class="dune" style="right:3%;bottom:20%;width:240px;height:32px"></div>
+<div class="dune" style="left:28%;bottom:24%;width:190px;height:28px"></div>
+<!-- Habitat 1 -->
+<div class="hab" style="left:16%;bottom:26%;width:88px;height:58px">
+  <div class="hw" style="top:10px;left:8px;width:16px;height:10px"></div>
+  <div class="hw" style="top:10px;left:30px;width:16px;height:10px"></div>
+  <div class="hw" style="top:10px;right:8px;width:16px;height:10px"></div>
+  <div class="ha" style="top:-22px;right:10px;height:22px"></div>
+</div>
+<!-- Habitat 2 -->
+<div class="hab" style="left:30%;bottom:27%;width:62px;height:42px">
+  <div class="hw" style="top:8px;left:8px;width:12px;height:8px"></div>
+  <div class="hw" style="top:8px;right:8px;width:12px;height:8px"></div>
+</div>
+<!-- Solar panels -->
+<div class="solar" style="left:50%;bottom:30%;width:52px;height:22px;transform:rotate(-12deg)"></div>
+<div class="solar" style="left:56%;bottom:28%;width:52px;height:22px;transform:rotate(-12deg)"></div>
+<!-- Rocks -->
+<div class="rock" style="left:66%;bottom:22%;width:32px;height:22px;border-radius:40% 60% 30% 50%"></div>
+<div class="rock" style="left:73%;bottom:24%;width:20px;height:15px;border-radius:50% 40% 60% 30%"></div>
+<div class="rock" style="right:8%;bottom:20%;width:42px;height:28px;border-radius:30% 50% 40% 60%"></div>
+<div class="rock" style="left:42%;bottom:23%;width:15px;height:10px;border-radius:45% 55% 35% 65%"></div>
+<!-- Cactus -->
+<div class="cactus" style="left:60%;height:25px"></div>
+<div class="cactus" style="right:18%;height:18px;opacity:.6"></div>
+<!-- Sand particles -->
+<div class="sp" style="top:22%;left:12%;animation-delay:0s"></div>
+<div class="sp" style="top:32%;left:38%;animation-delay:1s"></div>
+<div class="sp" style="top:18%;left:62%;animation-delay:2s"></div>
+<div class="sp" style="top:38%;right:18%;animation-delay:.5s"></div>
+<div class="sp" style="top:28%;left:78%;animation-delay:1.5s"></div>
+<div class="sp" style="top:42%;left:25%;animation-delay:2.5s"></div>
+<!-- Ground -->
+<div class="mars-g"></div>
+<div class="gt"></div>
+<!-- Platforms -->
+<div class="plat" style="bottom:36%;left:13%;width:118px;height:14px"></div>
+<div class="plat" style="bottom:46%;left:43%;width:102px;height:14px"></div>
+<div class="plat" style="bottom:40%;right:10%;width:110px;height:14px"></div>
+<div class="pd" style="bottom:39%;left:15%"></div>
+</div>
+<div class="desc">
+<strong>背景层次（6层）：</strong><em>天空</em>橙红渐变 + 太阳光晕 → <em>沙丘</em>3层起伏 → <em>殖民地</em>双居住舱+天线+太阳能板阵列 → <em>地面</em>岩石群+仙人掌 → <em>前景</em>沙尘暴横扫+飘沙粒子。<br>
+<strong>新增细节：</strong>太阳光晕、仙人掌、更多岩石群、双居住舱窗户灯光、更多飘沙粒子。<br>
+<strong>参考：</strong>《塞尔达》格鲁德沙漠炎热 × 《空洞骑士》泪水之城环境叙事。
+</div>
+<div class="pal"><span style="background:#c06030"></span><span style="background:#e07040"></span><span style="background:#bf5b3b"></span><span style="background:#8a4020"></span><span style="background:#d08050"></span></div>
+<div class="tags"><span class="tag">沙尘暴横扫</span><span class="tag">太阳光晕</span><span class="tag">双居住舱</span><span class="tag">仙人掌</span><span class="tag">沙丘群</span><span class="tag">岩石群</span><span class="tag">太阳能板</span><span class="tag">飘沙粒子</span></div>
+</div>
+
+<!-- ===== CH4 水银星 ===== -->
+<div class="ch">
+<div class="ch-h"><div class="ch-n" style="background:#b0b8c8">4</div><span class="ch-t">水银星</span><span class="ch-th">液态金属 · 银色镜面</span></div>
+<div class="sb c4">
+<span class="sl">CH.4 — MERCURY</span>
+<!-- Nebula -->
+<div class="neb" style="top:3%;left:15%;width:180px;height:100px;background:radial-gradient(circle,rgba(100,100,160,.2),transparent)"></div>
+<div class="neb" style="top:10%;right:10%;width:120px;height:70px;background:radial-gradient(circle,rgba(160,100,100,.1),transparent)"></div>
+<!-- Pillars -->
+<div class="pillar" style="left:10%;width:38px;height:115px"></div>
+<div class="pillar" style="left:22%;width:28px;height:85px"></div>
+<div class="pillar" style="right:16%;width:32px;height:100px"></div>
+<div class="pillar" style="right:28%;width:24px;height:72px"></div>
+<!-- Pipes -->
+<div class="pipe" style="bottom:36%;left:16%;width:105px;height:8px"></div>
+<div class="pipe" style="bottom:44%;right:20%;width:85px;height:6px"></div>
+<div class="pipe" style="bottom:30%;left:40%;width:60px;height:5px"></div>
+<!-- Rivets -->
+<div class="rivet" style="bottom:37%;left:18%"></div>
+<div class="rivet" style="bottom:37%;left:26%"></div>
+<div class="rivet" style="bottom:45%;right:22%"></div>
+<div class="rivet" style="bottom:31%;left:42%"></div>
+<!-- Gears -->
+<div class="gear" style="bottom:40%;left:30%;width:30px;height:30px"></div>
+<div class="gear" style="bottom:35%;right:25%;width:22px;height:22px;animation-direction:reverse"></div>
+<!-- Glows -->
+<div class="glow" style="bottom:36%;left:20%;width:55px;height:55px"></div>
+<div class="glow" style="bottom:30%;right:22%;width:45px;height:45px;animation-delay:1.5s"></div>
+<!-- Metal surface -->
+<div class="msf"></div>
+<!-- Metal pools -->
+<div class="mp" style="left:8%;width:190px;height:28px"></div>
+<div class="mp" style="left:45%;width:150px;height:22px;animation-delay:1s"></div>
+<div class="mp" style="right:6%;width:170px;height:25px;animation-delay:2s"></div>
+<!-- Drips -->
+<div class="md" style="left:16%;top:36%;animation-delay:0s"></div>
+<div class="md" style="left:42%;top:30%;animation-delay:.8s"></div>
+<div class="md" style="right:20%;top:38%;animation-delay:1.5s"></div>
+<div class="md" style="left:62%;top:34%;animation-delay:2.2s"></div>
+<div class="md" style="right:35%;top:32%;animation-delay:3s"></div>
+<!-- Reflection -->
+<div class="refl"></div>
+<!-- Platforms -->
+<div class="plat" style="bottom:40%;left:16%;width:108px;height:14px"></div>
+<div class="plat" style="bottom:52%;left:46%;width:98px;height:14px"></div>
+<div class="plat" style="bottom:45%;right:12%;width:110px;height:14px"></div>
+<div class="pd" style="bottom:43%;left:18%"></div>
+</div>
+<div class="desc">
+<strong>背景层次（6层）：</strong><em>星云</em>双色星云 → <em>金属柱</em>4根+齿轮转动 → <em>管道</em>3条+铆钉×4 → <em>液态金属</em>3个池+5条液滴 → <em>地面</em>镜面反射+光泽脉动。<br>
+<strong>新增细节：</strong>齿轮旋转动画、更多管道、更多液滴、双色星云背景。<br>
+<strong>参考：</strong>《塞尔达》时之笛水神殿液态质感 × 《空洞骑士》泪水之城金属氛围。
+</div>
+<div class="pal"><span style="background:#151520"></span><span style="background:#5a6272"></span><span style="background:#8a92a2"></span><span style="background:#b8c0d0"></span><span style="background:#d0d8e8"></span></div>
+<div class="tags"><span class="tag">液态金属池</span><span class="tag">金属液滴</span><span class="tag">齿轮转动</span><span class="tag">管道纵横</span><span class="tag">铆钉装饰</span><span class="tag">镜面反射</span><span class="tag">双色星云</span><span class="tag">平台形变</span></div>
+</div>
+
+<!-- ===== CH5 冰封星 ===== -->
+<div class="ch">
+<div class="ch-h"><div class="ch-n" style="background:#6bb8d6">5</div><span class="ch-t">冰封星</span><span class="ch-th">冰面滑动 · 极光之夜</span></div>
+<div class="sb c5">
+<span class="sl">CH.5 — ICE PLANET</span>
+<!-- Aurora -->
+<div class="aurora"></div>
+<div class="aurora2"></div>
+<!-- Ice spikes - 6 -->
+<div class="spike" style="left:3%;border-left-width:20px;border-right-width:20px;border-bottom-width:75px"></div>
+<div class="spike" style="left:13%;border-left-width:14px;border-right-width:14px;border-bottom-width:55px"></div>
+<div class="spike" style="left:28%;border-left-width:22px;border-right-width:22px;border-bottom-width:95px"></div>
+<div class="spike" style="right:22%;border-left-width:16px;border-right-width:16px;border-bottom-width:70px"></div>
+<div class="spike" style="right:10%;border-left-width:24px;border-right-width:24px;border-bottom-width:90px"></div>
+<div class="spike" style="right:32%;border-left-width:12px;border-right-width:12px;border-bottom-width:48px"></div>
+<!-- Ice shards - 5 -->
+<div class="shard" style="left:20%;width:8px;height:48px"></div>
+<div class="shard" style="left:40%;width:6px;height:38px"></div>
+<div class="shard" style="right:25%;width:10px;height:58px"></div>
+<div class="shard" style="right:14%;width:7px;height:42px"></div>
+<div class="shard" style="left:55%;width:5px;height:30px"></div>
+<!-- Ice bridge -->
+<div class="ibridge" style="bottom:34%;left:28%;width:130px"></div>
+<!-- Frost -->
+<div class="frost"></div>
+<!-- Ground -->
+<div class="ig"></div>
+<!-- Snowflakes - 10 mixed sizes -->
+<div class="snow" style="left:6%;animation-delay:0s"></div>
+<div class="snow snow-lg" style="left:18%;animation-delay:1.2s"></div>
+<div class="snow snow-sm" style="left:30%;animation-delay:.6s"></div>
+<div class="snow" style="left:44%;animation-delay:2s"></div>
+<div class="snow snow-lg" style="left:58%;animation-delay:.4s"></div>
+<div class="snow" style="left:72%;animation-delay:1.8s"></div>
+<div class="snow snow-sm" style="left:85%;animation-delay:2.5s"></div>
+<div class="snow" style="left:12%;animation-delay:3s"></div>
+<div class="snow snow-lg" style="left:50%;animation-delay:1.5s"></div>
+<div class="snow snow-sm" style="right:8%;animation-delay:3.5s"></div>
+<!-- Wolf silhouette -->
+<div class="wolf" style="left:70%"></div>
+<!-- Platforms -->
+<div class="plat" style="bottom:36%;left:13%;width:128px;height:14px"></div>
+<div class="plat" style="bottom:48%;left:40%;width:118px;height:14px"></div>
+<div class="plat" style="bottom:42%;right:10%;width:108px;height:14px"></div>
+<div class="pd" style="bottom:39%;left:15%"></div>
+</div>
+<div class="desc">
+<strong>背景层次（7层）：</strong><em>天空</em>深蓝夜空 → <em>极光</em>双层流动 → <em>冰柱</em>6根参差 → <em>冰晶</em>5块碎片+冰桥 → <em>地面</em>冰原+霜冻层 → <em>生物</em>冰狼剪影 → <em>前景</em>大小混合雪花×10。<br>
+<strong>新增细节：</strong>双层极光、冰桥横跨、冰狼剪影、大小混合雪花、更多冰柱。<br>
+<strong>参考：</strong>《塞尔达》海布拉山脉雪景 × 《空洞骑士》水晶山峰寒冷感。
+</div>
+<div class="pal"><span style="background:#081828"></span><span style="background:#1a3050"></span><span style="background:#70a0c0"></span><span style="background:#b0e0f0"></span><span style="background:#64ffda"></span></div>
+<div class="tags"><span class="tag">双层极光</span><span class="tag">6根冰柱</span><span class="tag">冰桥横跨</span><span class="tag">冰狼剪影</span><span class="tag">混合雪花</span><span class="tag">冰晶碎片</span><span class="tag">霜冻纹理</span><span class="tag">深蓝夜空</span></div>
+</div>
+
+<!-- ===== CH6 火焰星球 ===== -->
+<div class="ch">
+<div class="ch-h"><div class="ch-n" style="background:#e05020">6</div><span class="ch-t">火焰星球</span><span class="ch-th">熔岩流淌 · 火山喷发</span></div>
+<div class="sb c6">
+<span class="sl">CH.6 — FIRE PLANET</span>
+<!-- Smoke clouds -->
+<div class="smoke" style="top:4%;left:10%;width:120px;height:40px"></div>
+<div class="smoke" style="top:8%;left:30%;width:90px;height:30px;opacity:.5"></div>
+<div class="smoke" style="top:6%;right:15%;width:150px;height:45px;opacity:.7"></div>
+<div class="smoke" style="top:12%;left:55%;width:70px;height:25px;opacity:.4"></div>
+<!-- Eruption particles -->
+<div class="ember" style="left:22%;animation-delay:0s"></div>
+<div class="ember" style="left:24%;animation-delay:.4s"></div>
+<div class="ember" style="left:20%;animation-delay:.8s"></div>
+<div class="ember" style="left:26%;animation-delay:1.2s"></div>
+<div class="ember" style="right:30%;animation-delay:.2s"></div>
+<div class="ember" style="right:28%;animation-delay:.6s"></div>
+<div class="ember" style="right:32%;animation-delay:1s"></div>
+<!-- Volcano 1 (left, active) -->
+<div class="volcano" style="left:8%;width:200px;height:160px">
+  <div class="crater-glow"></div>
+  <div class="lava-flow" style="left:30%;width:18px;height:80px"></div>
+  <div class="lava-flow" style="left:55%;width:14px;height:60px;animation-delay:.5s"></div>
+</div>
+<!-- Volcano 2 (right, dormant) -->
+<div class="volcano volcano-d" style="right:5%;width:170px;height:130px"></div>
+<!-- Far mountains -->
+<div class="f6" style="left:25%;width:260px;height:100px"></div>
+<div class="f6" style="right:10%;width:200px;height:80px"></div>
+<!-- Lava rivers -->
+<div class="lava-r" style="bottom:18%;left:5%;width:90%"></div>
+<div class="lava-r" style="bottom:14%;left:15%;width:60%;opacity:.6"></div>
+<!-- Lava pools -->
+<div class="lava-p" style="left:12%;width:100px;height:18px"></div>
+<div class="lava-p" style="left:45%;width:80px;height:14px;animation-delay:1s"></div>
+<div class="lava-p" style="right:10%;width:120px;height:20px;animation-delay:2s"></div>
+<!-- Scorched rocks -->
+<div class="srock" style="left:35%;bottom:22%;width:35px;height:25px"></div>
+<div class="srock" style="left:55%;bottom:24%;width:22px;height:16px"></div>
+<div class="srock" style="right:25%;bottom:20%;width:40px;height:28px"></div>
+<!-- Charred trees -->
+<div class="ctree" style="left:42%;height:35px"></div>
+<div class="ctree" style="right:35%;height:28px;opacity:.6"></div>
+<!-- Fire wisps -->
+<div class="fwisp" style="left:30%;bottom:28%;animation-delay:0s"></div>
+<div class="fwisp" style="left:60%;bottom:32%;animation-delay:.8s"></div>
+<div class="fwisp" style="right:22%;bottom:26%;animation-delay:1.6s"></div>
+<!-- Heat haze overlay -->
+<div class="heat-haze"></div>
+<!-- Ground -->
+<div class="lava-g"></div>
+<!-- Platforms -->
+<div class="plat" style="bottom:36%;left:14%;width:118px;height:14px"></div>
+<div class="plat" style="bottom:48%;left:42%;width:108px;height:14px"></div>
+<div class="plat" style="bottom:42%;right:12%;width:112px;height:14px"></div>
+<div class="pd" style="bottom:39%;left:16%"></div>
+</div>
+<div class="desc">
+<strong>背景层次（7层）：</strong><em>天空</em>暗红烟尘 → <em>火山</em>活火山（喷发口发光+岩浆流）+ 休眠火山 → <em>远山</em>2座焦黑剪影 → <em>熔岩河</em>2条蜿蜒流淌 → <em>熔岩池</em>3个脉动发光 → <em>地面</em>焦岩+枯树+火焰精灵 → <em>前景</em>火山灰飘落+热浪扭曲。<br>
+<strong>新增细节：</strong>活火山喷发口橙光、岩浆流淌动画、火焰精灵飘浮、焦树剪影、热浪扭曲效果、火山灰粒子。<br>
+<strong>参考：</strong>《塞尔达》死亡火山灼热 × 《空洞骑士》泪水之城余烬灰烬。
+</div>
+<div class="pal"><span style="background:#1a0800"></span><span style="background:#5a2010"></span><span style="background:#c04020"></span><span style="background:#ff6030"></span><span style="background:#ffaa40"></span></div>
+<div class="tags"><span class="tag">活火山喷发</span><span class="tag">岩浆流淌</span><span class="tag">火焰精灵</span><span class="tag">焦树枯木</span><span class="tag">热浪扭曲</span><span class="tag">火山灰粒子</span><span class="tag">熔岩池脉动</span><span class="tag">休眠火山</span></div>
+</div>
+
+<!-- ===== CH7 雷电星球 ===== -->
+<div class="ch">
+<div class="ch-h"><div class="ch-n" style="background:#5a8aee">7</div><span class="ch-t">雷电星球</span><span class="ch-th">闪电风暴 · 电磁脉冲</span></div>
+<div class="sb c7">
+<span class="sl">CH.7 — THUNDER PLANET</span>
+<!-- Storm clouds - layered -->
+<div class="scloud" style="top:2%;left:0;width:100%;height:18%"></div>
+<div class="scloud scloud-l" style="top:6%;left:5%;width:80%;height:12%"></div>
+<div class="scloud scloud-d" style="top:10%;left:15%;width:60%;height:10%"></div>
+<!-- Lightning bolts -->
+<div class="bolt" style="left:25%;top:14%;height:120px;animation-delay:0s"></div>
+<div class="bolt" style="right:28%;top:10%;height:140px;animation-delay:1.5s"></div>
+<div class="bolt bolt-faint" style="left:55%;top:16%;height:90px;animation-delay:3s"></div>
+<!-- Lightning glow -->
+<div class="lglow" style="left:22%;top:12%;width:60px;height:60px"></div>
+<div class="lglow" style="right:25%;top:8%;width:80px;height:80px;animation-delay:1.5s"></div>
+<!-- Far mountains -->
+<div class="m7" style="left:-3%;width:220px;height:110px"></div>
+<div class="m7" style="left:30%;width:180px;height:90px"></div>
+<div class="m7" style="right:5%;width:240px;height:120px"></div>
+<!-- Rain -->
+<div class="rain7" style="left:8%;animation-delay:0s"></div>
+<div class="rain7" style="left:18%;animation-delay:.2s"></div>
+<div class="rain7" style="left:32%;animation-delay:.5s"></div>
+<div class="rain7" style="left:48%;animation-delay:.1s"></div>
+<div class="rain7" style="left:62%;animation-delay:.4s"></div>
+<div class="rain7" style="left:75%;animation-delay:.3s"></div>
+<div class="rain7" style="left:88%;animation-delay:.6s"></div>
+<!-- Electric towers -->
+<div class="tower" style="left:18%;bottom:22%;height:80px">
+  <div class="tower-arm" style="top:15px;left:-18px;width:40px"></div>
+  <div class="tower-arm" style="top:35px;left:-14px;width:32px"></div>
+  <div class="tower-spark" style="top:8px;left:-4px"></div>
+</div>
+<div class="tower" style="right:20%;bottom:22%;height:65px;opacity:.7">
+  <div class="tower-arm" style="top:12px;left:-14px;width:32px"></div>
+  <div class="tower-spark" style="top:6px;left:-3px"></div>
+</div>
+<!-- Electric arcs between towers -->
+<div class="arc" style="bottom:48%;left:22%;width:55%"></div>
+<!-- Ground -->
+<div class="tground"></div>
+<div class="tpuddle" style="left:15%;width:60px;height:6px"></div>
+<div class="tpuddle" style="left:45%;width:45px;height:5px"></div>
+<div class="tpuddle" style="right:18%;width:70px;height:6px"></div>
+<!-- Wind streaks -->
+<div class="wind" style="top:35%;left:10%;animation-delay:0s"></div>
+<div class="wind" style="top:50%;left:30%;animation-delay:1s"></div>
+<div class="wind" style="top:42%;right:20%;animation-delay:2s"></div>
+<!-- Platforms -->
+<div class="plat" style="bottom:36%;left:14%;width:120px;height:14px"></div>
+<div class="plat" style="bottom:50%;left:42%;width:108px;height:14px"></div>
+<div class="plat" style="bottom:44%;right:10%;width:115px;height:14px"></div>
+<div class="pd" style="bottom:39%;left:16%"></div>
+</div>
+<div class="desc">
+<strong>背景层次（7层）：</strong><em>雷云</em>3层叠压（最厚→薄） → <em>闪电</em>3道劈落+电光扩散 → <em>远山</em>3座暗蓝剪影 → <em>电塔</em>2座高压塔+电弧连接 → <em>地面</em>湿润反光+水洼 → <em>风暴</em>暴雨斜落+风痕横扫 → <em>氛围</em>电光闪烁照亮云层。<br>
+<strong>新增细节：</strong>高压电塔+电弧连接、水洼反射闪电、风痕横扫效果、3层云叠压、闪电照亮云层光晕。<br>
+<strong>参考：</strong>《塞尔达》雷之神殿电击 × 《空洞骑士》皇家水道暴雨。
+</div>
+<div class="pal"><span style="background:#0a0a20"></span><span style="background:#1a1a3a"></span><span style="background:#3a4a6a"></span><span style="background:#5a8aee"></span><span style="background:#a0c0ff"></span></div>
+<div class="tags"><span class="tag">雷云3层</span><span class="tag">闪电劈落</span><span class="tag">高压电塔</span><span class="tag">电弧连接</span><span class="tag">暴雨斜落</span><span class="tag">水洼反射</span><span class="tag">风痕横扫</span><span class="tag">电光闪烁</span></div>
+</div>
+
+<!-- ===== CH8 丛林星 ===== -->
+<div class="ch">
+<div class="ch-h"><div class="ch-n" style="background:#2a8a3a">8</div><span class="ch-t">丛林星</span><span class="ch-th">藤蔓缠绕 · 萤火虫夜</span></div>
+<div class="sb c8">
+<span class="sl">CH.8 — JUNGLE PLANET</span>
+<!-- Night sky -->
+<div class="star c8s" style="top:3%;left:10%"></div>
+<div class="star c8s" style="top:6%;left:25%;animation-delay:.5s"></div>
+<div class="star c8s" style="top:4%;left:45%;animation-delay:1s"></div>
+<div class="star c8s" style="top:8%;left:65%;animation-delay:1.5s"></div>
+<div class="star c8s" style="top:5%;left:82%;animation-delay:2s"></div>
+<div class="star c8s" style="top:10%;left:38%;animation-delay:.3s"></div>
+<!-- Moon -->
+<div class="jmoon"></div>
+<!-- Far canopy -->
+<div class="canopy" style="left:-5%;width:110%;height:25%"></div>
+<!-- Giant trees (background) -->
+<div class="gtree" style="left:5%;width:45px;height:200px">
+  <div class="gtree-top" style="width:120px;height:80px;left:-37px;top:-60px"></div>
+</div>
+<div class="gtree" style="left:28%;width:35px;height:170px">
+  <div class="gtree-top" style="width:100px;height:65px;left:-32px;top:-50px"></div>
+</div>
+<div class="gtree" style="right:12%;width:50px;height:210px">
+  <div class="gtree-top" style="width:130px;height:85px;left:-40px;top:-65px"></div>
+</div>
+<div class="gtree" style="right:30%;width:30px;height:150px;opacity:.6">
+  <div class="gtree-top" style="width:90px;height:55px;left:-30px;top:-42px"></div>
+</div>
+<!-- Hanging vines -->
+<div class="vine" style="left:15%;height:100px;top:18%"></div>
+<div class="vine" style="left:35%;height:80px;top:22%;animation-delay:.5s"></div>
+<div class="vine" style="right:25%;height:110px;top:16%;animation-delay:1s"></div>
+<div class="vine" style="right:10%;height:70px;top:24%;animation-delay:1.5s"></div>
+<div class="vine" style="left:52%;height:90px;top:20%;animation-delay:2s"></div>
+<!-- Flowers on vines -->
+<div class="jflower" style="left:15%;top:30%"></div>
+<div class="jflower" style="right:25%;top:28%;background:radial-gradient(circle,#ff80a0,#d05080)"></div>
+<!-- Mushrooms -->
+<div class="mush" style="left:22%;bottom:24%"></div>
+<div class="mush" style="left:50%;bottom:26%;transform:scale(.7)"></div>
+<div class="mush" style="right:20%;bottom:22%;transform:scale(.85)"></div>
+<!-- Fireflies -->
+<div class="firefly" style="left:18%;top:40%;animation-delay:0s"></div>
+<div class="firefly" style="left:32%;top:55%;animation-delay:.8s"></div>
+<div class="firefly" style="left:48%;top:38%;animation-delay:1.6s"></div>
+<div class="firefly" style="right:28%;top:50%;animation-delay:2.4s"></div>
+<div class="firefly" style="right:15%;top:42%;animation-delay:.4s"></div>
+<div class="firefly" style="left:65%;top:48%;animation-delay:1.2s"></div>
+<div class="firefly" style="left:8%;top:52%;animation-delay:2s"></div>
+<div class="firefly" style="right:40%;top:45%;animation-delay:3s"></div>
+<!-- Ground vegetation -->
+<div class="jground"></div>
+<div class="grass" style="left:8%;bottom:20%;width:4px;height:18px"></div>
+<div class="grass" style="left:12%;bottom:20%;width:3px;height:14px"></div>
+<div class="grass" style="left:38%;bottom:20%;width:4px;height:20px"></div>
+<div class="grass" style="left:42%;bottom:20%;width:3px;height:12px"></div>
+<div class="grass" style="right:22%;bottom:20%;width:4px;height:16px"></div>
+<div class="grass" style="right:18%;bottom:20%;width:3px;height:22px"></div>
+<!-- Platforms -->
+<div class="plat" style="bottom:36%;left:14%;width:120px;height:14px"></div>
+<div class="plat" style="bottom:48%;left:42%;width:110px;height:14px"></div>
+<div class="plat" style="bottom:42%;right:12%;width:115px;height:14px"></div>
+<div class="pd" style="bottom:39%;left:16%"></div>
+</div>
+<div class="desc">
+<strong>背景层次（8层）：</strong><em>夜空</em>6星+弯月 → <em>树冠</em>浓密遮天 → <em>巨树</em>4棵参天大树+树冠 → <em>藤蔓</em>5条垂挂+花朵×2 → <em>蘑菇</em>3朵发光 → <em>地面</em>草地层+杂草 → <em>生物</em>8只萤火虫飘浮 → <em>氛围</em>月光透过树冠缝隙。<br>
+<strong>新增细节：</strong>参天巨树剪影、藤蔓垂挂+花朵、发光蘑菇、萤火虫群、月光穿透效果、更多杂草。<br>
+<strong>参考：</strong>《塞尔达》科洛格森林神秘 × 《空洞骑士》绿色之路丛林。
+</div>
+<div class="pal"><span style="background:#081208"></span><span style="background:#1a3a1a"></span><span style="background:#2a6a2a"></span><span style="background:#4aaa4a"></span><span style="background:#80ff80"></span></div>
+<div class="tags"><span class="tag">参天巨树</span><span class="tag">藤蔓垂挂</span><span class="tag">发光蘑菇</span><span class="tag">萤火虫群</span><span class="tag">月光穿透</span><span class="tag">浓密树冠</span><span class="tag">弯月夜空</span><span class="tag">花草丛生</span></div>
+</div>
+
+<!-- ===== CH9 晶体星 ===== -->
+<div class="ch">
+<div class="ch-h"><div class="ch-n" style="background:#b388ff">9</div><span class="ch-t">晶体星</span><span class="ch-th">棱镜折射 · 紫晶洞穴</span></div>
+<div class="sb c9">
+<span class="sl">CH.9 — CRYSTAL PLANET</span>
+<!-- Deep space background -->
+<div class="star c9s" style="top:4%;left:8%"></div>
+<div class="star c9s" style="top:7%;left:22%;animation-delay:.4s"></div>
+<div class="star c9s" style="top:3%;left:40%;animation-delay:.8s"></div>
+<div class="star c9s" style="top:9%;left:58%;animation-delay:1.2s"></div>
+<div class="star c9s" style="top:5%;left:75%;animation-delay:1.6s"></div>
+<div class="star c9s" style="top:11%;left:88%;animation-delay:2s"></div>
+<!-- Nebula -->
+<div class="cneb" style="top:5%;left:20%;width:200px;height:100px"></div>
+<div class="cneb" style="top:15%;right:10%;width:150px;height:70px;opacity:.5"></div>
+<!-- Giant crystals (background) -->
+<div class="gcrystal" style="left:8%;bottom:20%;width:30px;height:140px;transform:rotate(-8deg)"></div>
+<div class="gcrystal" style="left:20%;bottom:20%;width:22px;height:100px;transform:rotate(5deg)"></div>
+<div class="gcrystal" style="right:15%;bottom:20%;width:35px;height:155px;transform:rotate(-5deg)"></div>
+<div class="gcrystal" style="right:28%;bottom:20%;width:20px;height:90px;transform:rotate(10deg)"></div>
+<div class="gcrystal" style="left:45%;bottom:20%;width:18px;height:80px;transform:rotate(-12deg);opacity:.5"></div>
+<!-- Prism light beams -->
+<div class="beam" style="left:18%;top:25%;width:200px;transform:rotate(15deg)"></div>
+<div class="beam" style="right:20%;top:30%;width:160px;transform:rotate(-20deg);background:linear-gradient(90deg,transparent,rgba(180,100,255,.06),transparent)"></div>
+<div class="beam" style="left:40%;top:20%;width:180px;transform:rotate(8deg);background:linear-gradient(90deg,transparent,rgba(100,200,255,.04),transparent)"></div>
+<!-- Floating crystal shards -->
+<div class="cshard" style="left:30%;top:35%;width:8px;height:20px;transform:rotate(20deg);animation-delay:0s"></div>
+<div class="cshard" style="left:55%;top:28%;width:6px;height:16px;transform:rotate(-15deg);animation-delay:.5s"></div>
+<div class="cshard" style="right:25%;top:40%;width:10px;height:24px;transform:rotate(10deg);animation-delay:1s"></div>
+<div class="cshard" style="left:70%;top:32%;width:7px;height:18px;transform:rotate(-25deg);animation-delay:1.5s"></div>
+<div class="cshard" style="left:42%;top:45%;width:5px;height:14px;transform:rotate(35deg);animation-delay:2s"></div>
+<!-- Crystal formations (ground) -->
+<div class="cform" style="left:12%;bottom:20%;width:40px;height:50px"></div>
+<div class="cform" style="left:38%;bottom:20%;width:30px;height:38px;transform:scale(.8)"></div>
+<div class="cform" style="right:18%;bottom:20%;width:45px;height:55px"></div>
+<div class="cform" style="right:35%;bottom:20%;width:25px;height:32px;transform:scale(.7)"></div>
+<!-- Reflective ground -->
+<div class="cground"></div>
+<div class="crefl" style="left:10%;width:80%"></div>
+<!-- Light sparkles -->
+<div class="sparkle" style="left:25%;top:45%;animation-delay:0s"></div>
+<div class="sparkle" style="left:50%;top:38%;animation-delay:.6s"></div>
+<div class="sparkle" style="right:22%;top:50%;animation-delay:1.2s"></div>
+<div class="sparkle" style="left:68%;top:42%;animation-delay:1.8s"></div>
+<div class="sparkle" style="left:35%;top:55%;animation-delay:2.4s"></div>
+<!-- Platforms -->
+<div class="plat" style="bottom:36%;left:14%;width:118px;height:14px"></div>
+<div class="plat" style="bottom:50%;left:42%;width:108px;height:14px"></div>
+<div class="plat" style="bottom:44%;right:12%;width:112px;height:14px"></div>
+<div class="pd" style="bottom:39%;left:16%"></div>
+</div>
+<div class="desc">
+<strong>背景层次（7层）：</strong><em>深空</em>6星+双紫色星云 → <em>巨晶柱</em>5根参差生长 → <em>棱镜光束</em>3道折射彩虹 → <em>浮晶碎片</em>5块飘浮旋转 → <em>晶体丛</em>4座地面晶簇 → <em>地面</em>镜面反射层 → <em>光效</em>5个闪烁光点。<br>
+<strong>新增细节：</strong>棱镜光束折射、浮晶碎片飘浮、镜面反射地面、双紫色星云、更多晶体丛。<br>
+<strong>参考：</strong>《塞尔达》沃托里村宝石洞 × 《空洞骑士》水晶山峰光辉。
+</div>
+<div class="pal"><span style="background:#0a0818"></span><span style="background:#2a1850"></span><span style="background:#6a38b0"></span><span style="background:#b388ff"></span><span style="background:#e0c0ff"></span></div>
+<div class="tags"><span class="tag">巨晶柱生长</span><span class="tag">棱镜光束</span><span class="tag">浮晶碎片</span><span class="tag">镜面反射</span><span class="tag">紫色星云</span><span class="tag">晶体丛</span><span class="tag">光点闪烁</span><span class="tag">棱镜折射</span></div>
+</div>
+
+<!-- ===== CH10 暗物质领域 ===== -->
+<div class="ch">
+<div class="ch-h"><div class="ch-n" style="background:#2a1040">10</div><span class="ch-t">暗物质领域</span><span class="ch-th">虚空深渊 · 最终决战</span></div>
+<div class="sb c10">
+<span class="sl">CH.10 — DARK MATTER DOMAIN</span>
+<!-- Void background with subtle movement -->
+<div class="void-bg"></div>
+<!-- Distant portal -->
+<div class="portal" style="top:8%;right:15%">
+  <div class="portal-ring"></div>
+  <div class="portal-ring" style="animation-delay:.5s;transform:rotate(60deg)"></div>
+  <div class="portal-ring" style="animation-delay:1s;transform:rotate(120deg)"></div>
+  <div class="portal-core"></div>
+</div>
+<!-- Distant galaxies -->
+<div class="dgal" style="top:15%;left:8%;width:40px;height:16px"></div>
+<div class="dgal" style="top:22%;left:35%;width:30px;height:12px;transform:rotate(30deg)"></div>
+<div class="dgal" style="top:10%;left:60%;width:35px;height:14px;transform:rotate(-20deg)"></div>
+<!-- Dark matter tendrils -->
+<div class="tendril" style="left:10%;top:20%;width:200px;transform:rotate(-15deg)"></div>
+<div class="tendril" style="right:8%;top:30%;width:180px;transform:rotate(10deg)"></div>
+<div class="tendril" style="left:30%;top:40%;width:150px;transform:rotate(-5deg);opacity:.4"></div>
+<!-- Eyes in the dark -->
+<div class="deye" style="left:15%;top:45%;animation-delay:0s"></div>
+<div class="deye" style="right:20%;top:38%;animation-delay:2s"></div>
+<div class="deye" style="left:50%;top:52%;animation-delay:4s"></div>
+<!-- Dark matter particles -->
+<div class="dpart" style="left:20%;top:30%;animation-delay:0s"></div>
+<div class="dpart" style="left:45%;top:25%;animation-delay:.8s"></div>
+<div class="dpart" style="right:25%;top:35%;animation-delay:1.6s"></div>
+<div class="dpart" style="left:65%;top:28%;animation-delay:2.4s"></div>
+<div class="dpart" style="left:35%;top:42%;animation-delay:3.2s"></div>
+<div class="dpart" style="right:35%;top:48%;animation-delay:4s"></div>
+<!-- Void cracks -->
+<div class="crack" style="left:22%;top:50%;width:80px;transform:rotate(25deg)"></div>
+<div class="crack" style="right:18%;top:45%;width:60px;transform:rotate(-30deg)"></div>
+<div class="crack" style="left:48%;top:55%;width:50px;transform:rotate(10deg);opacity:.4"></div>
+<!-- Floating debris -->
+<div class="debris10" style="left:12%;top:55%;width:12px;height:8px;animation-delay:0s"></div>
+<div class="debris10" style="left:38%;top:48%;width:8px;height:6px;animation-delay:1s"></div>
+<div class="debris10" style="right:22%;top:58%;width:14px;height:10px;animation-delay:2s"></div>
+<div class="debris10" style="right:38%;top:50%;width:6px;height:4px;animation-delay:3s"></div>
+<!-- Anti-gravity platform base -->
+<div class="avoid"></div>
+<!-- Platforms -->
+<div class="plat" style="bottom:36%;left:14%;width:118px;height:14px"></div>
+<div class="plat" style="bottom:50%;left:42%;width:108px;height:14px"></div>
+<div class="plat" style="bottom:44%;right:12%;width:112px;height:14px"></div>
+<div class="pd" style="bottom:39%;left:16%"></div>
+</div>
+<div class="desc">
+<strong>背景层次（7层）：</strong><em>虚空</em>深紫黑渐变+微弱脉动 → <em>传送门</em>3环旋转+核心发光 → <em>远处星系</em>3个螺旋剪影 → <em>暗物质触须</em>3条蠕动 → <em>黑暗之眼</em>3只若隐若现 → <em>裂缝</em>3条空间裂隙 → <em>粒子</em>暗物质粒子+浮空碎片。<br>
+<strong>新增细节：</strong>传送门旋转环、暗物质触须蠕动、黑暗之眼若隐若现、空间裂隙、远处星系、浮空碎片。<br>
+<strong>参考：</strong>《塞尔达》魔王城堡终极暗域 × 《空洞骑士》深渊无尽黑暗。
+</div>
+<div class="pal"><span style="background:#050008"></span><span style="background:#1a0830"></span><span style="background:#2a1050"></span><span style="background:#6030a0"></span><span style="background:#a050ff"></span></div>
+<div class="tags"><span class="tag">传送门旋转</span><span class="tag">暗物质触须</span><span class="tag">黑暗之眼</span><span class="tag">空间裂隙</span><span class="tag">远处星系</span><span class="tag">虚空脉动</span><span class="tag">浮空碎片</span><span class="tag">暗物质粒子</span></div>
+</div>
+
+</body>
+</html>

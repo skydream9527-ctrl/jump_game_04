@@ -9,9 +9,10 @@ interface Props {
   level: number;
   onConfirm: (selectedItems: string[]) => void;
   onBack: () => void;
+  standalone?: boolean;
 }
 
-export function ItemSelect({ inventory, equippedItems, chapter, level, onConfirm, onBack }: Props) {
+export function ItemSelect({ inventory, equippedItems, chapter: _chapter, level: _level, onConfirm, onBack, standalone }: Props) {
   const [selected, setSelected] = useState<string[]>(equippedItems.slice(0, MAX_EQUIPPED_ITEMS));
 
   const toggleItem = useCallback((itemId: string) => {
@@ -47,10 +48,12 @@ export function ItemSelect({ inventory, equippedItems, chapter, level, onConfirm
     }}>
       {/* 标题 */}
       <h2 style={{ color: '#c8aa6e', fontSize: 20, fontWeight: 400, letterSpacing: 4, margin: '0 0 4px' }}>
-        选择携带道具
+        {standalone ? '储物袋' : '选择携带道具'}
       </h2>
       <p style={{ color: '#7a7060', fontSize: 12, margin: '0 0 16px' }}>
-        第{chapter}章 · 第{level}关 — 最多携带 {MAX_EQUIPPED_ITEMS} 件
+        {standalone
+          ? `当前装备 ${selected.length} / ${MAX_EQUIPPED_ITEMS} 件`
+          : `第{chapter}章 · 第{level}关 — 最多携带 ${MAX_EQUIPPED_ITEMS} 件`}
       </p>
 
       {/* 已选道具槽 */}
@@ -156,7 +159,7 @@ export function ItemSelect({ inventory, equippedItems, chapter, level, onConfirm
           padding: '8px 24px', borderRadius: 6, border: '1px solid rgba(107,184,232,0.4)',
           background: 'rgba(107,184,232,0.15)', color: '#6bb8e8', fontSize: 12,
           cursor: 'pointer', fontFamily: 'inherit',
-        }}>开始关卡</button>
+        }}>{standalone ? '保存装备' : '开始关卡'}</button>
       </div>
     </div>
   );

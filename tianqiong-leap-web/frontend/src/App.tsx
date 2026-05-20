@@ -35,6 +35,7 @@ export default function App() {
   const [gameOverData, setGameOverData] = useState<GameOverPayload>({ score: 0, bestScore: 0 });
   const [completeData, setCompleteData] = useState<LevelCompletePayload>({ score: 0, shards: 0, lives: 0, stars: 0 });
   const [_phaserReady, setPhaserReady] = useState(false);
+  const [standaloneView, setStandaloneView] = useState(false);
 
   const save = useSaveData();
 
@@ -106,12 +107,13 @@ export default function App() {
   const handleNextLevel = useCallback(() => {
     save.refresh();
     if (currentLevel < 10) {
-      // Go to item select for next level
       setCurrentLevel(currentLevel + 1);
+      setStandaloneView(false);
       setScreen('item_select');
     } else if (currentChapter < 10) {
       setCurrentChapter(currentChapter + 1);
       setCurrentLevel(1);
+      setStandaloneView(false);
       setScreen('item_select');
     }
   }, [currentChapter, currentLevel, save]);
@@ -163,6 +165,8 @@ export default function App() {
               onCharacterSelect={() => { save.refresh(); setScreen('character_select'); }}
               onShop={() => { save.refresh(); setScreen('shop'); }}
               onLeaderboard={() => setShowLeaderboard(true)}
+              onInventory={() => { save.refresh(); setStandaloneView(true); setScreen('item_select'); }}
+              onPet={() => { save.refresh(); setStandaloneView(true); setScreen('pet_select'); }}
             />
           )}
           {screen === 'shop' && (
@@ -185,7 +189,7 @@ export default function App() {
               chapter={selectedChapter}
               isLevelUnlocked={save.isLevelUnlocked}
               getRecord={save.getRecord}
-              onSelect={(ch, lv) => { setCurrentChapter(ch); setCurrentLevel(lv); setScreen('item_select'); }}
+              onSelect={(ch, lv) => { setCurrentChapter(ch); setCurrentLevel(lv); setStandaloneView(false); setScreen('item_select'); }}
               onBack={() => setScreen('planet_select')}
             />
           )}
@@ -195,16 +199,44 @@ export default function App() {
               equippedItems={save.saveData.equippedItems}
               chapter={currentChapter}
               level={currentLevel}
-              onConfirm={(items) => { save.setEquippedItems(items); setScreen('pet_select'); }}
-              onBack={() => setScreen('level_select')}
+              standalone={standaloneView}
+              onConfirm={(items) => {
+                save.setEquippedItems(items);
+                if (standaloneView) {
+                  setStandaloneView(false);
+                  setScreen('menu');
+                } else {
+                  setScreen('pet_select');
+                }
+              }}
+              onBack={() => {
+                setStandaloneView(false);
+                setScreen(standaloneView ? 'menu' : 'level_select');
+              }}
             />
           )}
           {screen === 'pet_select' && (
             <PetSelect
               ownedPets={save.saveData.ownedPets}
               selectedPet={save.saveData.selectedPet}
-              onSelect={(petId) => { save.selectPet(petId); startLevel(currentChapter, currentLevel, save.saveData.equippedItems); }}
-              onBack={() => setScreen('item_select')}
+              standalone={standaloneView}
+              onSelect={(petId) => {
+                save.selectPet(petId);
+                if (standaloneView) {
+                  setStandaloneView(false);
+                  setScreen('menu');
+                } else {
+                  startLevel(currentChapter, currentLevel, save.saveData.equippedItems);
+                }
+              }}
+              onBack={() => {
+                if (standaloneView) {
+                  setStandaloneView(false);
+                  setScreen('menu');
+                } else {
+                  setScreen('item_select');
+                }
+              }}
             />
           )}
           {screen === 'character_select' && (

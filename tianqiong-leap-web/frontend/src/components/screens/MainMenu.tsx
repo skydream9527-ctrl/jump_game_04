@@ -4,9 +4,11 @@ interface MainMenuProps {
   onCharacterSelect: () => void;
   onShop: () => void;
   onLeaderboard: () => void;
+  onInventory: () => void;
+  onPet: () => void;
 }
 
-export function MainMenu({ totalShards, onStartGame, onCharacterSelect, onShop, onLeaderboard }: MainMenuProps) {
+export function MainMenu({ totalShards, onStartGame, onCharacterSelect, onShop, onLeaderboard, onInventory, onPet }: MainMenuProps) {
   return (
     <div className="screen menu-screen">
       <div className="menu-content">
@@ -15,6 +17,8 @@ export function MainMenu({ totalShards, onStartGame, onCharacterSelect, onShop, 
         <div className="menu-divider" />
         <button className="btn btn-primary" onClick={onStartGame}>开始游戏</button>
         <button className="btn btn-secondary" onClick={onCharacterSelect}>角色选择</button>
+        <button className="btn btn-secondary" onClick={onInventory}>储物袋</button>
+        <button className="btn btn-secondary" onClick={onPet}>宠物</button>
         <button className="btn btn-secondary" onClick={onShop}>商店</button>
         <button className="btn btn-secondary" onClick={onLeaderboard}>排行榜</button>
         <div className="shard-display">
