@@ -1,10 +1,12 @@
 // Ported from LevelManager.kt
 import type { SaveData, LevelRecord, InventoryItem, PetInstance } from '../types/game';
 import { getLevelIndex } from '../constants/levels';
-import { MAX_INVENTORY_SIZE, MAX_EQUIPPED_ITEMS, getItemById } from '../constants/items';
-import { getPetById, MAX_OWNED_PETS, PET_EXP_PER_LEVEL, MAX_PET_LEVEL } from '../constants/pets';
+import { ITEMS, MAX_INVENTORY_SIZE, MAX_EQUIPPED_ITEMS, getItemById } from '../constants/items';
+import { PETS, getPetById, MAX_OWNED_PETS, PET_EXP_PER_LEVEL, MAX_PET_LEVEL } from '../constants/pets';
+import { CHARACTERS } from '../constants/characters';
 
 const SAVE_KEY = 'tianqiong_save';
+const TEST_MODE_KEY = 'tianqiong_test_mode';
 
 function getDefaultSave(): SaveData {
   return {
@@ -21,8 +23,69 @@ function getDefaultSave(): SaveData {
   };
 }
 
+function getTestSave(): SaveData {
+  const allRecords: (LevelRecord & { idx: number })[] = [];
+  for (let ch = 1; ch <= 10; ch++) {
+    for (let lv = 1; lv <= 10; lv++) {
+      allRecords.push({
+        idx: getLevelIndex(ch, lv),
+        cleared: true,
+        bestScore: 9999,
+        bestStars: 3,
+        bestShards: 3,
+      });
+    }
+  }
+
+  const allItems: InventoryItem[] = ITEMS.map(item => ({
+    itemId: item.id,
+    quantity: item.maxStack,
+  }));
+
+  const equippedItems = ITEMS.filter(i => i.category === 'relic' || i.category === 'equipment')
+    .slice(0, MAX_EQUIPPED_ITEMS)
+    .map(i => i.id);
+
+  const testPets: PetInstance[] = PETS.slice(0, MAX_OWNED_PETS).map(p => ({
+    petId: p.id,
+    level: 10,
+    exp: 0,
+    friendship: 100,
+  }));
+
+  return {
+    totalShards: 99999,
+    currentChapter: 1,
+    currentLevel: 1,
+    selectedCharacter: 0,
+    unlockedCharacters: CHARACTERS.map(c => c.id),
+    records: allRecords,
+    inventory: allItems,
+    equippedItems,
+    ownedPets: testPets,
+    selectedPet: testPets[0]?.petId ?? null,
+  };
+}
+
+export function isTestMode(): boolean {
+  return localStorage.getItem(TEST_MODE_KEY) === 'true';
+}
+
+export function enableTestMode(): void {
+  localStorage.setItem(TEST_MODE_KEY, 'true');
+  const testSave = getTestSave();
+  saveSave(testSave);
+}
+
+export function disableTestMode(): void {
+  localStorage.removeItem(TEST_MODE_KEY);
+}
+
 export function loadSave(): SaveData {
   try {
+    if (localStorage.getItem(TEST_MODE_KEY) === 'true') {
+      return getTestSave();
+    }
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return getDefaultSave();
     const json = JSON.parse(raw);

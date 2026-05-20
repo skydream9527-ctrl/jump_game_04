@@ -1,14 +1,16 @@
 interface MainMenuProps {
   totalShards: number;
+  testMode: boolean;
   onStartGame: () => void;
   onCharacterSelect: () => void;
   onShop: () => void;
   onLeaderboard: () => void;
   onInventory: () => void;
   onPet: () => void;
+  onToggleTestMode: () => void;
 }
 
-export function MainMenu({ totalShards, onStartGame, onCharacterSelect, onShop, onLeaderboard, onInventory, onPet }: MainMenuProps) {
+export function MainMenu({ totalShards, testMode, onStartGame, onCharacterSelect, onShop, onLeaderboard, onInventory, onPet, onToggleTestMode }: MainMenuProps) {
   return (
     <div className="screen menu-screen">
       <div className="menu-content">
@@ -25,6 +27,13 @@ export function MainMenu({ totalShards, onStartGame, onCharacterSelect, onShop, 
           <span className="shard-icon">★</span>
           <span>{totalShards} 星核碎片</span>
         </div>
+        <button
+          className="btn btn-secondary"
+          onClick={onToggleTestMode}
+          style={{ marginTop: 8, fontSize: 11, opacity: 0.7 }}
+        >
+          {testMode ? '🔓 测试模式（已开启）' : '🔒 测试模式'}
+        </button>
       </div>
     </div>
   );

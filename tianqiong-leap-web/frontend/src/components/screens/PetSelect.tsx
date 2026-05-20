@@ -12,6 +12,7 @@ interface Props {
 
 export function PetSelect({ ownedPets, selectedPet, onSelect, onBack, standalone }: Props) {
   const [selected, setSelected] = useState<string | null>(selectedPet);
+  const [showUnowned, setShowUnowned] = useState(false);
 
   const hexColor = (n: number) => '#' + n.toString(16).padStart(6, '0');
 
@@ -103,30 +104,46 @@ export function PetSelect({ ownedPets, selectedPet, onSelect, onBack, standalone
       {/* 未拥有宠物 */}
       {unownedPets.length > 0 && (
         <div style={{ width: '100%', maxWidth: 700, padding: '0 20px' }}>
-          <div style={{ color: '#7a7060', fontSize: 13, marginBottom: 10, letterSpacing: 2 }}>未获得</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-            {unownedPets.map(def => (
-              <div key={def.id} style={{
-                width: 160, padding: '10px 12px', borderRadius: 10,
-                border: '1px solid rgba(200,170,110,0.06)',
-                background: 'rgba(255,255,255,0.01)',
-                opacity: 0.5,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 32, filter: 'grayscale(1)' }}>❓</span>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#5a5a60' }}>???</div>
-                    <div style={{ fontSize: 9, color: '#4a4a50' }}>
-                      {PET_ELEMENT_NAMES[def.element]}系 · {RARITY_NAMES[def.rarity]}
+          <div
+            onClick={() => setShowUnowned(v => !v)}
+            style={{
+              color: '#7a7060', fontSize: 13, marginBottom: showUnowned ? 10 : 0,
+              letterSpacing: 2, cursor: 'pointer', userSelect: 'none',
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}
+          >
+            <span style={{
+              display: 'inline-block', transition: 'transform 0.2s',
+              transform: showUnowned ? 'rotate(90deg)' : 'rotate(0deg)',
+              fontSize: 10,
+            }}>▶</span>
+            未获得 ({unownedPets.length})
+          </div>
+          {showUnowned && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, maxHeight: 400, overflow: 'auto' }}>
+              {unownedPets.map(def => (
+                <div key={def.id} style={{
+                  width: 160, padding: '10px 12px', borderRadius: 10,
+                  border: '1px solid rgba(200,170,110,0.06)',
+                  background: 'rgba(255,255,255,0.01)',
+                  opacity: 0.5,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 32, filter: 'grayscale(1)' }}>❓</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#5a5a60' }}>???</div>
+                      <div style={{ fontSize: 9, color: '#4a4a50' }}>
+                        {PET_ELEMENT_NAMES[def.element]}系 · {RARITY_NAMES[def.rarity]}
+                      </div>
                     </div>
                   </div>
+                  <div style={{ fontSize: 10, color: '#4a4a50', marginTop: 6 }}>
+                    在商店中购买或通过关卡获得
+                  </div>
                 </div>
-                <div style={{ fontSize: 10, color: '#4a4a50', marginTop: 6 }}>
-                  在商店中购买或通过关卡获得
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

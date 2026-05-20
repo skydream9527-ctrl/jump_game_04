@@ -5,6 +5,7 @@ import { EVENTS } from './types/events';
 import type { GameScreen, GameState } from './types/game';
 import type { GameOverPayload, LevelCompletePayload } from './types/events';
 import { useSaveData } from './hooks/useSaveData';
+import { isTestMode, enableTestMode, disableTestMode } from './state/SaveManager';
 import { getCharacterById } from './constants/characters';
 import { ACHIEVEMENTS, type Achievement } from './constants/achievements';
 import { unlockAchievement } from './state/achievements';
@@ -36,8 +37,19 @@ export default function App() {
   const [completeData, setCompleteData] = useState<LevelCompletePayload>({ score: 0, shards: 0, lives: 0, stars: 0 });
   const [_phaserReady, setPhaserReady] = useState(false);
   const [standaloneView, setStandaloneView] = useState(false);
+  const [testMode, setTestMode] = useState(isTestMode());
 
   const save = useSaveData();
+
+  const handleToggleTestMode = useCallback(() => {
+    if (isTestMode()) {
+      disableTestMode();
+    } else {
+      enableTestMode();
+    }
+    setTestMode(isTestMode());
+    save.refresh();
+  }, [save]);
 
   const tryUnlock = useCallback((id: string) => {
     if (unlockAchievement(id)) {
@@ -161,12 +173,14 @@ export default function App() {
           {screen === 'menu' && (
             <MainMenu
               totalShards={save.saveData.totalShards}
+              testMode={testMode}
               onStartGame={() => { save.refresh(); setScreen('planet_select'); }}
               onCharacterSelect={() => { save.refresh(); setScreen('character_select'); }}
               onShop={() => { save.refresh(); setScreen('shop'); }}
               onLeaderboard={() => setShowLeaderboard(true)}
               onInventory={() => { save.refresh(); setStandaloneView(true); setScreen('item_select'); }}
               onPet={() => { save.refresh(); setStandaloneView(true); setScreen('pet_select'); }}
+              onToggleTestMode={handleToggleTestMode}
             />
           )}
           {screen === 'shop' && (

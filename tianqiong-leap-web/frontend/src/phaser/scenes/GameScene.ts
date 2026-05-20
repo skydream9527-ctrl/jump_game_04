@@ -98,6 +98,7 @@ export class GameScene extends Phaser.Scene {
   private animFrameIndex = 0;
   private animTimer = 0;
   private wasGrounded = false;
+  private spinTween: Phaser.Tweens.Tween | null = null;
 
   // Ice platform sliding
   private iceSlideVX = 0;
@@ -955,6 +956,10 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (this.isGrounded && !this.wasGrounded) {
+      // Reset spin angle on landing
+      if (this.spinTween) { this.spinTween.stop(); this.spinTween = null; }
+      this.player.setAngle(0);
+
       this.player.setScale(PHYSICS.WORLD_SCALE * 1.2, PHYSICS.WORLD_SCALE * 0.8);
       this.tweens.add({
         targets: this.player,
@@ -1315,6 +1320,17 @@ export class GameScene extends Phaser.Scene {
           this.slowFallTimer = item.effect.value ?? 500;
         }
       }
+
+      // Contra-style rolling spin on double jump
+      if (this.spinTween) this.spinTween.stop();
+      this.player.setAngle(0);
+      this.spinTween = this.tweens.add({
+        targets: this.player,
+        angle: 360,
+        duration: 400,
+        ease: 'Linear',
+        onComplete: () => { this.spinTween = null; },
+      });
     }
 
     this.player.setScale(PHYSICS.WORLD_SCALE * 0.8, PHYSICS.WORLD_SCALE * 1.2);
