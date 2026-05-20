@@ -15,6 +15,7 @@ import { LevelSelect } from './components/screens/LevelSelect';
 import { CharacterSelect } from './components/screens/CharacterSelect';
 import { Shop } from './components/screens/Shop';
 import { ItemSelect } from './components/screens/ItemSelect';
+import { PetSelect } from './components/screens/PetSelect';
 import type { ShopItem } from './constants/shop';
 import { PauseOverlay } from './components/overlays/PauseOverlay';
 import { GameOverOverlay } from './components/overlays/GameOverOverlay';
@@ -96,10 +97,11 @@ export default function App() {
           level,
           characterId: save.saveData.selectedCharacter,
           equippedItems: items,
+          selectedPet: save.saveData.selectedPet,
         });
       });
     });
-  }, [save.saveData.selectedCharacter]);
+  }, [save.saveData.selectedCharacter, save.saveData.selectedPet]);
 
   const handleNextLevel = useCallback(() => {
     save.refresh();
@@ -193,8 +195,16 @@ export default function App() {
               equippedItems={save.saveData.equippedItems}
               chapter={currentChapter}
               level={currentLevel}
-              onConfirm={(items) => { save.setEquippedItems(items); startLevel(currentChapter, currentLevel, items); }}
+              onConfirm={(items) => { save.setEquippedItems(items); setScreen('pet_select'); }}
               onBack={() => setScreen('level_select')}
+            />
+          )}
+          {screen === 'pet_select' && (
+            <PetSelect
+              ownedPets={save.saveData.ownedPets}
+              selectedPet={save.saveData.selectedPet}
+              onSelect={(petId) => { save.selectPet(petId); startLevel(currentChapter, currentLevel, save.saveData.equippedItems); }}
+              onBack={() => setScreen('item_select')}
             />
           )}
           {screen === 'character_select' && (

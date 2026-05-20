@@ -45,6 +45,22 @@ export function useSaveData() {
     setSaveData(prev => SaveManager.useConsumableItem(prev, itemId));
   }, []);
 
+  const adoptPet = useCallback((petId: string) => {
+    setSaveData(prev => SaveManager.adoptPet(prev, petId) ?? prev);
+  }, []);
+
+  const selectPet = useCallback((petId: string | null) => {
+    setSaveData(prev => SaveManager.selectPet(prev, petId));
+  }, []);
+
+  const addPetExp = useCallback((petId: string, exp: number) => {
+    setSaveData(prev => SaveManager.addPetExp(prev, petId, exp));
+  }, []);
+
+  const purchasePet = useCallback((petId: string, price: number) => {
+    setSaveData(prev => SaveManager.purchasePet(prev, petId, price) ?? prev);
+  }, []);
+
   return {
     saveData,
     refresh,
@@ -57,11 +73,16 @@ export function useSaveData() {
     unequipItem,
     setEquippedItems,
     useConsumableItem,
+    adoptPet,
+    selectPet,
+    addPetExp,
+    purchasePet,
     isLevelUnlocked: (ch: number, lv: number) => SaveManager.isLevelUnlocked(saveData, ch, lv),
     isChapterUnlocked: (ch: number) => SaveManager.isChapterUnlocked(saveData, ch),
     isCharacterUnlocked: (id: number) => SaveManager.isCharacterUnlocked(saveData, id),
     isItemPurchased: (itemId: string) => SaveManager.isItemPurchased(itemId),
     getRecord: (ch: number, lv: number) => SaveManager.getRecord(saveData, ch, lv),
     getChapterStars: (ch: number) => SaveManager.getChapterStars(saveData, ch),
+    getPetInstance: (petId: string) => SaveManager.getPetInstance(saveData, petId),
   };
 }

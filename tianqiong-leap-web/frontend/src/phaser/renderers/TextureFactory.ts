@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { CHAPTER_DATA } from '../../constants/levels';
 import { PHYSICS } from '../../constants/physics';
+import { PETS } from '../../constants/pets';
 
 export function generateAllTextures(scene: Phaser.Scene): void {
   generateParticleTexture(scene);
@@ -15,6 +16,7 @@ export function generateAllTextures(scene: Phaser.Scene): void {
   generateNinjaArtTextures(scene);
   generatePlatformTypeOverlays(scene);
   generateWeaponTextures(scene);
+  generatePetTextures(scene);
 }
 
 // ==================== Particle ====================
@@ -1266,4 +1268,96 @@ function generateWeaponTextures(scene: Phaser.Scene): void {
   ge.fillCircle(10, 10, 3);
   ge.generateTexture('explosion', 20, 20);
   ge.destroy();
+}
+
+// ==================== Pet Textures ====================
+function generatePetTextures(scene: Phaser.Scene): void {
+  for (const pet of PETS) {
+    const s = 32;
+    const g = scene.make.graphics({ x: 0, y: 0 }, false);
+
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillCircle(s / 2, s / 2 + 2, 10);
+
+    // Element glow
+    g.fillStyle(pet.color, 0.25);
+    g.fillCircle(s / 2, s / 2 + 2, 14);
+
+    // Eyes
+    g.fillStyle(0xffffff, 1);
+    g.fillCircle(s / 2 - 3, s / 2, 3);
+    g.fillCircle(s / 2 + 3, s / 2, 3);
+    g.fillStyle(pet.eyeColor, 1);
+    g.fillCircle(s / 2 - 2, s / 2 + 0.5, 1.8);
+    g.fillCircle(s / 2 + 4, s / 2 + 0.5, 1.8);
+    g.fillStyle(0xffffff, 1);
+    g.fillCircle(s / 2 - 1.5, s / 2 - 0.5, 0.7);
+    g.fillCircle(s / 2 + 4.5, s / 2 - 0.5, 0.7);
+
+    // Ears (element-specific shape)
+    if (pet.element === 'electric') {
+      // Pointy ears
+      g.fillStyle(pet.bodyColor, 1);
+      g.fillTriangle(s / 2 - 6, s / 2 - 6, s / 2 - 10, s / 2 - 16, s / 2 - 2, s / 2 - 10);
+      g.fillTriangle(s / 2 + 6, s / 2 - 6, s / 2 + 10, s / 2 - 16, s / 2 + 2, s / 2 - 10);
+      g.fillStyle(0x1a1a2e, 1);
+      g.fillTriangle(s / 2 - 7, s / 2 - 8, s / 2 - 9, s / 2 - 14, s / 2 - 3, s / 2 - 10);
+      g.fillTriangle(s / 2 + 7, s / 2 - 8, s / 2 + 9, s / 2 - 14, s / 2 + 3, s / 2 - 10);
+    } else if (pet.element === 'fire') {
+      // Flame ears
+      g.fillStyle(0xff8a65, 1);
+      g.fillTriangle(s / 2 - 6, s / 2 - 6, s / 2 - 8, s / 2 - 14, s / 2, s / 2 - 8);
+      g.fillTriangle(s / 2 + 6, s / 2 - 6, s / 2 + 8, s / 2 - 14, s / 2, s / 2 - 8);
+    } else if (pet.element === 'water') {
+      // Round ears
+      g.fillStyle(pet.bodyColor, 1);
+      g.fillCircle(s / 2 - 7, s / 2 - 8, 4);
+      g.fillCircle(s / 2 + 7, s / 2 - 8, 4);
+    } else if (pet.element === 'grass') {
+      // Leaf ears
+      g.fillStyle(0x81c784, 1);
+      g.fillTriangle(s / 2 - 5, s / 2 - 6, s / 2 - 10, s / 2 - 14, s / 2 + 2, s / 2 - 10);
+      g.fillTriangle(s / 2 + 5, s / 2 - 6, s / 2 + 10, s / 2 - 14, s / 2 - 2, s / 2 - 10);
+    } else {
+      // Default round ears
+      g.fillStyle(pet.bodyColor, 1);
+      g.fillCircle(s / 2 - 6, s / 2 - 7, 4);
+      g.fillCircle(s / 2 + 6, s / 2 - 7, 4);
+    }
+
+    // Tail (element-specific)
+    g.lineStyle(2, pet.color, 0.8);
+    if (pet.element === 'electric') {
+      // Lightning bolt tail
+      g.beginPath();
+      g.moveTo(s / 2 + 8, s / 2 + 4);
+      g.lineTo(s / 2 + 14, s / 2 - 2);
+      g.lineTo(s / 2 + 10, s / 2 + 2);
+      g.lineTo(s / 2 + 16, s / 2 - 4);
+      g.stroke();
+    } else if (pet.element === 'fire') {
+      // Flame tail
+      g.fillStyle(0xff5722, 0.8);
+      g.fillTriangle(s / 2 + 8, s / 2 + 2, s / 2 + 16, s / 2 - 6, s / 2 + 12, s / 2 + 6);
+      g.fillStyle(0xffab40, 0.6);
+      g.fillTriangle(s / 2 + 10, s / 2 + 2, s / 2 + 14, s / 2 - 4, s / 2 + 12, s / 2 + 4);
+    } else if (pet.element === 'water') {
+      // Bubble tail
+      g.fillStyle(0x64b5f6, 0.6);
+      g.fillCircle(s / 2 + 12, s / 2 + 2, 4);
+      g.fillCircle(s / 2 + 16, s / 2 - 2, 2);
+    } else {
+      // Default tail
+      g.fillStyle(pet.bodyColor, 0.8);
+      g.fillCircle(s / 2 + 10, s / 2 + 2, 4);
+    }
+
+    // Mouth
+    g.fillStyle(0x1a1a2e, 1);
+    g.fillRect(s / 2 - 1, s / 2 + 4, 3, 1);
+
+    g.generateTexture(`pet-${pet.id}`, s + 8, s + 8);
+    g.destroy();
+  }
 }

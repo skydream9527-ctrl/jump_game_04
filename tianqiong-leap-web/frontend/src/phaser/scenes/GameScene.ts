@@ -9,6 +9,7 @@ import { ENEMY_CONFIGS, ENEMY_SPAWN_CHANCE, ELITE_SPAWN_CHANCE, MINI_BOSS_SPAWN_
 import { getBossConfig, getRandomMiniBoss, type BossPhase, type BossAttack } from '../../constants/boss';
 import { WEAPON_CONFIGS, WEAPON_DROP_CHANCE, WEAPON_SPAWN_CHANCE, getAvailableWeaponTypes, type WeaponType, type WeaponConfig } from '../../constants/weapons';
 import { getItemById, type ItemDef } from '../../constants/items';
+import { getPetById, type PetDef } from '../../constants/pets';
 import { EventBus } from '../EventBus';
 import { EVENTS, type StartLevelPayload } from '../../types/events';
 import type { GameState } from '../../types/game';
@@ -112,6 +113,14 @@ export class GameScene extends Phaser.Scene {
   private invincibleTimer = 0;
   private swordBeamTimer = 0;
   private stunTimer = 0;
+
+  // Pet system
+  private selectedPet: PetDef | null = null;
+  private petSprite!: Phaser.GameObjects.Image;
+  private petTargetX = 0;
+  private petTargetY = 0;
+  private petActiveTimer = 0;
+  private petActiveCooldown = 0;
 
   // Environment effects (chapter-specific)
   private envOverlay: Phaser.GameObjects.Graphics | null = null;
@@ -224,7 +233,7 @@ export class GameScene extends Phaser.Scene {
 
   private setupEventListeners(): void {
     EventBus.on(EVENTS.START_LEVEL, (payload: StartLevelPayload) => {
-      this.startLevel(payload.chapter, payload.level, payload.characterId, payload.equippedItems);
+      this.startLevel(payload.chapter, payload.level, payload.characterId, payload.equippedItems, payload.selectedPet);
     });
     EventBus.on(EVENTS.PAUSE, () => this.pauseGame());
     EventBus.on(EVENTS.RESUME, () => this.resumeGame());
@@ -308,11 +317,11 @@ export class GameScene extends Phaser.Scene {
     this.liquidMetalTimer = 0;
   }
 
-  private startLevel(chapter: number, level: number, characterId: number, equippedItemIds?: string[]): void {
+  private startLevel(chapter: number, level: number, characterId: number, equippedItemIds?: string[], selectedPetId?: string | null): void {
     // Guard: ensure scene is ready
     if (!this.add || !this.children) {
       console.warn('GameScene not ready, deferring startLevel');
-      this.time.delayedCall(100, () => this.startLevel(chapter, level, characterId, equippedItemIds));
+      this.time.delayedCall(100, () => this.startLevel(chapter, level, characterId, equippedItemIds, selectedPetId));
       return;
     }
 
@@ -360,9 +369,26 @@ export class GameScene extends Phaser.Scene {
       if (e.stat === 'revive') {  } // fairy acts as revive
     }
 
+    // ── Resolve pet ──
+    this.selectedPet = selectedPetId ? (getPetById(selectedPetId) ?? null) : null;
+    this.petActiveCooldown = 0;
+
+    // Apply pet passive stats
+    if (this.selectedPet) {
+      const ps = this.selectedPet.stats;
+      this.speed *= (1 + ps.speedBonus / 100);
+      if (this.selectedPet.passive.type === 'speed_boost') {
+        this.speed *= (1 + this.selectedPet.passive.value);
+      }
+      if (this.selectedPet.passive.type === 'regen') {
+        // Handled in update loop
+      }
+    }
+
     this.clearGameObjects();
     this.createBackground();
     this.createPlayer();
+    this.createPetSprite();
     this.generateInitialPlatforms();
     this.setupCamera();
     this.createHUD();
@@ -642,6 +668,17 @@ export class GameScene extends Phaser.Scene {
     this.wasGrounded = false;
   }
 
+  private createPetSprite(): void {
+    if (!this.selectedPet) return;
+    const texKey = `pet-${this.selectedPet.id}`;
+    this.petSprite = this.add.image(this.playerX - 30, this.playerY - 20, texKey);
+    this.petSprite.setScale(0.6);
+    this.petSprite.setDepth(18);
+    this.petSprite.setAlpha(0.9);
+    this.petTargetX = this.playerX - 30;
+    this.petTargetY = this.playerY - 20;
+  }
+
   private updatePlayerVisuals(normalized: number): void {
     this.player.setPosition(this.playerX, this.playerY);
 
@@ -673,6 +710,165 @@ export class GameScene extends Phaser.Scene {
     if (this.player.texture.key !== key && this.textures.exists(key)) {
       this.player.setTexture(key);
     }
+  }
+
+  // ========== Pet System ==========
+  private updatePet(delta: number, normalized: number): void {
+    if (!this.selectedPet || !this.petSprite || !this.petSprite.active) return;
+
+    // Pet follows player with smooth interpolation
+    this.petTargetX = this.playerX - 35;
+    this.petTargetY = this.playerY - 25;
+    this.petSprite.x += (this.petTargetX - this.petSprite.x) * 0.08 * normalized;
+    this.petSprite.y += (this.petTargetY - this.petSprite.y) * 0.08 * normalized;
+
+    // Pet bobbing animation
+    this.petSprite.y += Math.sin(Date.now() * 0.004) * 0.5;
+
+    // Pet facing direction
+    this.petSprite.setFlipX(this.playerX < this.petSprite.x);
+
+    // Passive: regen — heal 1 life every N seconds
+    if (this.selectedPet.passive.type === 'regen') {
+      const regenInterval = 20000 / (this.selectedPet.passive.value || 1);
+      this.petActiveTimer += delta;
+      if (this.petActiveTimer >= regenInterval && this.lives < 3) {
+        this.lives++;
+        this.hudNeedsUpdate = true;
+        this.petActiveTimer = 0;
+        this.spawnParticles(0x4caf50, 6, 3, 2);
+      }
+    }
+
+    // Active skill cooldown
+    if (this.petActiveCooldown > 0) {
+      this.petActiveCooldown -= delta;
+    }
+
+    // Press R to activate pet skill
+    if (Phaser.Input.Keyboard.JustDown(this.rKey) && this.petActiveCooldown <= 0) {
+      this.activatePetSkill();
+    }
+  }
+
+  private activatePetSkill(): void {
+    if (!this.selectedPet) return;
+    const skill = this.selectedPet.active;
+    this.petActiveCooldown = skill.cooldown;
+
+    switch (skill.type) {
+      case 'lightning': // Pikachu — full screen damage
+        for (const e of this.enemies) {
+          e.hp -= skill.value;
+          this.spawnParticles(0xffeb3b, 3, 2, 2);
+        }
+        this.enemies = this.enemies.filter(e => {
+          if (e.hp <= 0) { e.sprite.destroy(); this.onEnemyKilled(); return false; }
+          return true;
+        });
+        this.spawnParticles(0xffeb3b, 15, 6, 5);
+        this.audio.lightningStrike();
+        break;
+
+      case 'fire_trail': // Charmander — fire behind player
+        // Spawn fire particles behind player for duration
+        for (let i = 0; i < 10; i++) {
+          const p = this.add.circle(this.playerX - i * 15, this.playerY + 10, 4, 0xff5722, 0.8);
+          p.setDepth(15);
+          this.particles.push({ obj: p, data: { vx: 0, vy: -0.5, life: 30 } });
+        }
+        break;
+
+      case 'water_wave': // Squirtle — push enemies forward
+        for (const e of this.enemies) {
+          if (Math.abs(e.sprite.x - this.playerX) < 200) {
+            e.sprite.x += 100;
+            e.hp -= skill.value;
+          }
+        }
+        this.spawnParticles(0x2196f3, 10, 5, 3);
+        break;
+
+      case 'vine_whip': // Bulbasaur — stun nearby enemies
+        for (const e of this.enemies) {
+          if (Math.abs(e.sprite.x - this.playerX) < 150) {
+            e.frozen = true;
+            e.hp -= skill.value;
+            this.time.delayedCall(2000, () => { if (e.sprite.active) e.frozen = false; });
+          }
+        }
+        this.spawnParticles(0x4caf50, 8, 4, 3);
+        break;
+
+      case 'thunder': // Jolteon — full screen damage
+        for (const e of this.enemies) {
+          e.hp -= skill.value;
+        }
+        this.enemies = this.enemies.filter(e => {
+          if (e.hp <= 0) { e.sprite.destroy(); this.onEnemyKilled(); return false; }
+          return true;
+        });
+        this.spawnParticles(0xffd600, 20, 8, 6);
+        this.audio.lightningStrike();
+        break;
+
+      case 'fire_explosion': // Charmeleon — explosion ahead
+        const expX = this.playerX + 120;
+        for (const e of this.enemies) {
+          if (Math.abs(e.sprite.x - expX) < 100 && Math.abs(e.sprite.y - this.playerY) < 80) {
+            e.hp -= skill.value;
+          }
+        }
+        this.enemies = this.enemies.filter(e => {
+          if (e.hp <= 0) { e.sprite.destroy(); this.onEnemyKilled(); return false; }
+          return true;
+        });
+        this.spawnParticles(0xff3d00, 15, 6, 5);
+        break;
+
+      case 'flare_blitz': // Flareon — invincible charge
+        this.invincibleTimer = skill.duration;
+        this.speed *= 1.5;
+        this.spawnParticles(0xe64a19, 12, 5, 4);
+        break;
+
+      case 'psychic': // Mew — slow all enemies
+        this.stunTimer = skill.duration;
+        for (const e of this.enemies) {
+          e.frozen = true;
+          this.time.delayedCall(skill.duration, () => { if (e.sprite.active) e.frozen = false; });
+        }
+        this.spawnParticles(0xe040fb, 12, 5, 4);
+        break;
+
+      case 'psychic_blast': // Mewtwo — full screen damage
+        for (const e of this.enemies) {
+          e.hp -= skill.value;
+        }
+        this.enemies = this.enemies.filter(e => {
+          if (e.hp <= 0) { e.sprite.destroy(); this.onEnemyKilled(); return false; }
+          return true;
+        });
+        if (this.boss) { this.boss.hp -= skill.value; }
+        this.spawnParticles(0x7c4dff, 25, 8, 6);
+        this.audio.lightningStrike();
+        break;
+
+      default:
+        // Generic damage skill
+        for (const e of this.enemies) {
+          if (Math.abs(e.sprite.x - this.playerX) < 200) {
+            e.hp -= skill.value;
+          }
+        }
+        this.enemies = this.enemies.filter(e => {
+          if (e.hp <= 0) { e.sprite.destroy(); this.onEnemyKilled(); return false; }
+          return true;
+        });
+        break;
+    }
+
+    this.hudNeedsUpdate = true;
   }
 
   // ========== Jump Physics Helpers ==========
@@ -954,8 +1150,9 @@ export class GameScene extends Phaser.Scene {
     }
 
     const hasConsumable = this.equippedItems.some(i => i.category === 'consumable');
+    const petHint = this.selectedPet ? `  R: ${this.selectedPet.active.name}` : '';
     const hint = this.add.text(padding, PHYSICS.CANVAS_HEIGHT - padding - 10,
-      `SPACE/点击: 跳跃  E: 忍术${hasConsumable ? '  Q: 使用道具' : ''}  自动射击`, {
+      `SPACE/点击: 跳跃  E: 忍术${hasConsumable ? '  Q: 使用道具' : ''}${petHint}  自动射击`, {
       fontSize: '10px',
       color: '#9e9486',
       fontFamily: 'sans-serif',
@@ -1589,6 +1786,7 @@ export class GameScene extends Phaser.Scene {
     this.checkWinCondition();
 
     this.updatePlayerVisuals(normalized);
+    this.updatePet(delta, normalized);
     this.updateParticles(normalized);
     this.updatePlatformTypes();
     this.updateNinjaArt(delta);

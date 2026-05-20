@@ -11,6 +11,13 @@ export interface InventoryItem {
   quantity: number;
 }
 
+export interface PetInstance {
+  petId: string;
+  level: number;
+  exp: number;
+  friendship: number;
+}
+
 export interface SaveData {
   totalShards: number;
   currentChapter: number;
@@ -20,8 +27,10 @@ export interface SaveData {
   records: LevelRecord[];
   inventory: InventoryItem[];
   equippedItems: string[];
+  ownedPets: PetInstance[];
+  selectedPet: string | null;
 }
 
-export type GameScreen = 'menu' | 'planet_select' | 'level_select' | 'character_select' | 'game' | 'shop' | 'settings' | 'item_select';
+export type GameScreen = 'menu' | 'planet_select' | 'level_select' | 'character_select' | 'game' | 'shop' | 'settings' | 'item_select' | 'pet_select';
 
 export type GameState = 'idle' | 'playing' | 'paused' | 'game_over' | 'result';

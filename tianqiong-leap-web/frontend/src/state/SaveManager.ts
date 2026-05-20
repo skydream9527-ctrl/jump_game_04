@@ -1,7 +1,8 @@
 // Ported from LevelManager.kt
-import type { SaveData, LevelRecord, InventoryItem } from '../types/game';
+import type { SaveData, LevelRecord, InventoryItem, PetInstance } from '../types/game';
 import { getLevelIndex } from '../constants/levels';
 import { MAX_INVENTORY_SIZE, MAX_EQUIPPED_ITEMS, getItemById } from '../constants/items';
+import { getPetById, MAX_OWNED_PETS, PET_EXP_PER_LEVEL, MAX_PET_LEVEL } from '../constants/pets';
 
 const SAVE_KEY = 'tianqiong_save';
 
@@ -15,6 +16,8 @@ function getDefaultSave(): SaveData {
     records: [],
     inventory: [],
     equippedItems: [],
+    ownedPets: [{ petId: 'pet_pikachu', level: 1, exp: 0, friendship: 50 }],
+    selectedPet: 'pet_pikachu',
   };
 }
 
@@ -32,6 +35,8 @@ export function loadSave(): SaveData {
       records: json.records ?? [],
       inventory: json.inventory ?? [],
       equippedItems: json.equippedItems ?? [],
+      ownedPets: json.ownedPets ?? getDefaultSave().ownedPets,
+      selectedPet: json.selectedPet ?? getDefaultSave().selectedPet,
     };
   } catch {
     return getDefaultSave();
@@ -243,4 +248,59 @@ export function useConsumableItem(data: SaveData, itemId: string): SaveData {
   const itemDef = getItemById(itemId);
   if (!itemDef || itemDef.category !== 'consumable') return data;
   return removeItemFromInventory(data, itemId, 1);
+}
+
+// ═══════════ Pet Management ═══════════
+
+export function adoptPet(data: SaveData, petId: string): SaveData | null {
+  if (data.ownedPets.length >= MAX_OWNED_PETS) return null;
+  if (data.ownedPets.some(p => p.petId === petId)) return null;
+  const petDef = getPetById(petId);
+  if (!petDef) return null;
+
+  const newPet: PetInstance = { petId, level: 1, exp: 0, friendship: 30 };
+  const newData = { ...data, ownedPets: [...data.ownedPets, newPet] };
+  saveSave(newData);
+  return newData;
+}
+
+export function selectPet(data: SaveData, petId: string | null): SaveData {
+  if (petId && !data.ownedPets.some(p => p.petId === petId)) return data;
+  const newData = { ...data, selectedPet: petId };
+  saveSave(newData);
+  return newData;
+}
+
+export function addPetExp(data: SaveData, petId: string, expAmount: number): SaveData {
+  const newData = {
+    ...data,
+    ownedPets: data.ownedPets.map(p => {
+      if (p.petId !== petId) return p;
+      if (p.level >= MAX_PET_LEVEL) return p;
+      let newExp = p.exp + expAmount;
+      let newLevel = p.level;
+      while (newLevel < MAX_PET_LEVEL && newExp >= PET_EXP_PER_LEVEL[newLevel]) {
+        newExp -= PET_EXP_PER_LEVEL[newLevel];
+        newLevel++;
+      }
+      return { ...p, level: newLevel, exp: newExp, friendship: Math.min(100, p.friendship + 1) };
+    }),
+  };
+  saveSave(newData);
+  return newData;
+}
+
+export function getPetInstance(data: SaveData, petId: string): PetInstance | undefined {
+  return data.ownedPets.find(p => p.petId === petId);
+}
+
+export function purchasePet(data: SaveData, petId: string, price: number): SaveData | null {
+  if (data.totalShards < price) return null;
+  if (data.ownedPets.some(p => p.petId === petId)) return null;
+
+  const newData: SaveData = {
+    ...data,
+    totalShards: data.totalShards - price,
+  };
+  return adoptPet(newData, petId);
 }

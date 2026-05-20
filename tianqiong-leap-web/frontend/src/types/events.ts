@@ -4,6 +4,7 @@ export interface StartLevelPayload {
   level: number;
   characterId: number;
   equippedItems?: string[];
+  selectedPet?: string | null;
 }
 
 export interface ScoreChangedPayload {
