@@ -68,10 +68,16 @@ export function PetSelect({ ownedPets, selectedPet, onSelect, onBack }: Props) {
                     </div>
                   </div>
                   <div style={{ fontSize: 10, color: '#a09880', marginTop: 6, lineHeight: 1.5 }}>
-                    {def.passive.description}
+                    被动：{def.passive.description}
                   </div>
                   <div style={{ fontSize: 10, color: '#6bb8e8', marginTop: 2 }}>
-                    技能：{def.active.name}
+                    R: {def.active.name}
+                  </div>
+                  <div style={{ fontSize: 10, color: '#e8a06b', marginTop: 1 }}>
+                    T: {def.active2.name}
+                  </div>
+                  <div style={{ fontSize: 10, color: '#d46bff', marginTop: 1 }}>
+                    Y: {def.ultimate.name}
                   </div>
                   {/* EXP bar */}
                   <div style={{ marginTop: 6, height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>

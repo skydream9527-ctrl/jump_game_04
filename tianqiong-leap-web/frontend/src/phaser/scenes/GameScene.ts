@@ -9,7 +9,7 @@ import { ENEMY_CONFIGS, ENEMY_SPAWN_CHANCE, ELITE_SPAWN_CHANCE, MINI_BOSS_SPAWN_
 import { getBossConfig, getRandomMiniBoss, type BossPhase, type BossAttack } from '../../constants/boss';
 import { WEAPON_CONFIGS, WEAPON_DROP_CHANCE, WEAPON_SPAWN_CHANCE, getAvailableWeaponTypes, type WeaponType, type WeaponConfig } from '../../constants/weapons';
 import { getItemById, type ItemDef } from '../../constants/items';
-import { getPetById, type PetDef } from '../../constants/pets';
+import { getPetById, type PetDef, type PetActive } from '../../constants/pets';
 import { EventBus } from '../EventBus';
 import { EVENTS, type StartLevelPayload } from '../../types/events';
 import type { GameState } from '../../types/game';
@@ -121,6 +121,8 @@ export class GameScene extends Phaser.Scene {
   private petTargetY = 0;
   private petActiveTimer = 0;
   private petActiveCooldown = 0;
+  private petTCooldown = 0;
+  private petUltCooldown = 0;
 
   // Environment effects (chapter-specific)
   private envOverlay: Phaser.GameObjects.Graphics | null = null;
@@ -180,6 +182,8 @@ export class GameScene extends Phaser.Scene {
   private wKey!: Phaser.Input.Keyboard.Key;
   private upKey!: Phaser.Input.Keyboard.Key;
   private rKey!: Phaser.Input.Keyboard.Key;
+  private tKey!: Phaser.Input.Keyboard.Key;
+  private yKey!: Phaser.Input.Keyboard.Key;
   private escKey!: Phaser.Input.Keyboard.Key;
   private eKey!: Phaser.Input.Keyboard.Key;
   private qKey!: Phaser.Input.Keyboard.Key;
@@ -214,6 +218,8 @@ export class GameScene extends Phaser.Scene {
     this.wKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.W);
     this.upKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.UP);
     this.rKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+    this.tKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.T);
+    this.yKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Y);
     this.escKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.eKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.E);
     this.qKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
@@ -372,6 +378,8 @@ export class GameScene extends Phaser.Scene {
     // ── Resolve pet ──
     this.selectedPet = selectedPetId ? (getPetById(selectedPetId) ?? null) : null;
     this.petActiveCooldown = 0;
+    this.petTCooldown = 0;
+    this.petUltCooldown = 0;
 
     // Apply pet passive stats
     if (this.selectedPet) {
@@ -740,38 +748,87 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    // Active skill cooldown
-    if (this.petActiveCooldown > 0) {
-      this.petActiveCooldown -= delta;
-    }
+    // Skill cooldowns
+    if (this.petActiveCooldown > 0) this.petActiveCooldown -= delta;
+    if (this.petTCooldown > 0) this.petTCooldown -= delta;
+    if (this.petUltCooldown > 0) this.petUltCooldown -= delta;
 
-    // Press R to activate pet skill
+    // R — active skill
     if (Phaser.Input.Keyboard.JustDown(this.rKey) && this.petActiveCooldown <= 0) {
-      this.activatePetSkill();
+      this.activatePetSkill('active');
+    }
+    // T — second active skill
+    if (Phaser.Input.Keyboard.JustDown(this.tKey) && this.petTCooldown <= 0) {
+      this.activatePetSkill('t_skill');
+    }
+    // Y — ultimate skill
+    if (Phaser.Input.Keyboard.JustDown(this.yKey) && this.petUltCooldown <= 0) {
+      this.activatePetSkill('ultimate');
     }
   }
 
-  private activatePetSkill(): void {
+  private activatePetSkill(slot: 'active' | 't_skill' | 'ultimate'): void {
     if (!this.selectedPet) return;
-    const skill = this.selectedPet.active;
-    this.petActiveCooldown = skill.cooldown;
 
+    let skill: PetActive;
+    if (slot === 'active') {
+      skill = this.selectedPet.active;
+      this.petActiveCooldown = skill.cooldown;
+    } else if (slot === 't_skill') {
+      skill = this.selectedPet.active2;
+      this.petTCooldown = skill.cooldown;
+    } else {
+      skill = this.selectedPet.ultimate;
+      this.petUltCooldown = skill.cooldown;
+    }
+
+    this.runPetSkillEffect(skill);
+    this.hudNeedsUpdate = true;
+  }
+
+  private runPetSkillEffect(skill: PetActive): void {
     switch (skill.type) {
-      case 'lightning': // Pikachu — full screen damage
+      // ── Full screen damage ──
+      case 'lightning':
+      case 'thunder':
+      case 'psychic_blast':
+      case 'sacred_fire':
+      case 'blizzard':
+      case 'thunder_flash':
+      case 'thunder_flash_2':
+      case 'dark_pulse':
+      case 'moonblast':
+      case 'judgment':
+      case 'fire_explosion':
+      case 'hydro_pump':
+      case 'hydro_cannon':
+      case 'zap_cannon':
+      case 'dual_cannon':
+      case 'solar_beam':
+      case 'giga_impact':
+      case 'flare_blitz':
+      case 'inferno':
+      case 'blast_burn':
+      case 'overheat':
+      case 'ice_crash':
+      case 'absolute_zero':
+      case 'eternal_frost':
+      case 'nightmare侵蚀':
+      case 'creation':
         for (const e of this.enemies) {
           e.hp -= skill.value;
-          this.spawnParticles(0xffeb3b, 3, 2, 2);
         }
         this.enemies = this.enemies.filter(e => {
           if (e.hp <= 0) { e.sprite.destroy(); this.onEnemyKilled(); return false; }
           return true;
         });
-        this.spawnParticles(0xffeb3b, 15, 6, 5);
-        this.audio.lightningStrike();
+        if (this.boss) { this.boss.hp -= skill.value; }
+        this.spawnParticles(0xffd600, 20, 8, 6);
         break;
 
-      case 'fire_trail': // Charmander — fire behind player
-        // Spawn fire particles behind player for duration
+      // ── Fire trail behind player ──
+      case 'fire_trail':
+      case 'ember':
         for (let i = 0; i < 10; i++) {
           const p = this.add.circle(this.playerX - i * 15, this.playerY + 10, 4, 0xff5722, 0.8);
           p.setDepth(15);
@@ -779,7 +836,11 @@ export class GameScene extends Phaser.Scene {
         }
         break;
 
-      case 'water_wave': // Squirtle — push enemies forward
+      // ── Water wave / push ──
+      case 'water_wave':
+      case 'water_gun':
+      case 'tide':
+      case 'crab_hammer':
         for (const e of this.enemies) {
           if (Math.abs(e.sprite.x - this.playerX) < 200) {
             e.sprite.x += 100;
@@ -789,33 +850,87 @@ export class GameScene extends Phaser.Scene {
         this.spawnParticles(0x2196f3, 10, 5, 3);
         break;
 
-      case 'vine_whip': // Bulbasaur — stun nearby enemies
+      // ── Vine whip / stun nearby ──
+      case 'vine_whip':
+      case 'razor_leaf':
+      case 'sleep_powder':
+      case 'supersonic':
         for (const e of this.enemies) {
           if (Math.abs(e.sprite.x - this.playerX) < 150) {
             e.frozen = true;
             e.hp -= skill.value;
-            this.time.delayedCall(2000, () => { if (e.sprite.active) e.frozen = false; });
+            this.time.delayedCall(skill.duration || 2000, () => { if (e.sprite.active) e.frozen = false; });
           }
         }
         this.spawnParticles(0x4caf50, 8, 4, 3);
         break;
 
-      case 'thunder': // Jolteon — full screen damage
+      // ── Slow all enemies ──
+      case 'psychic':
+      case 'psychic_2':
+      case 'psychic_3':
+      case 'icy_wind':
+      case 'snowstorm':
+      case 'aurora_beam':
+      case 'dark_void':
         for (const e of this.enemies) {
-          e.hp -= skill.value;
+          e.frozen = true;
+          this.time.delayedCall(skill.duration || 3000, () => { if (e.sprite.active) e.frozen = false; });
         }
-        this.enemies = this.enemies.filter(e => {
-          if (e.hp <= 0) { e.sprite.destroy(); this.onEnemyKilled(); return false; }
-          return true;
-        });
-        this.spawnParticles(0xffd600, 20, 8, 6);
-        this.audio.lightningStrike();
+        this.spawnParticles(0xe040fb, 12, 5, 4);
         break;
 
-      case 'fire_explosion': // Charmeleon — explosion ahead
-        const expX = this.playerX + 120;
+      // ── Invincible charge ──
+      case 'flare_blitz':
+      case 'volt_tackle':
+      case 'ice_ball':
+      case 'shell_charge':
+      case 'moon_jump':
+        this.invincibleTimer = skill.duration;
+        this.speed *= 1.5;
+        this.spawnParticles(0xe64a19, 12, 5, 4);
+        break;
+
+      // ── Heal ──
+      case 'heal_pulse':
+      case 'healing_wish':
+      case 'healing_wave':
+      case 'morning_sun':
+      case 'rest':
+        this.lives = Math.min(5, this.lives + skill.value);
+        this.spawnParticles(0x4caf50, 10, 4, 3);
+        break;
+
+      // ── Shield / invincibility ──
+      case 'water_shield':
+      case 'blessing':
+        this.invincibleTimer = skill.duration;
+        this.spawnParticles(0x42a5f5, 10, 4, 3);
+        break;
+
+      // ── Boost stats ──
+      case 'agility':
+      case 'evolve':
+      case 'cosmic_power':
+      case 'overgrow':
+      case 'dark_domain':
+        this.speed *= 1.3;
+        this.spawnParticles(0xffd700, 12, 5, 4);
+        break;
+
+      // ── DOT / area effect ──
+      case 'fire_spin':
+      case 'leaf_storm':
+      case 'water_pulse':
+      case 'petal_dance':
+      case 'storm':
+      case 'thunder_storm':
+      case 'ice_dance':
+      case 'cannon阵列':
+      case 'nightmare':
+      case 'foxfire':
         for (const e of this.enemies) {
-          if (Math.abs(e.sprite.x - expX) < 100 && Math.abs(e.sprite.y - this.playerY) < 80) {
+          if (Math.abs(e.sprite.x - this.playerX) < 250) {
             e.hp -= skill.value;
           }
         }
@@ -823,25 +938,23 @@ export class GameScene extends Phaser.Scene {
           if (e.hp <= 0) { e.sprite.destroy(); this.onEnemyKilled(); return false; }
           return true;
         });
-        this.spawnParticles(0xff3d00, 15, 6, 5);
+        this.spawnParticles(0x7c4dff, 10, 5, 3);
         break;
 
-      case 'flare_blitz': // Flareon — invincible charge
-        this.invincibleTimer = skill.duration;
-        this.speed *= 1.5;
-        this.spawnParticles(0xe64a19, 12, 5, 4);
+      // ── Revive / special ──
+      case 'rebirth':
+        this.lives = 5;
+        this.invincibleTimer = 3000;
+        this.spawnParticles(0xff6d00, 15, 6, 5);
         break;
 
-      case 'psychic': // Mew — slow all enemies
-        this.stunTimer = skill.duration;
-        for (const e of this.enemies) {
-          e.frozen = true;
-          this.time.delayedCall(skill.duration, () => { if (e.sprite.active) e.frozen = false; });
-        }
-        this.spawnParticles(0xe040fb, 12, 5, 4);
+      case 'time_travel':
+      case 'time_rewind':
+        this.lives = 5;
+        this.spawnParticles(0x81c784, 15, 6, 5);
         break;
 
-      case 'psychic_blast': // Mewtwo — full screen damage
+      case 'thousand_thunders':
         for (const e of this.enemies) {
           e.hp -= skill.value;
         }
@@ -849,13 +962,11 @@ export class GameScene extends Phaser.Scene {
           if (e.hp <= 0) { e.sprite.destroy(); this.onEnemyKilled(); return false; }
           return true;
         });
-        if (this.boss) { this.boss.hp -= skill.value; }
-        this.spawnParticles(0x7c4dff, 25, 8, 6);
-        this.audio.lightningStrike();
+        this.spawnParticles(0xffd600, 25, 8, 6);
         break;
 
+      // ── Fallback: generic damage ──
       default:
-        // Generic damage skill
         for (const e of this.enemies) {
           if (Math.abs(e.sprite.x - this.playerX) < 200) {
             e.hp -= skill.value;
@@ -867,8 +978,6 @@ export class GameScene extends Phaser.Scene {
         });
         break;
     }
-
-    this.hudNeedsUpdate = true;
   }
 
   // ========== Jump Physics Helpers ==========
@@ -1150,7 +1259,9 @@ export class GameScene extends Phaser.Scene {
     }
 
     const hasConsumable = this.equippedItems.some(i => i.category === 'consumable');
-    const petHint = this.selectedPet ? `  R: ${this.selectedPet.active.name}` : '';
+    const petHint = this.selectedPet
+      ? `  R: ${this.selectedPet.active.name}  T: ${this.selectedPet.active2.name}  Y: ${this.selectedPet.ultimate.name}`
+      : '';
     const hint = this.add.text(padding, PHYSICS.CANVAS_HEIGHT - padding - 10,
       `SPACE/点击: 跳跃  E: 忍术${hasConsumable ? '  Q: 使用道具' : ''}${petHint}  自动射击`, {
       fontSize: '10px',
