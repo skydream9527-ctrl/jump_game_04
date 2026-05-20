@@ -3,6 +3,7 @@ export interface StartLevelPayload {
   chapter: number;
   level: number;
   characterId: number;
+  equippedItems?: string[];
 }
 
 export interface ScoreChangedPayload {

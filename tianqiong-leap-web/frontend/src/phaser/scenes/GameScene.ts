@@ -8,6 +8,7 @@ import { ENERGY_PER_JUMP, ENERGY_PER_SHARD, ENERGY_MAX, NINJA_ART_CONFIGS, type 
 import { ENEMY_CONFIGS, ENEMY_SPAWN_CHANCE, ELITE_SPAWN_CHANCE, MINI_BOSS_SPAWN_CHANCE, SHOOTER_FIRE_INTERVAL, BULLET_SPEED, BULLET_SIZE, getAvailableEnemyTypes, type EnemyType } from '../../constants/enemies';
 import { getBossConfig, getRandomMiniBoss, type BossPhase, type BossAttack } from '../../constants/boss';
 import { WEAPON_CONFIGS, WEAPON_DROP_CHANCE, WEAPON_SPAWN_CHANCE, getAvailableWeaponTypes, type WeaponType, type WeaponConfig } from '../../constants/weapons';
+import { getItemById, type ItemDef } from '../../constants/items';
 import { EventBus } from '../EventBus';
 import { EVENTS, type StartLevelPayload } from '../../types/events';
 import type { GameState } from '../../types/game';
@@ -100,6 +101,18 @@ export class GameScene extends Phaser.Scene {
   private iceSlideVX = 0;
   private lastProgressEmit = 0;
 
+  // Item system
+  private equippedItems: ItemDef[] = [];
+  private killCount = 0;
+  private comboCount = 0;
+  private stealthTimer = 0;
+  private autoShieldTimer = 0;
+  private slowFallActive = false;
+  private slowFallTimer = 0;
+  private invincibleTimer = 0;
+  private swordBeamTimer = 0;
+  private stunTimer = 0;
+
   // Environment effects (chapter-specific)
   private envOverlay: Phaser.GameObjects.Graphics | null = null;
   private envParticles: { obj: Phaser.GameObjects.Arc; data: ParticleData }[] = [];
@@ -160,6 +173,7 @@ export class GameScene extends Phaser.Scene {
   private rKey!: Phaser.Input.Keyboard.Key;
   private escKey!: Phaser.Input.Keyboard.Key;
   private eKey!: Phaser.Input.Keyboard.Key;
+  private qKey!: Phaser.Input.Keyboard.Key;
 
   private get cameraTargetX(): number {
     return this.playerX - PLAYER_SCREEN_X;
@@ -193,6 +207,7 @@ export class GameScene extends Phaser.Scene {
     this.rKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.R);
     this.escKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.eKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+    this.qKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (this.gameState === 'playing') {
@@ -209,7 +224,7 @@ export class GameScene extends Phaser.Scene {
 
   private setupEventListeners(): void {
     EventBus.on(EVENTS.START_LEVEL, (payload: StartLevelPayload) => {
-      this.startLevel(payload.chapter, payload.level, payload.characterId);
+      this.startLevel(payload.chapter, payload.level, payload.characterId, payload.equippedItems);
     });
     EventBus.on(EVENTS.PAUSE, () => this.pauseGame());
     EventBus.on(EVENTS.RESUME, () => this.resumeGame());
@@ -293,11 +308,11 @@ export class GameScene extends Phaser.Scene {
     this.liquidMetalTimer = 0;
   }
 
-  private startLevel(chapter: number, level: number, characterId: number): void {
+  private startLevel(chapter: number, level: number, characterId: number, equippedItemIds?: string[]): void {
     // Guard: ensure scene is ready
     if (!this.add || !this.children) {
       console.warn('GameScene not ready, deferring startLevel');
-      this.time.delayedCall(100, () => this.startLevel(chapter, level, characterId));
+      this.time.delayedCall(100, () => this.startLevel(chapter, level, characterId, equippedItemIds));
       return;
     }
 
@@ -319,6 +334,31 @@ export class GameScene extends Phaser.Scene {
     this.gameState = 'playing';
     this.playerX = 80;
     this.playerY = 340;
+
+    // ── Resolve equipped items ──
+    this.equippedItems = (equippedItemIds ?? []).map(id => getItemById(id)).filter((d): d is ItemDef => !!d);
+    this.killCount = 0;
+    this.comboCount = 0;
+    this.stealthTimer = 0;
+    this.autoShieldTimer = 0;
+    
+    this.slowFallActive = false;
+    this.slowFallTimer = 0;
+    this.invincibleTimer = 0;
+    this.swordBeamTimer = 0;
+    this.stunTimer = 0;
+
+    // Apply passive item effects on start
+    for (const item of this.equippedItems) {
+      const e = item.effect;
+      if (e.type !== 'passive') continue;
+      if (e.stat === 'shield') {  this.hasShield = true; }
+      if (e.stat === 'speed') { this.speed *= (1 + (e.value ?? 0)); }
+      if (e.stat === 'game_speed') { this.speed *= (1 + (e.value ?? 0)); }
+      if (e.stat === 'stealth') { this.stealthTimer = e.value ?? 5000; }
+      if (e.stat === 'auto_shield') { this.autoShieldTimer = e.value ?? 30000; }
+      if (e.stat === 'revive') {  } // fairy acts as revive
+    }
 
     this.clearGameObjects();
     this.createBackground();
@@ -689,7 +729,16 @@ export class GameScene extends Phaser.Scene {
 
     const char = getCharacterById(this.characterId);
     const boostActive = this.activePowerUps.has('boostboots');
-    const jumpMult = boostActive ? 1.5 : 1.0;
+
+    // Item jump bonus
+    let itemJumpMult = 1.0;
+    for (const item of this.equippedItems) {
+      if (item.effect.type === 'passive' && item.effect.stat === 'jump') {
+        itemJumpMult += item.effect.value ?? 0;
+      }
+    }
+
+    const jumpMult = (boostActive ? 1.5 : 1.0) * itemJumpMult;
     const jumpForce = PHYSICS.JUMP_FORCE * char.jumpMultiplier * jumpMult;
     const force = this.jumpCount === 0 ? jumpForce : jumpForce * PHYSICS.DOUBLE_JUMP_MULTIPLIER;
 
@@ -699,6 +748,16 @@ export class GameScene extends Phaser.Scene {
     this.energy = Math.min(ENERGY_MAX, this.energy + ENERGY_PER_JUMP);
     this.spawnParticles(0xffe4b5, PHYSICS.JUMP_PARTICLE_COUNT, 4, 3);
     this.audio.jump();
+
+    // Slow fall on double jump (charm_gravity)
+    if (this.jumpCount >= 2) {
+      for (const item of this.equippedItems) {
+        if (item.effect.type === 'on_jump' && item.effect.stat === 'slow_fall') {
+          this.slowFallActive = true;
+          this.slowFallTimer = item.effect.value ?? 500;
+        }
+      }
+    }
 
     this.player.setScale(PHYSICS.WORLD_SCALE * 0.8, PHYSICS.WORLD_SCALE * 1.2);
     this.tweens.add({
@@ -894,7 +953,9 @@ export class GameScene extends Phaser.Scene {
       this.powerUpIcons.push({ type: 'shield', icon, timer });
     }
 
-    const hint = this.add.text(padding, PHYSICS.CANVAS_HEIGHT - padding - 10, 'SPACE/点击: 跳跃  E: 忍术  自动射击', {
+    const hasConsumable = this.equippedItems.some(i => i.category === 'consumable');
+    const hint = this.add.text(padding, PHYSICS.CANVAS_HEIGHT - padding - 10,
+      `SPACE/点击: 跳跃  E: 忍术${hasConsumable ? '  Q: 使用道具' : ''}  自动射击`, {
       fontSize: '10px',
       color: '#9e9486',
       fontFamily: 'sans-serif',
@@ -1025,13 +1086,40 @@ export class GameScene extends Phaser.Scene {
   }
 
   private onPlayerFall(): void {
+    // Invincibility from items
+    if (this.invincibleTimer > 0) return;
+
+    // Item: damage reduce (armor_light) — 20% chance to ignore
+    for (const item of this.equippedItems) {
+      if (item.effect.type === 'passive' && item.effect.stat === 'damage_reduce') {
+        if (Math.random() < (item.effect.value ?? 0)) {
+          this.spawnParticles(0xffd700, 6, 4, 3);
+          return;
+        }
+      }
+    }
+
     // Shield absorbs one hit — always check, even if dead is already set
     if (this.hasShield) {
       this.hasShield = false;
+      
       this.hudNeedsUpdate = true;
       this.spawnParticles(0x4fc3f7, 8, 5, 4);
       this.respawnOnPlatform();
       this.dead = false;
+      return;
+    }
+
+    // Item: fairy revive — restore full lives
+    if (this.equippedItems.some(i => i.effect.stat === 'revive')) {
+      this.lives = 3;
+      this.hudNeedsUpdate = true;
+      this.spawnParticles(0xe040fb, 12, 5, 5);
+      this.audio.powerup();
+      this.respawnOnPlatform();
+      this.dead = false;
+      // Remove fairy from equipped (consumed)
+      this.equippedItems = this.equippedItems.filter(i => i.effect.stat !== 'revive');
       return;
     }
 
@@ -1052,6 +1140,7 @@ export class GameScene extends Phaser.Scene {
     this.dead = true;
 
     this.lives--;
+    this.killCount = 0; // Reset combo on death
     this.hudNeedsUpdate = true;
     EventBus.emit(EVENTS.LIVES_CHANGED, { lives: this.lives });
 
@@ -1067,6 +1156,88 @@ export class GameScene extends Phaser.Scene {
       this.player.setScale(PHYSICS.WORLD_SCALE);
       this.updatePlayerVisuals(1);
       this.dead = false;
+    }
+  }
+
+  // ========== Item: Use Consumable ==========
+  private useConsumableItem(): void {
+    const consumables = this.equippedItems.filter(i => i.category === 'consumable');
+    if (consumables.length === 0) return;
+
+    const item = consumables[0]; // Use first consumable
+    const e = item.effect;
+
+    switch (e.stat) {
+      case 'lives': // Potion HP
+        this.lives = Math.min(3, this.lives + (e.value ?? 1));
+        this.hudNeedsUpdate = true;
+        this.spawnParticles(0xe91e63, 8, 4, 3);
+        break;
+      case 'shield': // Potion shield
+        this.hasShield = true;
+        this.hudNeedsUpdate = true;
+        this.spawnParticles(0x4fc3f7, 8, 4, 3);
+        break;
+      case 'bomb_range': // Bomb — destroy all enemies in range
+        for (const enemy of this.enemies) {
+          const dx = this.playerX - enemy.sprite.x;
+          if (Math.abs(dx) < (e.value ?? 300)) {
+            enemy.hp = 0;
+            this.spawnParticles(0xff5722, 6, 4, 3);
+            this.score += 50;
+          }
+        }
+        this.enemies = this.enemies.filter(enemy => {
+          if (enemy.hp <= 0) { enemy.sprite.destroy(); return false; }
+          return true;
+        });
+        this.spawnParticles(0xff5722, 12, 6, 4);
+        this.audio.lightningStrike();
+        break;
+      case 'light_arrow': // Light arrow — damage all enemies
+        for (const enemy of this.enemies) {
+          enemy.hp -= (e.value ?? 2);
+          this.spawnParticles(0xffeb3b, 4, 3, 2);
+        }
+        this.enemies = this.enemies.filter(enemy => {
+          if (enemy.hp <= 0) { enemy.sprite.destroy(); this.onEnemyKilled(); return false; }
+          return true;
+        });
+        break;
+      case 'stun': // Deku nut — stun all enemies
+        this.stunTimer = e.value ?? 3000;
+        for (const enemy of this.enemies) {
+          enemy.frozen = true;
+          this.time.delayedCall(e.value ?? 3000, () => { if (enemy.sprite.active) enemy.frozen = false; });
+        }
+        this.spawnParticles(0x8d6e63, 10, 5, 4);
+        break;
+    }
+
+    // Remove consumed item from equipped list
+    this.equippedItems = this.equippedItems.filter(i => i !== item);
+    this.hudNeedsUpdate = true;
+  }
+
+  // ========== Item: Enemy Kill Tracking ==========
+  private onEnemyKilled(): void {
+    this.killCount++;
+    this.comboCount++;
+
+    // charm_vampire: every 5 kills restore 1 life
+    for (const item of this.equippedItems) {
+      if (item.effect.type === 'on_kill' && item.effect.stat === 'lifesteal') {
+        const threshold = item.effect.value ?? 5;
+        if (this.killCount % threshold === 0 && this.lives < 3) {
+          this.lives++;
+          this.hudNeedsUpdate = true;
+          this.spawnParticles(0xc62828, 8, 4, 3);
+        }
+      }
+      // triforce_power: kill refreshes jump
+      if (item.effect.type === 'on_kill' && item.effect.stat === 'refresh_jump') {
+        this.jumpCount = 0;
+      }
     }
   }
 
@@ -1125,6 +1296,9 @@ export class GameScene extends Phaser.Scene {
     if (Phaser.Input.Keyboard.JustDown(this.eKey)) {
       this.tryActivateNinjaArt();
     }
+    if (Phaser.Input.Keyboard.JustDown(this.qKey)) {
+      this.useConsumableItem();
+    }
     if (Phaser.Input.Keyboard.JustDown(this.escKey)) {
       this.pauseGame();
       return;
@@ -1135,7 +1309,42 @@ export class GameScene extends Phaser.Scene {
     const maxSpeed = PHYSICS.MAX_SPEED * this.config.speedMultiplier * speedFactor;
     this.speed = Math.min(maxSpeed, this.speed + PHYSICS.SPEED_RAMP * normalized);
 
-    this.playerVY += PHYSICS.GRAVITY * this.chapterData.gravityMultiplier * normalized;
+    // ── Item effect timers ──
+    if (this.stealthTimer > 0) { this.stealthTimer -= delta; }
+    if (this.invincibleTimer > 0) { this.invincibleTimer -= delta; }
+    if (this.stunTimer > 0) { this.stunTimer -= delta; }
+    if (this.slowFallActive) {
+      this.slowFallTimer -= delta;
+      if (this.slowFallTimer <= 0) this.slowFallActive = false;
+    }
+    // Auto shield (hylian_shield)
+    if (this.autoShieldTimer > 0) {
+      this.autoShieldTimer -= delta;
+      if (this.autoShieldTimer <= 0 && !this.hasShield) {
+        this.hasShield = true;
+        
+        this.hudNeedsUpdate = true;
+        this.spawnParticles(0x1565c0, 8, 4, 3);
+        this.autoShieldTimer = 30000; // Reset timer
+      }
+    }
+    // Sword beam (master_sword) — auto fire every 800ms
+    this.swordBeamTimer += delta;
+    if (this.equippedItems.some(i => i.effect.stat === 'sword_beam') && this.swordBeamTimer > 800) {
+      this.swordBeamTimer = 0;
+      const beam = this.add.image(this.playerX + 20, this.playerY, 'bullet-laser');
+      beam.setDisplaySize(20, 4);
+      beam.setDepth(15);
+      this.playerBullets.push({ sprite: beam, vx: 8, vy: 0, config: { ...WEAPON_CONFIGS.laser, piercing: true }, pierced: 0, age: 0 });
+    }
+
+    // Apply slow fall gravity reduction
+    let gravityMult = this.chapterData.gravityMultiplier;
+    if (this.slowFallActive && this.playerVY > 0) {
+      gravityMult *= 0.4;
+    }
+
+    this.playerVY += PHYSICS.GRAVITY * gravityMult * normalized;
     this.playerY += this.playerVY * normalized;
 
     if (this.playerY < this.playerHeight / 2) {
@@ -1237,7 +1446,15 @@ export class GameScene extends Phaser.Scene {
 
     const magnetActive = this.activePowerUps.has('magnet');
     const collectThreshold = (16 + this.playerWidth * 0.5) ** 2;
-    const magnetThreshold = MAGNET_RADIUS * MAGNET_RADIUS;
+
+    // Item: magnet range bonus
+    let magnetRangeMult = 1.0;
+    for (const item of this.equippedItems) {
+      if (item.effect.type === 'passive' && item.effect.stat === 'magnet_range') {
+        magnetRangeMult += item.effect.value ?? 0;
+      }
+    }
+    const magnetThreshold = MAGNET_RADIUS * MAGNET_RADIUS * magnetRangeMult * magnetRangeMult;
     for (let i = this.shardSprites.length - 1; i >= 0; i--) {
       const s = this.shardSprites[i];
       if (s.collected || !s.active) continue;
@@ -1266,6 +1483,16 @@ export class GameScene extends Phaser.Scene {
         this.shardSprites.splice(i, 1);
         this.audio.shard();
         EventBus.emit(EVENTS.SHARD_COLLECTED, { count: this.shardsCollected, total: this.totalShards });
+
+        // Item: triforce_wisdom — collect 3 shards → invincible 1s
+        for (const item of this.equippedItems) {
+          if (item.effect.type === 'on_collect' && item.effect.stat === 'invincible_on_collect') {
+            if (this.shardsCollected % 3 === 0) {
+              this.invincibleTimer = item.effect.value ?? 1000;
+              this.spawnParticles(0x2979ff, 10, 5, 4);
+            }
+          }
+        }
       }
     }
 
@@ -1491,18 +1718,30 @@ export class GameScene extends Phaser.Scene {
 
         if (playerBottom >= ey - eh && playerBottom <= ey + eh * 0.3 &&
             playerRight > ex - ew && playerLeft < ex + ew) {
-          e.hp--;
+          // Combo damage from charm_rage
+          let stompDmg = 1;
+          for (const item of this.equippedItems) {
+            if (item.effect.type === 'passive' && item.effect.stat === 'stomp_damage') stompDmg += item.effect.value ?? 0;
+            if (item.effect.type === 'passive' && item.effect.stat === 'combo_damage') stompDmg += this.comboCount * (item.effect.value ?? 0);
+            if (item.effect.type === 'passive' && item.effect.stat === 'low_hp_power' && this.lives <= 1) stompDmg *= (item.effect.value ?? 1);
+          }
+          e.hp -= stompDmg;
+          this.comboCount++;
           this.playerVY = PHYSICS.JUMP_FORCE * 0.6; // bounce
           this.spawnParticles(cfg.color, 5, 3, 3);
           this.score += cfg.scoreReward;
           this.hudNeedsUpdate = true;
           if (e.hp <= 0) {
+            this.onEnemyKilled();
             e.sprite.destroy();
             this.enemies.splice(i, 1);
             continue;
           }
         }
       }
+
+      // Stealth: enemies don't deal contact damage
+      if (this.stealthTimer > 0) continue;
 
       if (!this.ninjaArtActive || this.ninjaArtType !== 'dash') {
         const dx = this.playerX - ex;
