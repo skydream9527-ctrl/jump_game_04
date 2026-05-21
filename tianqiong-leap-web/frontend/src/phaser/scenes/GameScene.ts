@@ -1662,6 +1662,13 @@ export class GameScene extends Phaser.Scene {
     this.isGrounded = true;
   }
 
+  private spawnRespawnPlatform(): void {
+    const safeWidth = 300;
+    const safeX = this.playerX - safeWidth / 2;
+    const safeY = this.playerY + this.playerHeight / 2;
+    this.spawnPlatform(safeX, safeY, safeWidth);
+  }
+
   private onPlayerFall(): void {
     // Invincibility from items
     if (this.invincibleTimer > 0) return;
@@ -1679,10 +1686,12 @@ export class GameScene extends Phaser.Scene {
     // Shield absorbs one hit — always check, even if dead is already set
     if (this.hasShield) {
       this.hasShield = false;
-      
+
       this.hudNeedsUpdate = true;
       this.spawnParticles(0x4fc3f7, 8, 5, 4);
       this.respawnOnPlatform();
+      this.spawnRespawnPlatform();
+      this.invincibleTimer = 2000;
       this.dead = false;
       return;
     }
@@ -1694,6 +1703,8 @@ export class GameScene extends Phaser.Scene {
       this.spawnParticles(0xe040fb, 12, 5, 5);
       this.audio.powerup();
       this.respawnOnPlatform();
+      this.spawnRespawnPlatform();
+      this.invincibleTimer = 2000;
       this.dead = false;
       // Remove fairy from equipped (consumed)
       this.equippedItems = this.equippedItems.filter(i => i.effect.stat !== 'revive');
@@ -1708,6 +1719,8 @@ export class GameScene extends Phaser.Scene {
       this.spawnParticles(0xffc800, 12, 5, 5);
       this.audio.powerup();
       this.respawnOnPlatform();
+      this.spawnRespawnPlatform();
+      this.invincibleTimer = 2000;
       this.dead = false;
       return;
     }
@@ -1730,6 +1743,8 @@ export class GameScene extends Phaser.Scene {
       EventBus.emit(EVENTS.GAME_STATE_CHANGED, 'game_over');
     } else {
       this.respawnOnPlatform();
+      this.spawnRespawnPlatform();
+      this.invincibleTimer = 2000;
       this.player.setScale(PHYSICS.WORLD_SCALE);
       this.updatePlayerVisuals(1);
       this.dead = false;
