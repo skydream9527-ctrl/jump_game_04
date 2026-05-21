@@ -1489,94 +1489,1596 @@ function generateWeaponTextures(scene: Phaser.Scene): void {
   ge.destroy();
 }
 
-// ==================== Pet Textures ====================
+// ==================== Pet Textures (100x100 unique designs) ====================
 function generatePetTextures(scene: Phaser.Scene): void {
   for (const pet of PETS) {
-    const s = 32;
+    const S = 100;
     const g = scene.make.graphics({ x: 0, y: 0 }, false);
 
-    // Body
-    g.fillStyle(pet.bodyColor, 1);
-    g.fillCircle(s / 2, s / 2 + 2, 10);
-
-    // Element glow
-    g.fillStyle(pet.color, 0.25);
-    g.fillCircle(s / 2, s / 2 + 2, 14);
-
-    // Eyes
-    g.fillStyle(0xffffff, 1);
-    g.fillCircle(s / 2 - 3, s / 2, 3);
-    g.fillCircle(s / 2 + 3, s / 2, 3);
-    g.fillStyle(pet.eyeColor, 1);
-    g.fillCircle(s / 2 - 2, s / 2 + 0.5, 1.8);
-    g.fillCircle(s / 2 + 4, s / 2 + 0.5, 1.8);
-    g.fillStyle(0xffffff, 1);
-    g.fillCircle(s / 2 - 1.5, s / 2 - 0.5, 0.7);
-    g.fillCircle(s / 2 + 4.5, s / 2 - 0.5, 0.7);
-
-    // Ears (element-specific shape)
-    if (pet.element === 'electric') {
-      // Pointy ears
-      g.fillStyle(pet.bodyColor, 1);
-      g.fillTriangle(s / 2 - 6, s / 2 - 6, s / 2 - 10, s / 2 - 16, s / 2 - 2, s / 2 - 10);
-      g.fillTriangle(s / 2 + 6, s / 2 - 6, s / 2 + 10, s / 2 - 16, s / 2 + 2, s / 2 - 10);
-      g.fillStyle(0x1a1a2e, 1);
-      g.fillTriangle(s / 2 - 7, s / 2 - 8, s / 2 - 9, s / 2 - 14, s / 2 - 3, s / 2 - 10);
-      g.fillTriangle(s / 2 + 7, s / 2 - 8, s / 2 + 9, s / 2 - 14, s / 2 + 3, s / 2 - 10);
-    } else if (pet.element === 'fire') {
-      // Flame ears
-      g.fillStyle(0xff8a65, 1);
-      g.fillTriangle(s / 2 - 6, s / 2 - 6, s / 2 - 8, s / 2 - 14, s / 2, s / 2 - 8);
-      g.fillTriangle(s / 2 + 6, s / 2 - 6, s / 2 + 8, s / 2 - 14, s / 2, s / 2 - 8);
-    } else if (pet.element === 'water') {
-      // Round ears
-      g.fillStyle(pet.bodyColor, 1);
-      g.fillCircle(s / 2 - 7, s / 2 - 8, 4);
-      g.fillCircle(s / 2 + 7, s / 2 - 8, 4);
-    } else if (pet.element === 'grass') {
-      // Leaf ears
-      g.fillStyle(0x81c784, 1);
-      g.fillTriangle(s / 2 - 5, s / 2 - 6, s / 2 - 10, s / 2 - 14, s / 2 + 2, s / 2 - 10);
-      g.fillTriangle(s / 2 + 5, s / 2 - 6, s / 2 + 10, s / 2 - 14, s / 2 - 2, s / 2 - 10);
+    // Dispatch to per-pet drawing function
+    const drawer = PET_DRAWERS[pet.id];
+    if (drawer) {
+      drawer(g, pet);
     } else {
-      // Default round ears
+      // Fallback: generic blob
       g.fillStyle(pet.bodyColor, 1);
-      g.fillCircle(s / 2 - 6, s / 2 - 7, 4);
-      g.fillCircle(s / 2 + 6, s / 2 - 7, 4);
+      g.fillCircle(50, 55, 25);
+      drawEyes(g, 50, 48, pet.eyeColor);
     }
 
-    // Tail (element-specific)
-    g.lineStyle(2, pet.color, 0.8);
-    if (pet.element === 'electric') {
-      // Lightning bolt tail
-      g.beginPath();
-      g.moveTo(s / 2 + 8, s / 2 + 4);
-      g.lineTo(s / 2 + 14, s / 2 - 2);
-      g.lineTo(s / 2 + 10, s / 2 + 2);
-      g.lineTo(s / 2 + 16, s / 2 - 4);
-      g.stroke();
-    } else if (pet.element === 'fire') {
-      // Flame tail
-      g.fillStyle(0xff5722, 0.8);
-      g.fillTriangle(s / 2 + 8, s / 2 + 2, s / 2 + 16, s / 2 - 6, s / 2 + 12, s / 2 + 6);
-      g.fillStyle(0xffab40, 0.6);
-      g.fillTriangle(s / 2 + 10, s / 2 + 2, s / 2 + 14, s / 2 - 4, s / 2 + 12, s / 2 + 4);
-    } else if (pet.element === 'water') {
-      // Bubble tail
-      g.fillStyle(0x64b5f6, 0.6);
-      g.fillCircle(s / 2 + 12, s / 2 + 2, 4);
-      g.fillCircle(s / 2 + 16, s / 2 - 2, 2);
-    } else {
-      // Default tail
-      g.fillStyle(pet.bodyColor, 0.8);
-      g.fillCircle(s / 2 + 10, s / 2 + 2, 4);
-    }
-
-    // Mouth
-    g.fillStyle(0x1a1a2e, 1);
-    g.fillRect(s / 2 - 1, s / 2 + 4, 3, 1);
-
-    g.generateTexture(`pet-${pet.id}`, s + 8, s + 8);
+    g.generateTexture(`pet-${pet.id}`, S, S);
     g.destroy();
   }
 }
+
+// ── Shared helpers ──
+function drawEyes(g: Phaser.GameObjects.Graphics, cx: number, cy: number, eyeColor: number, size = 5): void {
+  g.fillStyle(0xffffff, 1);
+  g.fillCircle(cx - 10, cy, size + 1);
+  g.fillCircle(cx + 10, cy, size + 1);
+  g.fillStyle(eyeColor, 1);
+  g.fillCircle(cx - 9, cy + 1, size - 1);
+  g.fillCircle(cx + 11, cy + 1, size - 1);
+  g.fillStyle(0xffffff, 1);
+  g.fillCircle(cx - 8, cy - 1, 1.5);
+  g.fillCircle(cx + 12, cy - 1, 1.5);
+}
+
+function drawSmallEyes(g: Phaser.GameObjects.Graphics, cx: number, cy: number, eyeColor: number): void {
+  g.fillStyle(0xffffff, 1);
+  g.fillCircle(cx - 8, cy, 4);
+  g.fillCircle(cx + 8, cy, 4);
+  g.fillStyle(eyeColor, 1);
+  g.fillCircle(cx - 7, cy + 1, 2.5);
+  g.fillCircle(cx + 9, cy + 1, 2.5);
+  g.fillStyle(0xffffff, 1);
+  g.fillCircle(cx - 6, cy - 1, 1);
+  g.fillCircle(cx + 10, cy - 1, 1);
+}
+
+function drawMouth(g: Phaser.GameObjects.Graphics, cx: number, y: number): void {
+  g.lineStyle(1.5, 0x1a1a2e, 0.8);
+  g.beginPath();
+  g.moveTo(cx - 4, y);
+  g.lineTo(cx + 4, y);
+  g.stroke();
+}
+
+function drawBlush(g: Phaser.GameObjects.Graphics, cx: number, y: number): void {
+  g.fillStyle(0xff8a80, 0.3);
+  g.fillCircle(cx - 16, y, 5);
+  g.fillCircle(cx + 16, y, 5);
+}
+
+// ── Per-pet drawing functions ──
+type PetDrawer = (g: Phaser.GameObjects.Graphics, pet: typeof PETS[number]) => void;
+
+const PET_DRAWERS: Record<string, PetDrawer> = {
+  // ═══════════════════════════════════════════
+  //                 一般系 (6只)
+  // ═══════════════════════════════════════════
+  'pet_slime': (g, pet) => {
+    // Slime: dome body with drip
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillCircle(50, 60, 28);
+    g.fillRect(22, 60, 56, 18);
+    // Dome highlight
+    g.fillStyle(0xffffff, 0.2);
+    g.fillCircle(42, 48, 8);
+    // Drip
+    g.fillStyle(pet.bodyColor, 0.7);
+    g.fillCircle(65, 78, 5);
+    drawSmallEyes(g, 50, 55, pet.eyeColor);
+    drawMouth(g, 50, 68);
+  },
+
+  'pet_bunny': (g, pet) => {
+    // Bunny: long ears
+    g.fillStyle(pet.bodyColor, 1);
+    // Ears
+    g.fillRoundedRect(35, 8, 10, 32, 5);
+    g.fillRoundedRect(55, 8, 10, 32, 5);
+    // Inner ears
+    g.fillStyle(0xf8bbd0, 0.5);
+    g.fillRoundedRect(38, 14, 4, 22, 2);
+    g.fillRoundedRect(58, 14, 4, 22, 2);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillCircle(50, 60, 24);
+    // Feet
+    g.fillEllipse(38, 82, 14, 8);
+    g.fillEllipse(62, 82, 14, 8);
+    drawEyes(g, 50, 54, pet.eyeColor, 4);
+    drawBlush(g, 50, 62);
+    // Nose
+    g.fillStyle(0xe91e63, 0.8);
+    g.fillCircle(50, 60, 2);
+  },
+
+  'pet_rock': (g, pet) => {
+    // Rock: angular boulder body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillCircle(50, 58, 28);
+    // Cracks
+    g.lineStyle(2, 0x5d4037, 0.5);
+    g.beginPath(); g.moveTo(40, 45); g.lineTo(48, 55); g.lineTo(42, 68); g.stroke();
+    g.beginPath(); g.moveTo(55, 42); g.lineTo(60, 58); g.stroke();
+    // Small rocks on head
+    g.fillStyle(pet.bodyColor, 0.9);
+    g.fillCircle(38, 32, 6);
+    g.fillCircle(58, 30, 5);
+    drawSmallEyes(g, 50, 52, pet.eyeColor);
+    // Flat mouth
+    g.lineStyle(2, 0x3e2723, 0.6);
+    g.beginPath(); g.moveTo(42, 65); g.lineTo(58, 65); g.stroke();
+  },
+
+  'pet_fox': (g, pet) => {
+    // Fox: pointy face, big ears, fluffy tail
+    // Tail
+    g.fillStyle(pet.bodyColor, 0.8);
+    g.fillCircle(78, 55, 12);
+    g.fillStyle(0xffffff, 0.6);
+    g.fillCircle(82, 58, 6);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillCircle(50, 60, 22);
+    // Ears
+    g.fillTriangle(32, 38, 26, 14, 42, 30);
+    g.fillTriangle(68, 38, 74, 14, 58, 30);
+    g.fillStyle(0x1a1a2e, 0.3);
+    g.fillTriangle(34, 36, 30, 20, 40, 32);
+    g.fillTriangle(66, 36, 70, 20, 60, 32);
+    // Snout
+    g.fillStyle(0xffffff, 0.5);
+    g.fillCircle(50, 62, 10);
+    // Nose
+    g.fillStyle(0x1a1a2e, 1);
+    g.fillCircle(50, 58, 3);
+    drawEyes(g, 50, 50, pet.eyeColor, 4);
+  },
+
+  'pet_eevee': (g, pet) => {
+    // Eevee: fluffy collar, fox-like
+    // Collar fluff
+    g.fillStyle(0xffffff, 0.7);
+    g.fillCircle(50, 48, 18);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillCircle(50, 62, 22);
+    // Ears
+    g.fillTriangle(32, 42, 24, 16, 40, 34);
+    g.fillTriangle(68, 42, 76, 16, 60, 34);
+    g.fillStyle(0x1a1a2e, 0.3);
+    g.fillTriangle(34, 40, 28, 22, 38, 34);
+    g.fillTriangle(66, 40, 72, 22, 62, 34);
+    // Tail (big fluffy)
+    g.fillStyle(pet.bodyColor, 0.9);
+    g.fillCircle(76, 52, 10);
+    g.fillStyle(0xffffff, 0.5);
+    g.fillCircle(80, 50, 5);
+    drawEyes(g, 50, 56, pet.eyeColor, 4);
+    g.fillStyle(0x1a1a2e, 1);
+    g.fillCircle(50, 62, 2.5);
+    drawBlush(g, 50, 64);
+  },
+
+  'pet_snorlax': (g, pet) => {
+    // Snorlax: huge round body, tiny limbs
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillCircle(50, 55, 35);
+    // Belly
+    g.fillStyle(0xcfd8dc, 0.5);
+    g.fillCircle(50, 62, 20);
+    // Arms
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillCircle(18, 58, 8);
+    g.fillCircle(82, 58, 8);
+    // Feet
+    g.fillEllipse(36, 85, 14, 8);
+    g.fillEllipse(64, 85, 14, 8);
+    // Eyes (closed/sleepy)
+    g.lineStyle(2, 0x1a1a2e, 0.8);
+    g.beginPath(); g.moveTo(38, 46); g.lineTo(44, 48); g.stroke();
+    g.beginPath(); g.moveTo(56, 48); g.lineTo(62, 46); g.stroke();
+    // Mouth (happy)
+    g.lineStyle(2, 0x1a1a2e, 0.6);
+    g.beginPath();
+    g.moveTo(42, 56);
+    g.lineTo(50, 60);
+    g.lineTo(58, 56);
+    g.stroke();
+  },
+
+  // ═══════════════════════════════════════════
+  //                 火系 (7只)
+  // ═══════════════════════════════════════════
+  'pet_candle': (g, pet) => {
+    // Candle: wax body with flame on top
+    // Wax body
+    g.fillStyle(0xfff9c4, 1);
+    g.fillRoundedRect(38, 45, 24, 40, 4);
+    // Wax drip
+    g.fillStyle(0xfff9c4, 0.7);
+    g.fillCircle(40, 45, 4);
+    g.fillCircle(60, 48, 3);
+    // Wick
+    g.lineStyle(2, 0x5d4037, 1);
+    g.beginPath(); g.moveTo(50, 45); g.lineTo(50, 35); g.stroke();
+    // Flame outer
+    g.fillStyle(0xff9800, 0.9);
+    g.fillCircle(50, 28, 10);
+    g.fillTriangle(45, 28, 50, 10, 55, 28);
+    // Flame inner
+    g.fillStyle(0xffeb3b, 0.9);
+    g.fillCircle(50, 30, 5);
+    g.fillTriangle(47, 30, 50, 16, 53, 30);
+    // Eyes on candle body
+    drawSmallEyes(g, 50, 58, pet.eyeColor);
+    drawMouth(g, 50, 66);
+  },
+
+  'pet_firedrake': (g, pet) => {
+    // Salamander/lizard shape
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(50, 55, 40, 24);
+    // Head
+    g.fillCircle(26, 48, 14);
+    // Tail (flame)
+    g.fillStyle(0xff5722, 0.9);
+    g.fillTriangle(72, 52, 90, 45, 78, 60);
+    g.fillStyle(0xffeb3b, 0.7);
+    g.fillTriangle(76, 54, 88, 48, 80, 58);
+    // Legs
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillRoundedRect(36, 66, 6, 14, 3);
+    g.fillRoundedRect(56, 66, 6, 14, 3);
+    // Dorsal fins
+    g.fillStyle(0xff8a65, 0.8);
+    g.fillTriangle(40, 42, 44, 30, 48, 42);
+    g.fillTriangle(52, 42, 56, 30, 60, 42);
+    drawSmallEyes(g, 22, 44, pet.eyeColor);
+    // Nostril
+    g.fillStyle(0xff5722, 0.6);
+    g.fillCircle(16, 50, 2);
+  },
+
+  'pet_charmander': (g, pet) => {
+    // Charmander: standing lizard with tail flame
+    // Tail flame
+    g.fillStyle(0xff5722, 0.9);
+    g.fillCircle(82, 50, 10);
+    g.fillTriangle(76, 48, 90, 35, 82, 55);
+    g.fillStyle(0xffeb3b, 0.8);
+    g.fillCircle(82, 48, 5);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(50, 58, 30, 28);
+    // Head
+    g.fillCircle(35, 40, 16);
+    // Belly
+    g.fillStyle(0xffcc80, 0.5);
+    g.fillEllipse(50, 62, 16, 18);
+    // Arms
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillRoundedRect(24, 55, 6, 16, 3);
+    // Legs
+    g.fillRoundedRect(38, 74, 8, 14, 3);
+    g.fillRoundedRect(54, 74, 8, 14, 3);
+    // Crest
+    g.fillStyle(0xff5722, 0.7);
+    g.fillTriangle(30, 28, 34, 16, 38, 28);
+    drawEyes(g, 32, 36, pet.eyeColor, 4);
+    g.fillStyle(0x1a1a2e, 1);
+    g.fillCircle(30, 44, 2);
+  },
+
+  'pet_charmeleon': (g, pet) => {
+    // Charmeleon: more aggressive lizard
+    // Tail flame (bigger)
+    g.fillStyle(0xff3d00, 0.9);
+    g.fillCircle(84, 42, 12);
+    g.fillTriangle(78, 40, 94, 28, 86, 50);
+    g.fillStyle(0xffeb3b, 0.7);
+    g.fillCircle(84, 40, 6);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(50, 56, 32, 30);
+    // Head (angular)
+    g.fillCircle(32, 38, 16);
+    // Jaw
+    g.fillStyle(pet.bodyColor, 0.9);
+    g.fillEllipse(24, 44, 14, 8);
+    // Belly
+    g.fillStyle(0xffab91, 0.4);
+    g.fillEllipse(50, 60, 18, 20);
+    // Arms with claws
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillRoundedRect(22, 52, 6, 16, 3);
+    g.fillStyle(0xffffff, 0.8);
+    g.fillTriangle(20, 68, 22, 64, 24, 68);
+    // Legs
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillRoundedRect(38, 74, 8, 14, 3);
+    g.fillRoundedRect(54, 74, 8, 14, 3);
+    // Crest (larger)
+    g.fillStyle(0xff3d00, 0.8);
+    g.fillTriangle(28, 26, 34, 10, 40, 24);
+    drawEyes(g, 30, 34, pet.eyeColor, 4);
+    // Angry brow
+    g.lineStyle(2, 0x1a1a2e, 0.8);
+    g.beginPath(); g.moveTo(22, 30); g.lineTo(30, 32); g.stroke();
+    g.beginPath(); g.moveTo(38, 32); g.lineTo(34, 30); g.stroke();
+  },
+
+  'pet_charizard': (g, pet) => {
+    // Charizard: dragon with wings
+    // Wings
+    g.fillStyle(0x1565c0, 0.6);
+    g.fillTriangle(55, 35, 88, 15, 75, 50);
+    g.fillTriangle(60, 38, 90, 22, 78, 52);
+    // Tail flame
+    g.fillStyle(0xff5722, 0.9);
+    g.fillCircle(85, 55, 10);
+    g.fillStyle(0xffeb3b, 0.7);
+    g.fillCircle(85, 53, 5);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(48, 58, 34, 30);
+    // Head
+    g.fillCircle(30, 38, 16);
+    // Horns
+    g.fillStyle(0xffcc80, 0.9);
+    g.fillTriangle(24, 26, 20, 14, 30, 24);
+    g.fillTriangle(34, 24, 38, 12, 38, 24);
+    // Belly
+    g.fillStyle(0xffcc80, 0.5);
+    g.fillEllipse(48, 64, 20, 20);
+    // Arms
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillRoundedRect(20, 52, 6, 16, 3);
+    // Legs
+    g.fillRoundedRect(36, 76, 8, 14, 3);
+    g.fillRoundedRect(54, 76, 8, 14, 3);
+    drawEyes(g, 28, 34, pet.eyeColor, 4);
+    // Mouth (open, fire)
+    g.fillStyle(0xff5722, 0.6);
+    g.fillEllipse(20, 42, 10, 6);
+  },
+
+  'pet_flareon': (g, pet) => {
+    // Flareon: fluffy fox with flame mane
+    // Mane (fluffy fire)
+    g.fillStyle(0xff5722, 0.6);
+    g.fillCircle(50, 42, 22);
+    g.fillCircle(36, 48, 12);
+    g.fillCircle(64, 48, 12);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillCircle(50, 60, 22);
+    // Ears
+    g.fillTriangle(32, 40, 26, 18, 40, 34);
+    g.fillTriangle(68, 40, 74, 18, 60, 34);
+    // Tail (fluffy flame)
+    g.fillStyle(0xff5722, 0.8);
+    g.fillCircle(78, 55, 10);
+    g.fillStyle(0xffeb3b, 0.5);
+    g.fillCircle(80, 52, 5);
+    // Feet
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(38, 80, 12, 6);
+    g.fillEllipse(62, 80, 12, 6);
+    drawEyes(g, 50, 54, pet.eyeColor, 4);
+    g.fillStyle(0x1a1a2e, 1);
+    g.fillCircle(50, 60, 2.5);
+  },
+
+  'pet_moltres': (g, pet) => {
+    // Moltres: phoenix with spread wings
+    // Wings (fire)
+    g.fillStyle(0xff6d00, 0.7);
+    g.fillTriangle(48, 40, 10, 20, 30, 55);
+    g.fillTriangle(52, 40, 90, 20, 70, 55);
+    g.fillStyle(0xffab40, 0.5);
+    g.fillTriangle(48, 42, 15, 25, 32, 52);
+    g.fillTriangle(52, 42, 85, 25, 68, 52);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(50, 55, 20, 30);
+    // Head
+    g.fillCircle(50, 30, 12);
+    // Crest (flame)
+    g.fillStyle(0xff5722, 0.9);
+    g.fillTriangle(44, 22, 50, 6, 56, 22);
+    g.fillStyle(0xffeb3b, 0.6);
+    g.fillTriangle(46, 20, 50, 10, 54, 20);
+    // Tail (long flames)
+    g.fillStyle(0xff6d00, 0.8);
+    g.fillTriangle(44, 72, 50, 92, 56, 72);
+    g.fillStyle(0xffab40, 0.6);
+    g.fillTriangle(46, 74, 50, 88, 54, 74);
+    drawSmallEyes(g, 50, 28, pet.eyeColor);
+  },
+
+  // ═══════════════════════════════════════════
+  //                 水系 (7只)
+  // ═══════════════════════════════════════════
+  'pet_bubble': (g, pet) => {
+    // Bubble fish: round transparent body with fins
+    // Bubbles around
+    g.fillStyle(0x90caf9, 0.3);
+    g.fillCircle(72, 35, 6);
+    g.fillCircle(80, 48, 4);
+    g.fillCircle(26, 38, 5);
+    // Body
+    g.fillStyle(pet.bodyColor, 0.7);
+    g.fillCircle(50, 55, 26);
+    // Inner glow
+    g.fillStyle(0xffffff, 0.15);
+    g.fillCircle(44, 48, 10);
+    // Fins
+    g.fillStyle(pet.bodyColor, 0.8);
+    g.fillTriangle(24, 50, 14, 40, 18, 58);
+    g.fillTriangle(76, 50, 86, 40, 82, 58);
+    // Top fin
+    g.fillTriangle(44, 30, 50, 18, 56, 30);
+    // Tail fin
+    g.fillTriangle(72, 52, 86, 42, 86, 62);
+    drawEyes(g, 50, 50, pet.eyeColor, 5);
+    // Mouth (bubble)
+    g.fillStyle(0x64b5f6, 0.5);
+    g.fillCircle(50, 62, 4);
+  },
+
+  'pet_crab': (g, pet) => {
+    // Crab: body with big claws
+    // Claws
+    g.fillStyle(0xe53935, 1);
+    g.fillCircle(18, 50, 12);
+    g.fillCircle(82, 50, 12);
+    // Claw pincers
+    g.fillStyle(0xef5350, 1);
+    g.fillEllipse(8, 48, 12, 6);
+    g.fillEllipse(92, 48, 12, 6);
+    // Body
+    g.fillStyle(0xe53935, 1);
+    g.fillEllipse(50, 55, 36, 28);
+    // Shell pattern
+    g.fillStyle(0xc62828, 0.4);
+    g.fillEllipse(50, 52, 20, 14);
+    // Legs
+    g.fillStyle(0xef5350, 1);
+    g.fillRoundedRect(30, 70, 4, 12, 2);
+    g.fillRoundedRect(40, 72, 4, 12, 2);
+    g.fillRoundedRect(56, 72, 4, 12, 2);
+    g.fillRoundedRect(66, 70, 4, 12, 2);
+    // Eye stalks
+    g.lineStyle(3, 0xe53935, 1);
+    g.beginPath(); g.moveTo(42, 42); g.lineTo(38, 30); g.stroke();
+    g.beginPath(); g.moveTo(58, 42); g.lineTo(62, 30); g.stroke();
+    drawSmallEyes(g, 38, 28, pet.eyeColor);
+    drawSmallEyes(g, 62, 28, pet.eyeColor);
+  },
+
+  'pet_squirtle': (g, pet) => {
+    // Squirtle: turtle with shell
+    // Shell
+    g.fillStyle(0x795548, 0.8);
+    g.fillEllipse(50, 58, 34, 28);
+    g.fillStyle(0x4caf50, 0.3);
+    g.fillEllipse(50, 56, 24, 18);
+    // Shell pattern
+    g.lineStyle(1.5, 0x5d4037, 0.5);
+    g.beginPath(); g.moveTo(50, 42); g.lineTo(50, 72); g.stroke();
+    g.beginPath(); g.moveTo(34, 56); g.lineTo(66, 56); g.stroke();
+    // Head
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillCircle(50, 36, 16);
+    // Tail
+    g.fillStyle(pet.bodyColor, 0.8);
+    g.fillTriangle(50, 72, 44, 82, 56, 82);
+    // Arms
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillRoundedRect(28, 52, 8, 12, 4);
+    g.fillRoundedRect(64, 52, 8, 12, 4);
+    // Legs
+    g.fillRoundedRect(34, 72, 10, 10, 4);
+    g.fillRoundedRect(56, 72, 10, 10, 4);
+    // Belly
+    g.fillStyle(0xffcc80, 0.4);
+    g.fillEllipse(50, 64, 14, 12);
+    drawEyes(g, 50, 32, pet.eyeColor, 4);
+    drawMouth(g, 50, 42);
+  },
+
+  'pet_wartortle': (g, pet) => {
+    // Wartortle: bigger turtle with fluffy tail
+    // Shell
+    g.fillStyle(0x795548, 0.8);
+    g.fillEllipse(50, 56, 36, 30);
+    g.fillStyle(0x2196f3, 0.2);
+    g.fillEllipse(50, 54, 26, 20);
+    // Head
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillCircle(50, 34, 17);
+    // Ears (fur tufts)
+    g.fillTriangle(34, 28, 26, 14, 38, 24);
+    g.fillTriangle(66, 28, 74, 14, 62, 24);
+    // Tail (fluffy)
+    g.fillStyle(pet.bodyColor, 0.9);
+    g.fillCircle(50, 82, 10);
+    g.fillStyle(0x90caf9, 0.5);
+    g.fillCircle(50, 80, 5);
+    // Arms & legs
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillRoundedRect(26, 50, 8, 14, 4);
+    g.fillRoundedRect(66, 50, 8, 14, 4);
+    g.fillRoundedRect(32, 74, 12, 10, 4);
+    g.fillRoundedRect(56, 74, 12, 10, 4);
+    drawEyes(g, 50, 30, pet.eyeColor, 4);
+    drawMouth(g, 50, 40);
+  },
+
+  'pet_blastoise': (g, pet) => {
+    // Blastoise: turtle with water cannons
+    // Cannons
+    g.fillStyle(0x78909c, 1);
+    g.fillRoundedRect(22, 30, 10, 20, 3);
+    g.fillRoundedRect(68, 30, 10, 20, 3);
+    g.fillStyle(0x42a5f5, 0.7);
+    g.fillCircle(27, 30, 4);
+    g.fillCircle(73, 30, 4);
+    // Shell
+    g.fillStyle(0x795548, 0.8);
+    g.fillEllipse(50, 56, 40, 32);
+    g.fillStyle(0x1565c0, 0.2);
+    g.fillEllipse(50, 54, 30, 22);
+    // Head
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillCircle(50, 32, 16);
+    // Arms & legs (thick)
+    g.fillRoundedRect(22, 50, 10, 16, 4);
+    g.fillRoundedRect(68, 50, 10, 16, 4);
+    g.fillRoundedRect(30, 76, 14, 12, 4);
+    g.fillRoundedRect(56, 76, 14, 12, 4);
+    drawEyes(g, 50, 28, pet.eyeColor, 4);
+    // Determined mouth
+    g.lineStyle(2, 0x1a1a2e, 0.8);
+    g.beginPath(); g.moveTo(42, 38); g.lineTo(58, 38); g.stroke();
+  },
+
+  'pet_vaporeon': (g, pet) => {
+    // Vaporeon: sleek aquatic fox
+    // Tail fin
+    g.fillStyle(0x00bcd4, 0.7);
+    g.fillTriangle(76, 52, 92, 40, 92, 64);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(50, 58, 30, 26);
+    // Head
+    g.fillCircle(34, 42, 15);
+    // Ears (fin-like)
+    g.fillTriangle(26, 32, 18, 14, 34, 28);
+    g.fillTriangle(42, 30, 46, 12, 46, 28);
+    // Collar fin
+    g.fillStyle(0x80deea, 0.5);
+    g.fillTriangle(28, 44, 34, 34, 40, 44);
+    // Belly
+    g.fillStyle(0xb2ebf2, 0.4);
+    g.fillEllipse(50, 64, 16, 14);
+    // Legs
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillRoundedRect(36, 74, 8, 14, 3);
+    g.fillRoundedRect(56, 74, 8, 14, 3);
+    drawEyes(g, 32, 38, pet.eyeColor, 4);
+    drawMouth(g, 34, 48);
+  },
+
+  'pet_articuno': (g, pet) => {
+    // Articuno: ice bird with crystal wings
+    // Wings (ice crystals)
+    g.fillStyle(0x4fc3f7, 0.5);
+    g.fillTriangle(48, 40, 10, 25, 30, 55);
+    g.fillTriangle(52, 40, 90, 25, 70, 55);
+    g.fillStyle(0xb3e5fc, 0.3);
+    g.fillTriangle(48, 42, 18, 30, 32, 52);
+    g.fillTriangle(52, 42, 82, 30, 68, 52);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(50, 55, 18, 28);
+    // Head
+    g.fillCircle(50, 32, 12);
+    // Tail feathers
+    g.fillStyle(0x4fc3f7, 0.6);
+    g.fillTriangle(44, 72, 50, 90, 56, 72);
+    g.fillTriangle(40, 70, 46, 88, 52, 70);
+    // Crest
+    g.fillStyle(0x81d4fa, 0.7);
+    g.fillTriangle(46, 22, 50, 10, 54, 22);
+    drawSmallEyes(g, 50, 30, pet.eyeColor);
+  },
+
+  // ═══════════════════════════════════════════
+  //                 草系 (6只)
+  // ═══════════════════════════════════════════
+  'pet_seed': (g, pet) => {
+    // Seed: round seed body with sprout on top
+    // Sprout
+    g.fillStyle(0x4caf50, 0.9);
+    g.fillRoundedRect(48, 20, 4, 18, 2);
+    // Leaves
+    g.fillEllipse(42, 20, 12, 6);
+    g.fillEllipse(58, 20, 12, 6);
+    // Body (seed)
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillCircle(50, 55, 24);
+    // Seed pattern
+    g.fillStyle(0x66bb6a, 0.3);
+    g.beginPath();
+    g.moveTo(50, 35);
+    g.lineTo(38, 55);
+    g.lineTo(50, 75);
+    g.lineTo(62, 55);
+    g.closePath();
+    g.fill();
+    // Root legs
+    g.fillStyle(0x795548, 0.6);
+    g.fillRoundedRect(38, 76, 6, 12, 3);
+    g.fillRoundedRect(56, 76, 6, 12, 3);
+    drawSmallEyes(g, 50, 50, pet.eyeColor);
+    drawMouth(g, 50, 60);
+  },
+
+  'pet_mushroom': (g, pet) => {
+    // Mushroom: cap and stem
+    // Spore particles
+    g.fillStyle(0xce93d8, 0.3);
+    g.fillCircle(30, 35, 3);
+    g.fillCircle(70, 38, 3);
+    g.fillCircle(35, 25, 2);
+    // Cap
+    g.fillStyle(0xe53935, 0.9);
+    g.fillCircle(50, 38, 28);
+    g.fillRect(22, 38, 56, 8);
+    // Cap spots
+    g.fillStyle(0xffffff, 0.5);
+    g.fillCircle(40, 28, 6);
+    g.fillCircle(58, 32, 5);
+    g.fillCircle(48, 22, 4);
+    // Stem
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillRoundedRect(38, 46, 24, 32, 8);
+    // Gills
+    g.lineStyle(1, 0xd7ccc8, 0.4);
+    for (let i = 0; i < 5; i++) {
+      g.beginPath(); g.moveTo(38 + i * 6, 46); g.lineTo(38 + i * 6, 52); g.stroke();
+    }
+    drawSmallEyes(g, 50, 56, pet.eyeColor);
+    drawMouth(g, 50, 66);
+  },
+
+  'pet_bulbasaur': (g, pet) => {
+    // Bulbasaur: with bulb on back
+    // Bulb
+    g.fillStyle(0x4caf50, 0.8);
+    g.fillCircle(52, 32, 18);
+    g.fillStyle(0x2e7d32, 0.4);
+    g.fillCircle(52, 28, 10);
+    // Spots on bulb
+    g.fillStyle(0x81c784, 0.5);
+    g.fillCircle(46, 26, 3);
+    g.fillCircle(58, 30, 3);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(50, 58, 36, 28);
+    // Head
+    g.fillCircle(34, 44, 16);
+    // Ears
+    g.fillTriangle(24, 36, 18, 22, 30, 32);
+    g.fillTriangle(44, 34, 46, 20, 42, 32);
+    // Legs (short, thick)
+    g.fillRoundedRect(32, 72, 12, 12, 4);
+    g.fillRoundedRect(56, 72, 12, 12, 4);
+    // Spots on body
+    g.fillStyle(0x2e7d32, 0.3);
+    g.fillCircle(44, 56, 4);
+    g.fillCircle(58, 60, 3);
+    drawEyes(g, 32, 40, pet.eyeColor, 4);
+    g.fillStyle(0x1a1a2e, 1);
+    g.fillCircle(28, 48, 2);
+  },
+
+  'pet_ivysaur': (g, pet) => {
+    // Ivysaur: larger with flower bud
+    // Bud
+    g.fillStyle(0xe91e63, 0.7);
+    g.fillCircle(52, 26, 14);
+    g.fillStyle(0x4caf50, 0.8);
+    g.fillCircle(52, 22, 8);
+    // Vine
+    g.lineStyle(3, 0x4caf50, 0.7);
+    g.beginPath(); g.moveTo(52, 38); g.lineTo(56, 32); g.lineTo(52, 26); g.stroke();
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(50, 56, 38, 30);
+    // Head
+    g.fillCircle(32, 42, 16);
+    // Ears
+    g.fillTriangle(22, 34, 16, 20, 28, 30);
+    g.fillTriangle(42, 32, 44, 18, 40, 30);
+    // Legs
+    g.fillRoundedRect(30, 72, 14, 12, 4);
+    g.fillRoundedRect(56, 72, 14, 12, 4);
+    drawEyes(g, 30, 38, pet.eyeColor, 4);
+    drawMouth(g, 30, 48);
+  },
+
+  'pet_venusaur': (g, pet) => {
+    // Venusaur: large with giant flower
+    // Flower petals
+    g.fillStyle(0xe91e63, 0.6);
+    g.fillCircle(50, 18, 10);
+    g.fillCircle(38, 24, 10);
+    g.fillCircle(62, 24, 10);
+    g.fillCircle(42, 14, 8);
+    g.fillCircle(58, 14, 8);
+    // Flower center
+    g.fillStyle(0xffeb3b, 0.8);
+    g.fillCircle(50, 20, 8);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(50, 55, 42, 32);
+    // Head
+    g.fillCircle(30, 44, 16);
+    // Ears
+    g.fillTriangle(20, 36, 14, 22, 26, 32);
+    g.fillTriangle(40, 34, 42, 20, 38, 32);
+    // Legs (thick)
+    g.fillRoundedRect(26, 72, 16, 14, 5);
+    g.fillRoundedRect(58, 72, 16, 14, 5);
+    // Spots
+    g.fillStyle(0x2e7d32, 0.3);
+    g.fillCircle(42, 52, 5);
+    g.fillCircle(60, 56, 4);
+    drawEyes(g, 28, 40, pet.eyeColor, 4);
+    drawMouth(g, 28, 50);
+  },
+
+  'pet_celebi': (g, pet) => {
+    // Celebi: fairy-like with onion head
+    // Onion head
+    g.fillStyle(pet.bodyColor, 0.8);
+    g.fillCircle(50, 24, 14);
+    g.fillStyle(0x4caf50, 0.6);
+    g.fillTriangle(44, 14, 50, 2, 56, 14);
+    // Wings
+    g.fillStyle(0xc8e6c9, 0.4);
+    g.fillEllipse(30, 42, 14, 20);
+    g.fillEllipse(70, 42, 14, 20);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(50, 55, 18, 24);
+    // Arms
+    g.fillStyle(pet.bodyColor, 0.8);
+    g.fillRoundedRect(30, 48, 8, 14, 4);
+    g.fillRoundedRect(62, 48, 8, 14, 4);
+    // Legs
+    g.fillRoundedRect(40, 72, 8, 14, 4);
+    g.fillRoundedRect(52, 72, 8, 14, 4);
+    // Antennae
+    g.lineStyle(1.5, 0x81c784, 0.7);
+    g.beginPath(); g.moveTo(44, 14); g.lineTo(38, 6); g.lineTo(32, 8); g.stroke();
+    g.beginPath(); g.moveTo(56, 14); g.lineTo(62, 6); g.lineTo(68, 8); g.stroke();
+    g.fillStyle(0x81c784, 0.8);
+    g.fillCircle(32, 8, 3);
+    g.fillCircle(68, 8, 3);
+    drawSmallEyes(g, 50, 22, pet.eyeColor);
+  },
+
+  // ═══════════════════════════════════════════
+  //                 电系 (6只)
+  // ═══════════════════════════════════════════
+  'pet_spark': (g, pet) => {
+    // Spark: small electric orb with sparks
+    // Spark lines
+    g.lineStyle(2, 0xffeb3b, 0.7);
+    g.beginPath(); g.moveTo(28, 40); g.lineTo(18, 34); g.stroke();
+    g.beginPath(); g.moveTo(72, 40); g.lineTo(82, 34); g.stroke();
+    g.beginPath(); g.moveTo(50, 26); g.lineTo(50, 16); g.stroke();
+    g.beginPath(); g.moveTo(36, 30); g.lineTo(28, 22); g.stroke();
+    g.beginPath(); g.moveTo(64, 30); g.lineTo(72, 22); g.stroke();
+    // Body (glowing orb)
+    g.fillStyle(0xfff9c4, 0.4);
+    g.fillCircle(50, 48, 22);
+    g.fillStyle(pet.bodyColor, 0.9);
+    g.fillCircle(50, 48, 16);
+    // Core
+    g.fillStyle(0xffeb3b, 0.8);
+    g.fillCircle(50, 48, 8);
+    // Eyes
+    g.fillStyle(0x1a1a2e, 1);
+    g.fillCircle(44, 46, 3);
+    g.fillCircle(56, 46, 3);
+    // Mouth (zap)
+    g.lineStyle(1.5, 0x1a1a2e, 0.7);
+    g.beginPath(); g.moveTo(46, 54); g.lineTo(50, 52); g.lineTo(54, 54); g.stroke();
+  },
+
+  'pet_pikachu': (g, pet) => {
+    // Pikachu: iconic electric mouse
+    // Ears
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillTriangle(32, 36, 22, 8, 40, 28);
+    g.fillTriangle(68, 36, 78, 8, 60, 28);
+    // Black ear tips
+    g.fillStyle(0x1a1a2e, 0.8);
+    g.fillTriangle(30, 16, 22, 8, 36, 20);
+    g.fillTriangle(70, 16, 78, 8, 64, 20);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(50, 55, 32, 30);
+    // Head
+    g.fillCircle(50, 38, 18);
+    // Cheeks
+    g.fillStyle(0xe53935, 0.7);
+    g.fillCircle(32, 46, 6);
+    g.fillCircle(68, 46, 6);
+    // Tail (lightning bolt)
+    g.fillStyle(0xffeb3b, 0.9);
+    g.fillTriangle(72, 52, 88, 42, 78, 58);
+    g.fillTriangle(78, 48, 92, 36, 86, 52);
+    // Arms
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillRoundedRect(26, 52, 8, 10, 4);
+    g.fillRoundedRect(66, 52, 8, 10, 4);
+    // Feet
+    g.fillRoundedRect(36, 76, 10, 8, 4);
+    g.fillRoundedRect(54, 76, 10, 8, 4);
+    drawEyes(g, 50, 34, pet.eyeColor, 4);
+    // Nose
+    g.fillStyle(0x1a1a2e, 1);
+    g.fillCircle(50, 40, 2);
+    // Mouth
+    g.beginPath();
+    g.moveTo(46, 44);
+    g.lineTo(50, 46);
+    g.lineTo(54, 44);
+    g.stroke();
+  },
+
+  'pet_raichu': (g, pet) => {
+    // Raichu: evolved Pikachu, orange with long tail
+    // Ears
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillTriangle(30, 34, 18, 6, 38, 26);
+    g.fillTriangle(70, 34, 82, 6, 62, 26);
+    // Body
+    g.fillEllipse(50, 55, 34, 32);
+    // Head
+    g.fillCircle(50, 36, 18);
+    // Cheeks (bigger)
+    g.fillStyle(0xe53935, 0.7);
+    g.fillCircle(30, 44, 7);
+    g.fillCircle(70, 44, 7);
+    // Tail (long, flat)
+    g.fillStyle(0xffcc80, 0.9);
+    g.fillEllipse(82, 52, 16, 6);
+    g.fillTriangle(88, 50, 96, 44, 96, 56);
+    // Arms & legs
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillRoundedRect(24, 52, 8, 12, 4);
+    g.fillRoundedRect(68, 52, 8, 12, 4);
+    g.fillRoundedRect(34, 78, 12, 8, 4);
+    g.fillRoundedRect(54, 78, 12, 8, 4);
+    drawEyes(g, 50, 32, pet.eyeColor, 4);
+    drawMouth(g, 50, 42);
+  },
+
+  'pet_magnemite': (g, pet) => {
+    // Magnemite: floating magnet with screws
+    // Magnet arms (U-shape)
+    g.fillStyle(0x78909c, 1);
+    g.fillRoundedRect(16, 36, 12, 28, 4);
+    g.fillRoundedRect(72, 36, 12, 28, 4);
+    // Magnet tips (red/blue)
+    g.fillStyle(0xe53935, 1);
+    g.fillCircle(22, 36, 6);
+    g.fillCircle(78, 36, 6);
+    g.fillStyle(0x1565c0, 1);
+    g.fillCircle(22, 64, 6);
+    g.fillCircle(78, 64, 6);
+    // Body (sphere)
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillCircle(50, 50, 20);
+    // Metallic highlight
+    g.fillStyle(0xffffff, 0.2);
+    g.fillCircle(44, 44, 8);
+    // Eye (single, big)
+    g.fillStyle(0xffffff, 1);
+    g.fillCircle(50, 48, 10);
+    g.fillStyle(pet.eyeColor, 1);
+    g.fillCircle(50, 48, 6);
+    g.fillStyle(0xffffff, 1);
+    g.fillCircle(48, 46, 2);
+    // Screws
+    g.fillStyle(0x90a4ae, 1);
+    g.fillCircle(38, 58, 3);
+    g.fillCircle(62, 58, 3);
+    g.lineStyle(1, 0x546e7a, 0.8);
+    g.beginPath(); g.moveTo(36, 58); g.lineTo(40, 58); g.stroke();
+    g.beginPath(); g.moveTo(38, 56); g.lineTo(38, 60); g.stroke();
+    g.beginPath(); g.moveTo(60, 58); g.lineTo(64, 58); g.stroke();
+    g.beginPath(); g.moveTo(62, 56); g.lineTo(62, 60); g.stroke();
+    // Floating bolts
+    g.fillStyle(0x90a4ae, 0.5);
+    g.fillCircle(30, 76, 3);
+    g.fillCircle(70, 78, 3);
+  },
+
+  'pet_jolteon': (g, pet) => {
+    // Jolteon: spiky electric fox
+    // Spikes (all around)
+    g.fillStyle(pet.bodyColor, 1);
+    for (let a = 0; a < 8; a++) {
+      const angle = (a / 8) * Math.PI * 2 - Math.PI / 2;
+      const x1 = 50 + Math.cos(angle) * 20;
+      const y1 = 50 + Math.sin(angle) * 20;
+      const x2 = 50 + Math.cos(angle) * 34;
+      const y2 = 50 + Math.sin(angle) * 34;
+      g.fillTriangle(
+        x1 + Math.cos(angle + 0.3) * 4, y1 + Math.sin(angle + 0.3) * 4,
+        x2, y2,
+        x1 + Math.cos(angle - 0.3) * 4, y1 + Math.sin(angle - 0.3) * 4,
+      );
+    }
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillCircle(50, 52, 18);
+    // Head
+    g.fillCircle(50, 38, 14);
+    // Ears (spiky)
+    g.fillTriangle(38, 30, 30, 10, 42, 26);
+    g.fillTriangle(62, 30, 70, 10, 58, 26);
+    // Legs
+    g.fillRoundedRect(38, 66, 8, 14, 3);
+    g.fillRoundedRect(54, 66, 8, 14, 3);
+    drawEyes(g, 50, 34, pet.eyeColor, 4);
+    g.fillStyle(0x1a1a2e, 1);
+    g.fillCircle(50, 42, 2);
+  },
+
+  'pet_zapdos': (g, pet) => {
+    // Zapdos: legendary lightning bird
+    // Wings (electric bolts)
+    g.fillStyle(0xffd600, 0.6);
+    g.fillTriangle(48, 38, 8, 20, 28, 55);
+    g.fillTriangle(52, 38, 92, 20, 72, 55);
+    // Lightning wing edges
+    g.fillStyle(0xffeb3b, 0.4);
+    g.fillTriangle(46, 40, 12, 28, 26, 50);
+    g.fillTriangle(54, 40, 88, 28, 74, 50);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(50, 52, 18, 26);
+    // Head
+    g.fillCircle(50, 30, 12);
+    // Crest (spiky)
+    g.fillStyle(0xffd600, 0.8);
+    g.fillTriangle(44, 22, 38, 8, 48, 20);
+    g.fillTriangle(50, 20, 50, 4, 54, 20);
+    g.fillTriangle(56, 22, 62, 8, 52, 20);
+    // Tail (long feathers)
+    g.fillStyle(0xffd600, 0.7);
+    g.fillTriangle(42, 68, 36, 88, 50, 70);
+    g.fillTriangle(50, 70, 50, 90, 58, 70);
+    g.fillTriangle(58, 68, 64, 88, 50, 70);
+    drawSmallEyes(g, 50, 28, pet.eyeColor);
+  },
+
+  // ═══════════════════════════════════════════
+  //                 冰系 (6只)
+  // ═══════════════════════════════════════════
+  'pet_snowman': (g, _pet) => {
+    // Snowman: three snowballs
+    g.fillStyle(0xffffff, 0.95);
+    g.fillCircle(50, 72, 22);
+    g.fillCircle(50, 48, 16);
+    g.fillCircle(50, 28, 12);
+    // Eyes
+    g.fillStyle(0x1a1a2e, 1);
+    g.fillCircle(44, 24, 3);
+    g.fillCircle(56, 24, 3);
+    // Carrot nose
+    g.fillStyle(0xff9800, 1);
+    g.fillTriangle(50, 28, 50, 30, 62, 30);
+    // Buttons
+    g.fillCircle(50, 46, 2.5);
+    g.fillCircle(50, 54, 2.5);
+    g.fillCircle(50, 62, 2.5);
+    // Hat
+    g.fillStyle(0x1a1a2e, 1);
+    g.fillRect(38, 14, 24, 4);
+    g.fillRoundedRect(42, 2, 16, 14, 2);
+    // Scarf
+    g.fillStyle(0xe53935, 0.8);
+    g.fillRect(38, 36, 24, 4);
+    g.fillRect(58, 36, 4, 14);
+    // Arms
+    g.lineStyle(2, 0x795548, 0.8);
+    g.beginPath(); g.moveTo(34, 48); g.lineTo(18, 38); g.stroke();
+    g.beginPath(); g.moveTo(66, 48); g.lineTo(82, 38); g.stroke();
+  },
+
+  'pet_seal': (g, pet) => {
+    // Seal: round body with flippers
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(50, 55, 40, 30);
+    // Head
+    g.fillCircle(50, 34, 18);
+    // Flippers
+    g.fillStyle(pet.bodyColor, 0.8);
+    g.fillTriangle(22, 52, 10, 60, 26, 64);
+    g.fillTriangle(78, 52, 90, 60, 74, 64);
+    // Tail
+    g.fillTriangle(42, 74, 50, 86, 58, 74);
+    // Belly
+    g.fillStyle(0xbbdefb, 0.4);
+    g.fillEllipse(50, 60, 24, 16);
+    // Whiskers
+    g.lineStyle(1, 0x1a1a2e, 0.5);
+    g.beginPath(); g.moveTo(40, 40); g.lineTo(26, 38); g.stroke();
+    g.beginPath(); g.moveTo(40, 42); g.lineTo(26, 42); g.stroke();
+    g.beginPath(); g.moveTo(60, 40); g.lineTo(74, 38); g.stroke();
+    g.beginPath(); g.moveTo(60, 42); g.lineTo(74, 42); g.stroke();
+    drawEyes(g, 50, 30, pet.eyeColor, 5);
+    // Nose
+    g.fillStyle(0x1a1a2e, 1);
+    g.fillCircle(50, 38, 3);
+  },
+
+  'pet_cubchoo': (g, pet) => {
+    // Cubchoo: small bear with runny nose
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillCircle(50, 56, 26);
+    // Ears
+    g.fillCircle(32, 28, 10);
+    g.fillCircle(68, 28, 10);
+    g.fillStyle(0x1a1a2e, 0.2);
+    g.fillCircle(32, 28, 5);
+    g.fillCircle(68, 28, 5);
+    // Arms
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillRoundedRect(22, 50, 10, 16, 5);
+    g.fillRoundedRect(68, 50, 10, 16, 5);
+    // Feet
+    g.fillEllipse(38, 78, 14, 8);
+    g.fillEllipse(62, 78, 14, 8);
+    // Belly
+    g.fillStyle(0xe3f2fd, 0.4);
+    g.fillCircle(50, 60, 14);
+    // Face
+    drawEyes(g, 50, 46, pet.eyeColor, 4);
+    // Nose
+    g.fillStyle(0x1a1a2e, 1);
+    g.fillCircle(50, 54, 3);
+    // Runny nose (drool)
+    g.fillStyle(0x90caf9, 0.6);
+    g.fillCircle(50, 60, 3);
+    g.fillEllipse(50, 66, 2, 6);
+  },
+
+  'pet_glalie': (g, pet) => {
+    // Glalie: floating ice sphere with face
+    // Ice spikes
+    g.fillStyle(0xb0bec5, 0.7);
+    g.fillTriangle(50, 8, 44, 20, 56, 20);
+    g.fillTriangle(22, 24, 30, 34, 24, 34);
+    g.fillTriangle(78, 24, 70, 34, 76, 34);
+    g.fillTriangle(28, 68, 36, 60, 30, 60);
+    g.fillTriangle(72, 68, 64, 60, 70, 60);
+    // Body (dark sphere)
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillCircle(50, 44, 28);
+    // Ice shell
+    g.fillStyle(0xcfd8dc, 0.3);
+    g.fillCircle(50, 42, 22);
+    // Face crack
+    g.lineStyle(2, 0x455a64, 0.5);
+    g.beginPath(); g.moveTo(50, 30); g.lineTo(48, 44); g.lineTo(52, 56); g.stroke();
+    // Eyes (menacing)
+    g.fillStyle(0xc62828, 0.9);
+    g.fillEllipse(40, 40, 8, 5);
+    g.fillEllipse(60, 40, 8, 5);
+    g.fillStyle(0x1a1a2e, 1);
+    g.fillCircle(40, 40, 3);
+    g.fillCircle(60, 40, 3);
+    // Mouth (jagged)
+    g.lineStyle(2, 0x37474f, 0.8);
+    g.beginPath();
+    g.moveTo(38, 52);
+    g.lineTo(42, 48);
+    g.lineTo(46, 52);
+    g.lineTo(50, 48);
+    g.lineTo(54, 52);
+    g.lineTo(58, 48);
+    g.lineTo(62, 52);
+    g.stroke();
+  },
+
+  'pet_frosmoth': (g, pet) => {
+    // Frosmoth: moth with ice crystal wings
+    // Wings (ice crystals)
+    g.fillStyle(0xb3e5fc, 0.5);
+    g.fillEllipse(30, 44, 24, 36);
+    g.fillEllipse(70, 44, 24, 36);
+    // Wing patterns
+    g.fillStyle(0xe1f5fe, 0.3);
+    g.fillCircle(28, 38, 6);
+    g.fillCircle(32, 52, 5);
+    g.fillCircle(72, 38, 6);
+    g.fillCircle(68, 52, 5);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(50, 55, 16, 28);
+    // Head
+    g.fillCircle(50, 32, 10);
+    // Antennae
+    g.lineStyle(1.5, 0xb3e5fc, 0.7);
+    g.beginPath(); g.moveTo(44, 24); g.lineTo(38, 16); g.lineTo(30, 16); g.stroke();
+    g.beginPath(); g.moveTo(56, 24); g.lineTo(62, 16); g.lineTo(70, 16); g.stroke();
+    g.fillStyle(0xe1f5fe, 0.8);
+    g.fillCircle(30, 16, 3);
+    g.fillCircle(70, 16, 3);
+    // Legs
+    g.lineStyle(1.5, 0x90caf9, 0.5);
+    g.beginPath(); g.moveTo(44, 68); g.lineTo(38, 80); g.stroke();
+    g.beginPath(); g.moveTo(50, 70); g.lineTo(50, 82); g.stroke();
+    g.beginPath(); g.moveTo(56, 68); g.lineTo(62, 80); g.stroke();
+    // Ice dust
+    g.fillStyle(0xffffff, 0.3);
+    g.fillCircle(20, 64, 3);
+    g.fillCircle(80, 60, 3);
+    g.fillCircle(36, 74, 2);
+    drawSmallEyes(g, 50, 30, pet.eyeColor);
+  },
+
+  'pet_articuno2': (g, pet) => {
+    // Ice Phoenix: elegant ice bird
+    // Wings (wide, ice crystal)
+    g.fillStyle(0x4fc3f7, 0.5);
+    g.fillTriangle(48, 38, 4, 18, 26, 56);
+    g.fillTriangle(52, 38, 96, 18, 74, 56);
+    g.fillStyle(0xb3e5fc, 0.3);
+    g.fillTriangle(48, 40, 10, 24, 28, 52);
+    g.fillTriangle(52, 40, 90, 24, 72, 52);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(50, 52, 18, 28);
+    // Head
+    g.fillCircle(50, 30, 12);
+    // Crown
+    g.fillStyle(0x4fc3f7, 0.9);
+    g.fillTriangle(44, 22, 50, 8, 56, 22);
+    g.fillStyle(0xe1f5fe, 0.6);
+    g.fillTriangle(46, 20, 50, 12, 54, 20);
+    // Tail (ice streamers)
+    g.fillStyle(0x4fc3f7, 0.6);
+    g.fillTriangle(44, 70, 40, 90, 50, 72);
+    g.fillTriangle(50, 72, 50, 92, 56, 72);
+    g.fillTriangle(56, 70, 60, 90, 50, 72);
+    // Frost particles
+    g.fillStyle(0xffffff, 0.4);
+    g.fillCircle(20, 30, 3);
+    g.fillCircle(80, 28, 3);
+    g.fillCircle(30, 60, 2);
+    g.fillCircle(70, 58, 2);
+    drawSmallEyes(g, 50, 28, pet.eyeColor);
+  },
+
+  // ═══════════════════════════════════════════
+  //                 暗系 (6只)
+  // ═══════════════════════════════════════════
+  'pet_bat': (g, pet) => {
+    // Bat: with spread wings
+    // Wings
+    g.fillStyle(pet.bodyColor, 0.8);
+    g.fillTriangle(42, 45, 8, 30, 22, 58);
+    g.fillTriangle(58, 45, 92, 30, 78, 58);
+    // Wing membrane
+    g.fillStyle(0x424242, 0.4);
+    g.fillTriangle(42, 46, 14, 34, 24, 56);
+    g.fillTriangle(58, 46, 86, 34, 76, 56);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(50, 55, 18, 22);
+    // Head
+    g.fillCircle(50, 38, 12);
+    // Ears (big, pointy)
+    g.fillTriangle(38, 30, 30, 12, 42, 28);
+    g.fillTriangle(62, 30, 70, 12, 58, 28);
+    g.fillStyle(0x1a1a2e, 0.3);
+    g.fillTriangle(39, 29, 34, 18, 41, 28);
+    g.fillTriangle(61, 29, 66, 18, 59, 28);
+    // Fangs
+    g.fillStyle(0xffffff, 0.9);
+    g.fillTriangle(46, 48, 44, 54, 48, 48);
+    g.fillTriangle(54, 48, 56, 54, 52, 48);
+    // Eyes
+    g.fillStyle(0xe53935, 0.9);
+    g.fillCircle(44, 36, 4);
+    g.fillCircle(56, 36, 4);
+    g.fillStyle(0x1a1a2e, 1);
+    g.fillCircle(44, 36, 2);
+    g.fillCircle(56, 36, 2);
+    // Feet
+    g.fillStyle(pet.bodyColor, 0.7);
+    g.fillCircle(44, 72, 3);
+    g.fillCircle(56, 72, 3);
+  },
+
+  'pet_ghost': (g, pet) => {
+    // Ghost: floating with wavy bottom
+    // Glow
+    g.fillStyle(pet.color, 0.15);
+    g.fillCircle(50, 48, 32);
+    // Body
+    g.fillStyle(pet.bodyColor, 0.85);
+    g.fillCircle(50, 40, 24);
+    g.fillRect(26, 40, 48, 30);
+    // Wavy bottom
+    g.fillCircle(34, 70, 10);
+    g.fillCircle(50, 72, 10);
+    g.fillCircle(66, 70, 10);
+    // Arms
+    g.fillCircle(24, 50, 8);
+    g.fillCircle(76, 50, 8);
+    // Eyes (big, hollow)
+    g.fillStyle(0xffffff, 0.9);
+    g.fillEllipse(40, 38, 12, 14);
+    g.fillEllipse(60, 38, 12, 14);
+    g.fillStyle(0x1a1a2e, 1);
+    g.fillCircle(42, 40, 4);
+    g.fillCircle(58, 40, 4);
+    // Mouth
+    g.fillStyle(0x1a1a2e, 0.6);
+    g.fillEllipse(50, 54, 8, 10);
+  },
+
+  'pet_murkrow': (g, pet) => {
+    // Murkrow: crow with hat
+    // Wings
+    g.fillStyle(pet.bodyColor, 0.9);
+    g.fillTriangle(42, 48, 10, 36, 26, 62);
+    g.fillTriangle(58, 48, 90, 36, 74, 62);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(50, 55, 20, 24);
+    // Head
+    g.fillCircle(50, 36, 14);
+    // Hat (witch-like)
+    g.fillStyle(0x1a1a2e, 0.9);
+    g.fillTriangle(44, 26, 50, 8, 56, 26);
+    g.fillRect(36, 26, 28, 4);
+    // Hat feather
+    g.fillStyle(0xe53935, 0.7);
+    g.fillTriangle(58, 24, 66, 14, 62, 26);
+    // Tail feathers
+    g.fillStyle(pet.bodyColor, 0.8);
+    g.fillTriangle(44, 72, 38, 88, 50, 74);
+    g.fillTriangle(50, 74, 50, 90, 56, 74);
+    // Beak
+    g.fillStyle(0xff9800, 1);
+    g.fillTriangle(50, 40, 46, 44, 54, 44);
+    g.fillTriangle(50, 44, 48, 48, 52, 48);
+    // Eyes
+    g.fillStyle(0xffd600, 0.9);
+    g.fillCircle(44, 34, 4);
+    g.fillCircle(56, 34, 4);
+    g.fillStyle(0x1a1a2e, 1);
+    g.fillCircle(44, 34, 2);
+    g.fillCircle(56, 34, 2);
+  },
+
+  'pet_umbreon': (g, pet) => {
+    // Umbreon: black fox with glowing rings
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillCircle(50, 58, 24);
+    // Head
+    g.fillCircle(50, 36, 16);
+    // Ears
+    g.fillTriangle(34, 28, 26, 10, 40, 24);
+    g.fillTriangle(66, 28, 74, 10, 60, 24);
+    // Tail
+    g.fillCircle(78, 58, 8);
+    // Glowing rings (yellow)
+    g.fillStyle(0xffd600, 0.8);
+    // Forehead ring
+    g.fillCircle(50, 28, 4);
+    // Ear rings
+    g.fillCircle(34, 16, 3);
+    g.fillCircle(66, 16, 3);
+    // Shoulder rings
+    g.fillCircle(34, 52, 3);
+    g.fillCircle(66, 52, 3);
+    // Tail ring
+    g.fillCircle(78, 54, 3);
+    // Legs
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillRoundedRect(36, 76, 10, 12, 4);
+    g.fillRoundedRect(54, 76, 10, 12, 4);
+    // Eyes (red)
+    g.fillStyle(0xe53935, 0.9);
+    g.fillCircle(42, 34, 5);
+    g.fillCircle(58, 34, 5);
+    g.fillStyle(0x1a1a2e, 1);
+    g.fillCircle(42, 34, 2);
+    g.fillCircle(58, 34, 2);
+  },
+
+  'pet_darkrai': (g, pet) => {
+    // Darkrai: shadowy floating figure
+    // Shadow tendrils
+    g.fillStyle(pet.bodyColor, 0.5);
+    g.fillCircle(36, 78, 8);
+    g.fillCircle(50, 82, 8);
+    g.fillCircle(64, 78, 8);
+    g.fillCircle(28, 72, 6);
+    g.fillCircle(72, 72, 6);
+    // Body (ghostly)
+    g.fillStyle(pet.bodyColor, 0.8);
+    g.fillEllipse(50, 48, 28, 36);
+    // Head
+    g.fillCircle(50, 28, 16);
+    // Hood/cape
+    g.fillStyle(0x0d0d1a, 0.6);
+    g.fillTriangle(34, 32, 28, 50, 42, 40);
+    g.fillTriangle(66, 32, 72, 50, 58, 40);
+    // Red eyes
+    g.fillStyle(0xc62828, 0.9);
+    g.fillEllipse(42, 26, 8, 5);
+    g.fillEllipse(58, 26, 8, 5);
+    g.fillStyle(0xff1744, 0.6);
+    g.fillCircle(42, 26, 3);
+    g.fillCircle(58, 26, 3);
+    // Mouth (dark void)
+    g.fillStyle(0x000000, 0.7);
+    g.fillEllipse(50, 38, 10, 6);
+  },
+
+  'pet_spiritomb': (g, pet) => {
+    // Spiritomb: stone face with swirling spirit
+    // Spirit wisps
+    g.fillStyle(pet.bodyColor, 0.4);
+    g.fillCircle(30, 30, 8);
+    g.fillCircle(70, 32, 8);
+    g.fillCircle(24, 50, 6);
+    g.fillCircle(76, 52, 6);
+    // Stone body
+    g.fillStyle(0x616161, 0.9);
+    g.fillCircle(50, 50, 30);
+    // Stone crack
+    g.lineStyle(2, 0x424242, 0.6);
+    g.beginPath(); g.moveTo(50, 22); g.lineTo(48, 38); g.lineTo(52, 56); g.stroke();
+    // Face hole (dark)
+    g.fillStyle(0x1a1a2e, 0.9);
+    g.fillEllipse(50, 46, 24, 28);
+    // Swirling eye
+    g.fillStyle(0x76ff03, 0.9);
+    g.fillCircle(50, 44, 6);
+    g.fillStyle(0x000000, 0.8);
+    g.fillCircle(50, 44, 3);
+    // Small eyes
+    g.fillStyle(0x76ff03, 0.6);
+    g.fillCircle(38, 38, 3);
+    g.fillCircle(62, 38, 3);
+    // Mouth slit
+    g.lineStyle(2, 0x76ff03, 0.5);
+    g.beginPath(); g.moveTo(40, 56); g.lineTo(60, 56); g.stroke();
+  },
+
+  // ═══════════════════════════════════════════
+  //                 光系 (6只)
+  // ═══════════════════════════════════════════
+  'pet_pixie': (g, pet) => {
+    // Pixie: small fairy with wings and glow
+    // Glow
+    g.fillStyle(pet.color, 0.15);
+    g.fillCircle(50, 48, 30);
+    // Wings
+    g.fillStyle(0xfff9c4, 0.4);
+    g.fillEllipse(30, 42, 16, 24);
+    g.fillEllipse(70, 42, 16, 24);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillCircle(50, 50, 14);
+    // Head
+    g.fillCircle(50, 32, 12);
+    // Hair (spiky)
+    g.fillStyle(0xffe082, 0.8);
+    g.fillTriangle(44, 22, 38, 10, 48, 20);
+    g.fillTriangle(50, 20, 50, 8, 54, 20);
+    g.fillTriangle(56, 22, 62, 10, 52, 20);
+    // Arms
+    g.fillStyle(pet.bodyColor, 0.8);
+    g.fillCircle(34, 52, 5);
+    g.fillCircle(66, 52, 5);
+    // Legs
+    g.fillRoundedRect(42, 62, 6, 12, 3);
+    g.fillRoundedRect(52, 62, 6, 12, 3);
+    // Sparkle trail
+    g.fillStyle(0xffd700, 0.5);
+    g.fillCircle(26, 60, 3);
+    g.fillCircle(74, 58, 3);
+    g.fillCircle(50, 78, 2);
+    drawSmallEyes(g, 50, 30, pet.eyeColor);
+    drawBlush(g, 50, 36);
+  },
+
+  'pet_clefairy': (g, pet) => {
+    // Clefairy: pink fairy with star
+    // Wings
+    g.fillStyle(0xf8bbd0, 0.4);
+    g.fillEllipse(28, 46, 14, 22);
+    g.fillEllipse(72, 46, 14, 22);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillCircle(50, 55, 22);
+    // Head
+    g.fillCircle(50, 34, 16);
+    // Ears
+    g.fillCircle(34, 20, 8);
+    g.fillCircle(66, 20, 8);
+    g.fillStyle(0x1a1a2e, 0.2);
+    g.fillCircle(34, 20, 4);
+    g.fillCircle(66, 20, 4);
+    // Star on forehead
+    g.fillStyle(0xe53935, 0.8);
+    g.fillCircle(50, 24, 5);
+    // Arms
+    g.fillStyle(pet.bodyColor, 0.8);
+    g.fillCircle(30, 54, 6);
+    g.fillCircle(70, 54, 6);
+    // Feet
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(40, 76, 12, 6);
+    g.fillEllipse(60, 76, 12, 6);
+    drawEyes(g, 50, 32, pet.eyeColor, 4);
+    drawMouth(g, 50, 40);
+    drawBlush(g, 50, 38);
+  },
+
+  'pet_ralts': (g, pet) => {
+    // Ralts: small humanoid with horn
+    // Body (dress-like)
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(50, 60, 24, 28);
+    // Head
+    g.fillStyle(0xffffff, 0.9);
+    g.fillCircle(50, 36, 16);
+    // Hair (green)
+    g.fillStyle(pet.bodyColor, 0.9);
+    g.fillCircle(50, 30, 16);
+    g.fillRect(34, 30, 32, 10);
+    // Horn
+    g.fillStyle(0xe53935, 0.8);
+    g.fillTriangle(46, 18, 50, 6, 54, 18);
+    // Eyes (red)
+    g.fillStyle(0xe53935, 0.9);
+    g.fillCircle(44, 36, 4);
+    g.fillCircle(56, 36, 4);
+    g.fillStyle(0x1a1a2e, 1);
+    g.fillCircle(44, 36, 2);
+    g.fillCircle(56, 36, 2);
+    // Legs
+    g.fillStyle(0x4caf50, 0.5);
+    g.fillRoundedRect(42, 78, 6, 12, 3);
+    g.fillRoundedRect(52, 78, 6, 12, 3);
+  },
+
+  'pet_gardevoir': (g, pet) => {
+    // Gardevoir: elegant robed figure
+    // Dress/robe
+    g.fillStyle(pet.bodyColor, 0.9);
+    g.fillEllipse(50, 62, 32, 32);
+    g.fillTriangle(34, 56, 50, 90, 66, 56);
+    // White horn
+    g.fillStyle(0xffffff, 0.8);
+    g.fillCircle(50, 24, 8);
+    g.fillCircle(50, 18, 5);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(50, 48, 20, 24);
+    // Head
+    g.fillStyle(0xffffff, 0.9);
+    g.fillCircle(50, 30, 14);
+    // Hair
+    g.fillStyle(pet.bodyColor, 0.8);
+    g.fillCircle(50, 24, 14);
+    g.fillTriangle(36, 28, 30, 44, 40, 36);
+    g.fillTriangle(64, 28, 70, 44, 60, 36);
+    // Arms (flowing)
+    g.fillStyle(pet.bodyColor, 0.7);
+    g.fillTriangle(30, 48, 18, 62, 34, 56);
+    g.fillTriangle(70, 48, 82, 62, 66, 56);
+    // Green chest spike
+    g.fillStyle(0x4caf50, 0.5);
+    g.fillCircle(50, 42, 5);
+    // Eyes (red)
+    g.fillStyle(0xe53935, 0.8);
+    g.fillEllipse(44, 28, 5, 3);
+    g.fillEllipse(56, 28, 5, 3);
+  },
+
+  'pet_espeon': (g, pet) => {
+    // Espeon: cat-like with forked tail
+    // Tail (forked)
+    g.fillStyle(pet.bodyColor, 0.8);
+    g.fillCircle(80, 52, 8);
+    g.fillTriangle(76, 48, 88, 38, 84, 52);
+    g.fillTriangle(78, 52, 90, 48, 84, 56);
+    // Body
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillCircle(50, 58, 22);
+    // Head
+    g.fillCircle(50, 38, 16);
+    // Ears (large, pointed)
+    g.fillTriangle(34, 30, 22, 8, 40, 26);
+    g.fillTriangle(66, 30, 78, 8, 60, 26);
+    // Gem on forehead
+    g.fillStyle(0xe53935, 0.8);
+    g.fillCircle(50, 28, 4);
+    // Legs
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillRoundedRect(36, 76, 10, 12, 4);
+    g.fillRoundedRect(54, 76, 10, 12, 4);
+    // Collar fur
+    g.fillStyle(0xffffff, 0.3);
+    g.fillCircle(50, 46, 10);
+    drawEyes(g, 50, 34, pet.eyeColor, 4);
+    drawMouth(g, 50, 42);
+  },
+
+  'pet_arceus': (g, pet) => {
+    // Arceus: majestic with halo and mane
+    // Halo
+    g.lineStyle(3, 0xffd700, 0.7);
+    g.strokeCircle(50, 14, 12);
+    // Mane (flowing)
+    g.fillStyle(0xffe082, 0.5);
+    g.fillCircle(50, 32, 18);
+    g.fillCircle(36, 38, 10);
+    g.fillCircle(64, 38, 10);
+    // Body (horse-like)
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillEllipse(50, 58, 30, 28);
+    // Head
+    g.fillCircle(50, 34, 14);
+    // Horn
+    g.fillStyle(0xffd700, 0.9);
+    g.fillTriangle(46, 24, 50, 8, 54, 24);
+    // Legs
+    g.fillStyle(pet.bodyColor, 1);
+    g.fillRoundedRect(34, 74, 8, 14, 3);
+    g.fillRoundedRect(58, 74, 8, 14, 3);
+    // Hooves
+    g.fillStyle(0xffd700, 0.6);
+    g.fillRoundedRect(34, 84, 8, 4, 2);
+    g.fillRoundedRect(58, 84, 8, 4, 2);
+    // Tail (flowing)
+    g.fillStyle(pet.bodyColor, 0.7);
+    g.fillCircle(76, 62, 8);
+    g.fillCircle(82, 58, 6);
+    // Arceus markings
+    g.fillStyle(0x4caf50, 0.5);
+    g.fillCircle(42, 54, 4);
+    g.fillCircle(58, 54, 4);
+    g.fillStyle(0xe53935, 0.5);
+    g.fillCircle(50, 62, 4);
+    drawEyes(g, 50, 30, pet.eyeColor, 4);
+  },
+};
