@@ -46,7 +46,7 @@ function getTestSave(): SaveData {
     .slice(0, MAX_EQUIPPED_ITEMS)
     .map(i => i.id);
 
-  const testPets: PetInstance[] = PETS.slice(0, MAX_OWNED_PETS).map(p => ({
+  const testPets: PetInstance[] = PETS.map(p => ({
     petId: p.id,
     level: 10,
     exp: 0,
