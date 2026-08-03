@@ -2307,7 +2307,7 @@ const PET_DRAWERS: Record<string, PetDrawer> = {
   //  冰系 (6只) — 200×200 全身像
   // ═══════════════════════════════════════════
 
-  'pet_snowman': (g, _pet) => {
+  'pet_snowman': (g) => {
     // 雪人三球
     g.fillStyle(0xffffff, 0.95);
     g.fillCircle(100, 152, 38);               // 底球

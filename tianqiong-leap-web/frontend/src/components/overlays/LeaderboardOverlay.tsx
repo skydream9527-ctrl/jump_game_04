@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { getLeaderboard, type LeaderboardEntry } from '../../state/leaderboard';
 
 interface Props {
@@ -6,11 +6,7 @@ interface Props {
 }
 
 export function LeaderboardOverlay({ onClose }: Props) {
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-
-  useEffect(() => {
-    setEntries(getLeaderboard());
-  }, []);
+  const [entries] = useState<LeaderboardEntry[]>(() => getLeaderboard());
 
   return (
     <div className="overlay-backdrop" onClick={onClose}>

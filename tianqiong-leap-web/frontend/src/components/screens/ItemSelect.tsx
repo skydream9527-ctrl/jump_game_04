@@ -12,7 +12,7 @@ interface Props {
   standalone?: boolean;
 }
 
-export function ItemSelect({ inventory, equippedItems, chapter: _chapter, level: _level, onConfirm, onBack, standalone }: Props) {
+export function ItemSelect({ inventory, equippedItems, chapter, level, onConfirm, onBack, standalone }: Props) {
   const [selected, setSelected] = useState<string[]>(equippedItems.slice(0, MAX_EQUIPPED_ITEMS));
 
   const toggleItem = useCallback((itemId: string) => {
@@ -53,7 +53,7 @@ export function ItemSelect({ inventory, equippedItems, chapter: _chapter, level:
       <p style={{ color: '#7a7060', fontSize: 12, margin: '0 0 16px' }}>
         {standalone
           ? `当前装备 ${selected.length} / ${MAX_EQUIPPED_ITEMS} 件`
-          : `第{chapter}章 · 第{level}关 — 最多携带 ${MAX_EQUIPPED_ITEMS} 件`}
+          : `第 ${chapter} 章 · 第 ${level} 关 — 最多携带 ${MAX_EQUIPPED_ITEMS} 件`}
       </p>
 
       {/* 已选道具槽 */}

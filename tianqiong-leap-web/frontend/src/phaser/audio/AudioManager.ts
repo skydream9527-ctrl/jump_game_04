@@ -23,7 +23,7 @@ export class AudioManager {
 
   constructor(scene: Phaser.Scene) {
     try {
-      this.ctx = (scene.sound as any).context ?? null;
+      this.ctx = (scene.sound as unknown as { context?: AudioContext }).context ?? null;
     } catch {
       // Phaser sound manager not ready; will create on demand
     }
@@ -286,7 +286,9 @@ export class AudioManager {
       this.bgmInterval = null;
     }
     if (this.bgmGain) {
-      try { this.bgmGain.disconnect(); } catch {}
+      try { this.bgmGain.disconnect(); } catch {
+        // GainNode might already be disconnected
+      }
       this.bgmGain = null;
     }
     this.bgmChapter = 0;

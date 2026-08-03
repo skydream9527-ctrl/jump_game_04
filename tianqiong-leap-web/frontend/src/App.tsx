@@ -35,7 +35,7 @@ export default function App() {
   const [currentLevel, setCurrentLevel] = useState(1);
   const [gameOverData, setGameOverData] = useState<GameOverPayload>({ score: 0, bestScore: 0 });
   const [completeData, setCompleteData] = useState<LevelCompletePayload>({ score: 0, shards: 0, lives: 0, stars: 0 });
-  const [_phaserReady, setPhaserReady] = useState(false);
+  const [, setPhaserReady] = useState(false);
   const [standaloneView, setStandaloneView] = useState(false);
   const [testMode, setTestMode] = useState(isTestMode());
 
@@ -93,7 +93,7 @@ export default function App() {
       EventBus.off(EVENTS.LEVEL_COMPLETE, onLevelComplete);
       EventBus.off(EVENTS.GAME_STATE_CHANGED, onStateChanged);
     };
-  }, [currentChapter, currentLevel, save]);
+  }, [currentChapter, currentLevel, save, tryUnlock]);
 
   const startLevel = useCallback((chapter: number, level: number, items: string[] = []) => {
     setCurrentChapter(chapter);

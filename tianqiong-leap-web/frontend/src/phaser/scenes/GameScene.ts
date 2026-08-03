@@ -189,6 +189,8 @@ export class GameScene extends Phaser.Scene {
   private escKey!: Phaser.Input.Keyboard.Key;
   private eKey!: Phaser.Input.Keyboard.Key;
   private qKey!: Phaser.Input.Keyboard.Key;
+  private sKey!: Phaser.Input.Keyboard.Key;
+  private downKey!: Phaser.Input.Keyboard.Key;
 
   private get cameraTargetX(): number {
     return this.playerX - PLAYER_SCREEN_X;
@@ -225,6 +227,8 @@ export class GameScene extends Phaser.Scene {
     this.escKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.eKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.E);
     this.qKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
+    this.sKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+    this.downKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.DOWN);
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (this.gameState === 'playing') {
@@ -256,12 +260,14 @@ export class GameScene extends Phaser.Scene {
     this.tweens.killAll();
 
     // Safely destroy game objects
-    const safeDestroy = (obj: any) => {
+    const safeDestroy = (obj: { active?: boolean; destroy?: () => void } | null | undefined) => {
       try {
         if (obj && obj.active !== false && typeof obj.destroy === 'function') {
           obj.destroy();
         }
-      } catch {}
+      } catch {
+        // Object may already be destroyed
+      }
     };
 
     // Destroy tracked objects
@@ -274,7 +280,7 @@ export class GameScene extends Phaser.Scene {
     this.bgDecor.forEach(safeDestroy);
     this.powerUpSprites.forEach(p => safeDestroy(p.sprite));
     this.powerUpIcons.forEach(p => { safeDestroy(p.icon); safeDestroy(p.timer); });
-    this.weaponPickups.forEach(safeDestroy);
+    this.weaponPickups.forEach(w => safeDestroy(w.sprite));
     this.playerBullets.forEach(b => safeDestroy(b.sprite));
     this.enemies.forEach(e => safeDestroy(e.sprite));
     this.bullets.forEach(b => safeDestroy(b.sprite));
@@ -316,11 +322,15 @@ export class GameScene extends Phaser.Scene {
       this.envOverlay = null;
     }
     for (const p of this.envParticles) {
-      try { p.obj.destroy(); } catch {}
+      try { p.obj.destroy(); } catch {
+        // Ignore already destroyed particles
+      }
     }
     this.envParticles = [];
     for (const v of this.vineSegments) {
-      try { v.sprite.destroy(); } catch {}
+      try { v.sprite.destroy(); } catch {
+        // Ignore already destroyed vine segments
+      }
     }
     this.vineSegments = [];
     this.lightningTimer = 0;
@@ -376,7 +386,9 @@ export class GameScene extends Phaser.Scene {
       if (e.stat === 'game_speed') { this.speed *= (1 + (e.value ?? 0)); }
       if (e.stat === 'stealth') { this.stealthTimer = e.value ?? 5000; }
       if (e.stat === 'auto_shield') { this.autoShieldTimer = e.value ?? 30000; }
-      if (e.stat === 'revive') {  } // fairy acts as revive
+      if (e.stat === 'revive') {
+        // Fairy item handles revive on fall/death automatically
+      }
     }
 
     // ── Resolve pet ──
@@ -408,7 +420,7 @@ export class GameScene extends Phaser.Scene {
     this.initEnvironmentEffect(chapter);
 
     const mainCam = this.cameras.main;
-    const hudElements = this.children.list.filter(c => (c as any).depth >= HUD_DEPTH);
+    const hudElements = this.children.list.filter(c => (c as unknown as { depth?: number }).depth !== undefined && (c as unknown as { depth: number }).depth >= HUD_DEPTH);
     mainCam.ignore(hudElements);
 
     this.hudNeedsUpdate = true;
@@ -430,7 +442,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.hudCam.setScroll(0, 0);
     this.hudCam.ignore(this.children.list.filter(c => {
-      const d = (c as any).depth;
+      const d = (c as unknown as { depth?: number }).depth;
       return d === undefined || d < HUD_DEPTH;
     }));
   }
@@ -1064,7 +1076,6 @@ export class GameScene extends Phaser.Scene {
       case 'dual_cannon':
       case 'solar_beam':
       case 'giga_impact':
-      case 'flare_blitz':
       case 'inferno':
       case 'blast_burn':
       case 'overheat':
@@ -1884,6 +1895,9 @@ export class GameScene extends Phaser.Scene {
         Phaser.Input.Keyboard.JustDown(this.wKey) ||
         Phaser.Input.Keyboard.JustDown(this.upKey)) {
       this.doJump();
+    }
+    if (!this.isGrounded && (this.sKey.isDown || this.downKey.isDown)) {
+      this.playerVY += 0.8 * normalized;
     }
     if (Phaser.Input.Keyboard.JustDown(this.eKey)) {
       this.tryActivateNinjaArt();

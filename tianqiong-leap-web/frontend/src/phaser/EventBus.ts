@@ -1,6 +1,7 @@
 // Phaser <-> React communication bridge
 // Uses a simple EventEmitter pattern
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type EventCallback = (...args: any[]) => void;
 
 class EventBusClass {
@@ -17,6 +18,7 @@ class EventBusClass {
     this.listeners.get(event)?.delete(callback);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   emit(event: string, ...args: any[]): void {
     this.listeners.get(event)?.forEach((cb) => {
       try {

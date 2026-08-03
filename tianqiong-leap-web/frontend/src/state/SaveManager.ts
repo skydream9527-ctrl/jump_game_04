@@ -121,10 +121,12 @@ export function recordLevelResult(
   level: number,
   score: number,
   shardsCollected: number,
-  _livesRemaining: number
+  livesRemaining: number
 ): SaveData {
   const idx = getLevelIndex(chapter, level);
-  const stars = shardsCollected >= 3 ? 3 : shardsCollected >= 2 ? 2 : 1;
+  // Bonus star for flawless (3 lives remaining)
+  let stars = shardsCollected >= 3 ? 3 : shardsCollected >= 2 ? 2 : 1;
+  if (livesRemaining >= 3 && stars < 3) stars++;
 
   const existingIdx = data.records.findIndex((r) => r.idx === idx);
   const existing = existingIdx >= 0 ? data.records[existingIdx] : null;
@@ -307,7 +309,7 @@ export function setEquippedItems(data: SaveData, itemIds: string[]): SaveData {
   return newData;
 }
 
-export function useConsumableItem(data: SaveData, itemId: string): SaveData {
+export function consumeConsumableItem(data: SaveData, itemId: string): SaveData {
   const itemDef = getItemById(itemId);
   if (!itemDef || itemDef.category !== 'consumable') return data;
   return removeItemFromInventory(data, itemId, 1);

@@ -42,7 +42,7 @@ export function useSaveData() {
   }, []);
 
   const useConsumableItem = useCallback((itemId: string) => {
-    setSaveData(prev => SaveManager.useConsumableItem(prev, itemId));
+    setSaveData(prev => SaveManager.consumeConsumableItem(prev, itemId));
   }, []);
 
   const adoptPet = useCallback((petId: string) => {
