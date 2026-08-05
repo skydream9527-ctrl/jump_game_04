@@ -1,14 +1,228 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>天穹跃迁 - Tianqiong Leap</title>
-    <script type="module" crossorigin src="./assets/index-B2zv3f1h.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-w2FmN-4y.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>天穹跃迁 (Tianqiong Leap) 🚀 — HTML5 粒子横版跳跃游戏</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #070a12;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.3);
+      --text: #f8fafc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    header {
+      width: 100%; max-width: 800px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px;
+    }
+    .brand { font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 800; color: var(--accent); }
+    .theme-select {
+      background: #1e293b; border: 1px solid rgba(255,255,255,0.1);
+      color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 13px; outline: none; cursor: pointer;
+    }
+
+    .game-wrapper {
+      position: relative; width: 800px; height: 450px;
+      border: 3px solid var(--accent); border-radius: 20px;
+      overflow: hidden; box-shadow: 0 15px 50px var(--accent-glow);
+      background: #090d16;
+    }
+    canvas { width: 100%; height: 100%; display: block; }
+
+    .hud-overlay {
+      position: absolute; top: 16px; left: 20px; right: 20px;
+      display: flex; justify-content: space-between; pointer-events: none;
+      font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 16px;
+    }
+    .score-badge { background: rgba(15, 23, 42, 0.8); padding: 8px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); }
+    
+    .controls {
+      margin-top: 16px; display: flex; gap: 12px; width: 100%; max-width: 800px;
+    }
+    .btn-jump {
+      flex: 1; background: var(--accent); color: #0f172a; border: none; font-weight: 800;
+      padding: 14px; border-radius: 12px; font-size: 16px; cursor: pointer; transition: all 0.2s ease;
+    }
+    .btn-jump:hover { opacity: 0.9; transform: translateY(-2px); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">🚀 TIANQIONG LEAP</div>
+    <select class="theme-select" id="themeSelect" onchange="changeTheme(this.value)">
+      <option value="cyber">🪐 赛博星 (Cyber Planet)</option>
+      <option value="earth">🌍 地球 (Earth)</option>
+      <option value="deepspace">🌌 深空 (Deep Space)</option>
+    </select>
+  </header>
+
+  <div class="game-wrapper">
+    <div class="hud-overlay">
+      <div class="score-badge">SCORE: <span id="scoreVal" style="color:var(--accent);">0</span></div>
+      <div class="score-badge">HIGH: <span id="highVal" style="color:#f59e0b;">0</span></div>
+    </div>
+    <canvas id="gameCanvas" width="800" height="450"></canvas>
+  </div>
+
+  <div class="controls">
+    <button class="btn-jump" onclick="doJump()">🚀 空间跃迁 (Space / Click)</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let audioCtx = null;
+    function playJumpSound() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.15);
+    }
+
+    let theme = 'cyber';
+    const themes = {
+      cyber: { bg: '#090d16', platform: '#38bdf8', player: '#f43f5e', particle: '#38bdf8' },
+      earth: { bg: '#064e3b', platform: '#10b981', player: '#f59e0b', particle: '#a7f3d0' },
+      deepspace: { bg: '#1e1b4b', platform: '#c084fc', player: '#38bdf8', particle: '#e9d5ff' }
+    };
+
+    function changeTheme(val) {
+      theme = val;
+    }
+
+    let score = 0;
+    let highScore = localStorage.getItem('tianqiong_high') || 0;
+    document.getElementById('highVal').innerText = highScore;
+
+    const player = { x: 120, y: 300, vy: 0, gravity: 0.55, jumpPower: -12, size: 26, grounded: false };
+    const particles = [];
+    const platforms = [
+      { x: 80, y: 360, w: 140, h: 20 },
+      { x: 300, y: 300, w: 120, h: 20 },
+      { x: 500, y: 240, w: 120, h: 20 },
+      { x: 700, y: 180, w: 120, h: 20 }
+    ];
+
+    function createParticles(x, y, color) {
+      for (let i = 0; i < 12; i++) {
+        particles.push({
+          x, y,
+          vx: (Math.random() - 0.5) * 6,
+          vy: (Math.random() - 0.5) * 6,
+          life: 20,
+          color
+        });
+      }
+    }
+
+    function doJump() {
+      if (player.grounded) {
+        player.vy = player.jumpPower;
+        player.grounded = false;
+        playJumpSound();
+        createParticles(player.x + player.size/2, player.y + player.size, themes[theme].particle);
+        score += 10;
+        if (score > highScore) {
+          highScore = score;
+          localStorage.setItem('tianqiong_high', highScore);
+          document.getElementById('highVal').innerText = highScore;
+        }
+        document.getElementById('scoreVal').innerText = score;
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); doJump(); }
+    });
+
+    function update() {
+      player.vy += player.gravity;
+      player.y += player.vy;
+
+      player.grounded = false;
+      platforms.forEach(p => {
+        if (player.x + player.size > p.x && player.x < p.x + p.w &&
+            player.y + player.size >= p.y && player.y + player.size <= p.y + p.h + player.vy) {
+          player.y = p.y - player.size;
+          player.vy = 0;
+          player.grounded = true;
+        }
+      });
+
+      if (player.y > canvas.height) {
+        player.x = 120; player.y = 300; player.vy = 0;
+        score = 0; document.getElementById('scoreVal').innerText = score;
+      }
+
+      platforms.forEach(p => {
+        p.x -= 1.5;
+        if (p.x + p.w < 0) {
+          p.x = canvas.width;
+          p.y = 160 + Math.random() * 200;
+        }
+      });
+
+      // Update particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const pt = particles[i];
+        pt.x += pt.vx; pt.y += pt.vy; pt.life--;
+        if (pt.life <= 0) particles.splice(i, 1);
+      }
+    }
+
+    function draw() {
+      const cfg = themes[theme];
+      ctx.fillStyle = cfg.bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw Platforms
+      ctx.fillStyle = cfg.platform;
+      platforms.forEach(p => {
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+      });
+
+      // Draw Player
+      ctx.fillStyle = cfg.player;
+      ctx.fillRect(player.x, player.y, player.size, player.size);
+
+      // Draw Particles
+      particles.forEach(pt => {
+        ctx.fillStyle = pt.color;
+        ctx.fillRect(pt.x, pt.y, 4, 4);
+      });
+    }
+
+    function loop() {
+      update(); draw(); requestAnimationFrame(loop);
+    }
+    loop();
+  </script>
+</body>
 </html>
