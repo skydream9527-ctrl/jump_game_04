@@ -157,7 +157,7 @@ export class WeaponSystem {
             e.sprite.destroy();
             this.scene.enemySystem.enemies.splice(j, 1);
             if (Math.random() < WEAPON_DROP_CHANCE) {
-              this.scene.spawnWeaponPickup(e.sprite.x, e.sprite.y);
+              this.scene.collectibleSystem.spawnWeaponPickup(e.sprite.x, e.sprite.y);
             }
           }
           if (!b.config.piercing) {

@@ -109,7 +109,7 @@ export class BossSystem {
       }
     }
 
-    if (!this.scene.ninjaArtActive || this.scene.ninjaArtType !== 'dash') {
+    if (!this.scene.ninjaArtSystem.ninjaArtActive || this.scene.ninjaArtSystem.ninjaArtType !== 'dash') {
       const dx = this.scene.playerX - b.sprite.x;
       const dy = this.scene.playerY - b.sprite.y;
       if (dx * dx < (bossCfg.width * 0.5 + this.scene.playerWidth * 0.3) ** 2 &&

@@ -185,7 +185,7 @@ export class EnemySystem {
       // Stealth: enemies don't deal contact damage
       if (this.scene.stealthTimer > 0) continue;
 
-      if (!this.scene.ninjaArtActive || this.scene.ninjaArtType !== 'dash') {
+      if (!this.scene.ninjaArtSystem.ninjaArtActive || this.scene.ninjaArtSystem.ninjaArtType !== 'dash') {
         const dx = this.scene.playerX - ex;
         const dy = this.scene.playerY - ey;
         const collisionDist = (ew + this.scene.playerWidth * 0.4);

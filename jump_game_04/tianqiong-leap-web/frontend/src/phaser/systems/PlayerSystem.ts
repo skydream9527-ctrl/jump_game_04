@@ -139,7 +139,7 @@ export class PlayerSystem {
   respawn(): void {
     const camLeft = this.scene.cameras.main.scrollX;
     const camRight = camLeft + PHYSICS.CANVAS_WIDTH;
-    const platforms = this.scene.platforms;
+    const platforms = this.scene.levelSystem.platforms;
     let found: (typeof platforms)[number] | null = null;
     for (let i = platforms.length - 1; i >= 0; i--) {
       const p = platforms[i];
@@ -164,7 +164,7 @@ export class PlayerSystem {
     const safeWidth = 300;
     const safeX = this.scene.playerX - safeWidth / 2;
     const safeY = this.scene.playerY + this.scene.playerHeight / 2;
-    this.scene.spawnPlatform(safeX, safeY, safeWidth);
+    this.scene.levelSystem.spawnPlatform(safeX, safeY, safeWidth);
   }
 
   // public for system access (refactor in progress)

@@ -195,7 +195,7 @@ export class EnvironmentSystem {
     if (Math.random() < 0.005 * normalized && this.vineSegments.length < 20) {
       const camLeft = this.scene.cameraTargetX;
       const camRight = camLeft + PHYSICS.CANVAS_WIDTH;
-      const candidates = this.scene.platforms.filter(p =>
+      const candidates = this.scene.levelSystem.platforms.filter(p =>
         p.x > camLeft && p.x < camRight && p.platformType === 'normal'
       );
       if (candidates.length > 0) {
