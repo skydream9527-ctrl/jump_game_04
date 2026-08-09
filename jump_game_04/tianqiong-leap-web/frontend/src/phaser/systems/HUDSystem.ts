@@ -197,8 +197,8 @@ export class HUDSystem {
       this.powerUpIcons[i].timer.setVisible(false);
     }
 
-    const wCfg = WEAPON_CONFIGS[this.scene.currentWeapon];
-    this.weaponIcon.setTexture(`pu-weapon-${this.scene.currentWeapon}`);
+    const wCfg = WEAPON_CONFIGS[this.scene.weaponSystem.currentWeapon];
+    this.weaponIcon.setTexture(`pu-weapon-${this.scene.weaponSystem.currentWeapon}`);
     this.weaponNameText.setText(wCfg.name);
   }
 
