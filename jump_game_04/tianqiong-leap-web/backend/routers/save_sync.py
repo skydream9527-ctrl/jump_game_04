@@ -1,6 +1,7 @@
 import json
+import re
 from pathlib import Path
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from models import SaveData
 
 router = APIRouter(prefix="/api/save", tags=["save"])
@@ -9,7 +10,15 @@ DATA_DIR = Path(__file__).parent.parent / "data" / "saves"
 
 
 def get_save_path(player_id: str) -> Path:
-    return DATA_DIR / f"{player_id}.json"
+    # 校验 player_id 字符集，仅允许字母数字下划线连字符，防止路径穿越
+    if not re.match(r'^[a-zA-Z0-9_-]+$', player_id):
+        raise HTTPException(status_code=400, detail="Invalid player ID")
+    filename = f"{player_id}.json"
+    path = DATA_DIR / filename
+    # 确保最终路径未逃逸出 DATA_DIR（文件名与预期一致）
+    if path.name != filename:
+        raise HTTPException(status_code=400, detail="Invalid player ID")
+    return path
 
 
 @router.get("/{player_id}")

@@ -1,7 +1,10 @@
 import json
+import threading
+from collections import defaultdict
 from pathlib import Path
 from datetime import datetime
-from fastapi import APIRouter, Query
+from time import time
+from fastapi import APIRouter, Query, Request, HTTPException
 from models import LeaderboardEntry, LeaderboardSubmit
 
 router = APIRouter(prefix="/api/leaderboard", tags=["leaderboard"])
@@ -9,8 +12,25 @@ router = APIRouter(prefix="/api/leaderboard", tags=["leaderboard"])
 DATA_DIR = Path(__file__).parent.parent / "data"
 LEADERBOARD_FILE = DATA_DIR / "leaderboard.json"
 
+# 文件读写锁，防止并发竞态
+leaderboard_lock = threading.Lock()
 
-def load_leaderboard() -> list[dict]:
+# 提交频率限制：每 IP 每分钟最多 5 次
+submit_history: dict[str, list[float]] = defaultdict(list)
+
+
+def check_rate_limit(client_ip: str) -> bool:
+    now = time()
+    history = submit_history[client_ip]
+    # 清理 60 秒前的记录
+    submit_history[client_ip] = [t for t in history if now - t < 60]
+    if len(submit_history[client_ip]) >= 5:
+        return False
+    submit_history[client_ip].append(now)
+    return True
+
+
+def _load_unlocked() -> list[dict]:
     if not LEADERBOARD_FILE.exists():
         return []
     try:
@@ -19,9 +39,19 @@ def load_leaderboard() -> list[dict]:
         return []
 
 
-def save_leaderboard(data: list[dict]) -> None:
+def load_leaderboard() -> list[dict]:
+    with leaderboard_lock:
+        return _load_unlocked()
+
+
+def _save_unlocked(data: list[dict]) -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     LEADERBOARD_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2))
+
+
+def save_leaderboard(data: list[dict]) -> None:
+    with leaderboard_lock:
+        _save_unlocked(data)
 
 
 @router.get("")
@@ -50,31 +80,35 @@ async def get_leaderboard(
 
 
 @router.post("")
-async def submit_score(entry: LeaderboardSubmit):
-    entries = load_leaderboard()
-    entries.append({
-        "player_name": entry.player_name,
-        "chapter": entry.chapter,
-        "level": entry.level,
-        "score": entry.score,
-        "stars": entry.stars,
-        "shards_collected": entry.shards_collected,
-        "character_id": entry.character_id,
-        "timestamp": datetime.now().isoformat(),
-    })
-    # Keep max 500 entries total
-    if len(entries) > 500:
-        entries = entries[-500:]
-    save_leaderboard(entries)
+async def submit_score(entry: LeaderboardSubmit, request: Request):
+    client_ip = request.client.host if request.client else "unknown"
+    if not check_rate_limit(client_ip):
+        raise HTTPException(status_code=429, detail="提交过于频繁，请稍后再试")
+    with leaderboard_lock:
+        entries = _load_unlocked()
+        entries.append({
+            "player_name": entry.player_name,
+            "chapter": entry.chapter,
+            "level": entry.level,
+            "score": entry.score,
+            "stars": entry.stars,
+            "shards_collected": entry.shards_collected,
+            "character_id": entry.character_id,
+            "timestamp": datetime.now().isoformat(),
+        })
+        # Keep max 500 entries total
+        if len(entries) > 500:
+            entries = entries[-500:]
+        _save_unlocked(entries)
 
-    # Calculate rank for this chapter/level
-    level_entries = [
-        e for e in entries
-        if e.get("chapter") == entry.chapter and e.get("level") == entry.level
-    ]
-    level_entries.sort(key=lambda e: e.get("score", 0), reverse=True)
-    rank = next(
-        (i + 1 for i, e in enumerate(level_entries) if e.get("score", 0) == entry.score),
-        len(level_entries),
-    )
+        # Calculate rank for this chapter/level
+        level_entries = [
+            e for e in entries
+            if e.get("chapter") == entry.chapter and e.get("level") == entry.level
+        ]
+        level_entries.sort(key=lambda e: e.get("score", 0), reverse=True)
+        rank = next(
+            (i + 1 for i, e in enumerate(level_entries) if e.get("score", 0) == entry.score),
+            len(level_entries),
+        )
     return {"ok": True, "rank": rank}
