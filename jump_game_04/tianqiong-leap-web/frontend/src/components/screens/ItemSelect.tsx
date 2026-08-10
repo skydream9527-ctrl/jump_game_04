@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MAX_EQUIPPED_ITEMS, RARITY_COLORS, RARITY_NAMES, getItemById, type ItemDef } from '../../constants/items';
 import type { InventoryItem } from '../../types/game';
 
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function ItemSelect({ inventory, equippedItems, chapter, level, onConfirm, onBack, standalone }: Props) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<string[]>(equippedItems.slice(0, MAX_EQUIPPED_ITEMS));
 
   const toggleItem = useCallback((itemId: string) => {
@@ -32,10 +34,10 @@ export function ItemSelect({ inventory, equippedItems, chapter, level, onConfirm
     .filter((i): i is InventoryItem & { def: ItemDef } => !!i.def);
 
   const categories = [
-    { key: 'consumable' as const, label: '消耗品' },
-    { key: 'equipment' as const, label: '装备' },
-    { key: 'relic' as const, label: '遗物' },
-    { key: 'charm' as const, label: '护符' },
+    { key: 'consumable' as const, labelKey: 'item.cat_consumable' },
+    { key: 'equipment' as const, labelKey: 'item.cat_equipment' },
+    { key: 'relic' as const, labelKey: 'item.cat_relic' },
+    { key: 'charm' as const, labelKey: 'item.cat_charm' },
   ];
 
   return (
@@ -48,12 +50,12 @@ export function ItemSelect({ inventory, equippedItems, chapter, level, onConfirm
     }}>
       {/* 标题 */}
       <h2 style={{ color: '#c8aa6e', fontSize: 20, fontWeight: 400, letterSpacing: 4, margin: '0 0 4px' }}>
-        {standalone ? '储物袋' : '选择携带道具'}
+        {standalone ? t('item.standalone_title') : t('item.select_title')}
       </h2>
       <p style={{ color: '#7a7060', fontSize: 12, margin: '0 0 16px' }}>
         {standalone
-          ? `当前装备 ${selected.length} / ${MAX_EQUIPPED_ITEMS} 件`
-          : `第 ${chapter} 章 · 第 ${level} 关 — 最多携带 ${MAX_EQUIPPED_ITEMS} 件`}
+          ? t('item.current_equipped', { n: selected.length, max: MAX_EQUIPPED_ITEMS })
+          : t('item.select_desc', { chapter, level, max: MAX_EQUIPPED_ITEMS })}
       </p>
 
       {/* 已选道具槽 */}
@@ -75,10 +77,12 @@ export function ItemSelect({ inventory, equippedItems, chapter, level, onConfirm
               {def ? (
                 <>
                   <span style={{ fontSize: 28 }}>{def.icon}</span>
-                  <span style={{ fontSize: 9, color: hexColor(RARITY_COLORS[def.rarity]), marginTop: 2 }}>{def.name}</span>
+                  <span style={{ fontSize: 9, color: hexColor(RARITY_COLORS[def.rarity]), marginTop: 2 }}>
+                    {t(`data.item.${def.id}.name`, { defaultValue: def.name })}
+                  </span>
                 </>
               ) : (
-                <span style={{ fontSize: 10, color: '#5a5a60' }}>空</span>
+                <span style={{ fontSize: 10, color: '#5a5a60' }}>{t('item.empty_slot')}</span>
               )}
             </div>
           );
@@ -87,13 +91,13 @@ export function ItemSelect({ inventory, equippedItems, chapter, level, onConfirm
 
       {/* 已选数量提示 */}
       <p style={{ color: selected.length > 0 ? '#6bb8e8' : '#5a5a60', fontSize: 11, margin: '0 0 16px' }}>
-        已选择 {selected.length} / {MAX_EQUIPPED_ITEMS}
+        {t('item.selected_count', { n: selected.length, max: MAX_EQUIPPED_ITEMS })}
       </p>
 
       {/* 储物袋 */}
       {inventoryItems.length === 0 ? (
         <div style={{ color: '#7a7060', fontSize: 13, marginTop: 40 }}>
-          储物袋为空，在商店购买道具后可在此选择
+          {t('item.empty_hint')}
         </div>
       ) : (
         <div style={{ width: '100%', maxWidth: 600, padding: '0 20px' }}>
@@ -102,7 +106,7 @@ export function ItemSelect({ inventory, equippedItems, chapter, level, onConfirm
             if (items.length === 0) return null;
             return (
               <div key={cat.key} style={{ marginBottom: 16 }}>
-                <div style={{ color: '#c8aa6e', fontSize: 12, marginBottom: 8, letterSpacing: 2 }}>{cat.label}</div>
+                <div style={{ color: '#c8aa6e', fontSize: 12, marginBottom: 8, letterSpacing: 2 }}>{t(cat.labelKey)}</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {items.map(item => {
                     const def = item.def;
@@ -129,14 +133,14 @@ export function ItemSelect({ inventory, equippedItems, chapter, level, onConfirm
                             <div style={{
                               fontSize: 12, fontWeight: 600,
                               color: hexColor(RARITY_COLORS[def.rarity]),
-                            }}>{def.name}</div>
+                            }}>{t(`data.item.${def.id}.name`, { defaultValue: def.name })}</div>
                             <div style={{ fontSize: 9, color: '#7a7060' }}>
-                              {RARITY_NAMES[def.rarity]} · ×{item.quantity}
+                              {t(`data.rarity.${def.rarity}`, { defaultValue: RARITY_NAMES[def.rarity] })} · ×{item.quantity}
                             </div>
                           </div>
                         </div>
                         <div style={{ fontSize: 10, color: '#a09880', marginTop: 4, lineHeight: 1.4 }}>
-                          {def.description}
+                          {t(`data.item.${def.id}.description`, { defaultValue: def.description })}
                         </div>
                       </div>
                     );
@@ -154,12 +158,12 @@ export function ItemSelect({ inventory, equippedItems, chapter, level, onConfirm
           padding: '8px 24px', borderRadius: 6, border: '1px solid rgba(200,170,110,0.2)',
           background: 'rgba(255,255,255,0.05)', color: '#a09880', fontSize: 12,
           cursor: 'pointer', fontFamily: 'inherit',
-        }}>返回</button>
+        }}>{t('common.back')}</button>
         <button onClick={() => onConfirm(selected)} style={{
           padding: '8px 24px', borderRadius: 6, border: '1px solid rgba(107,184,232,0.4)',
           background: 'rgba(107,184,232,0.15)', color: '#6bb8e8', fontSize: 12,
           cursor: 'pointer', fontFamily: 'inherit',
-        }}>{standalone ? '保存装备' : '开始关卡'}</button>
+        }}>{standalone ? t('item.save') : t('item.start')}</button>
       </div>
     </div>
   );

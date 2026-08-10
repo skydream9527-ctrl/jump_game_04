@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ACHIEVEMENTS } from '../../constants/achievements';
 import { getUnlockedAchievements } from '../../state/achievements';
 
@@ -6,20 +7,21 @@ interface AchievementsScreenProps {
   onBack: () => void;
 }
 
-const CATEGORY_ORDER = ['基础', '章节', 'Boss', '收集', '角色', '战斗', '特殊'] as const;
+const CATEGORY_ORDER = ['cat_basic', 'cat_chapter', 'cat_boss', 'cat_collect', 'cat_character', 'cat_battle', 'cat_special'] as const;
 
 // Group achievements by rough category based on id prefix
 function categorize(id: string): string {
-  if (id.startsWith('chapter') && id.endsWith('_clear')) return '章节';
-  if (id.startsWith('boss_')) return 'Boss';
-  if (id.startsWith('collector') || id.startsWith('kill_')) return '收集';
-  if (id.startsWith('unlock_')) return '角色';
-  if (id === 'all_bosses' || id === 'all_characters' || id === 'all_stars' || id === 'speed_demon' || id === 'high_score') return '特殊';
-  if (id === 'first_clear' || id === 'all_shards' || id === 'no_damage' || id === 'boss_slayer' || id === 'speed_run' || id === 'ninja_master' || id === 'collector' || id === 'survivor' || id === 'explorer') return '基础';
-  return '战斗';
+  if (id.startsWith('chapter') && id.endsWith('_clear')) return 'cat_chapter';
+  if (id.startsWith('boss_')) return 'cat_boss';
+  if (id.startsWith('collector') || id.startsWith('kill_')) return 'cat_collect';
+  if (id.startsWith('unlock_')) return 'cat_character';
+  if (id === 'all_bosses' || id === 'all_characters' || id === 'all_stars' || id === 'speed_demon' || id === 'high_score') return 'cat_special';
+  if (id === 'first_clear' || id === 'all_shards' || id === 'no_damage' || id === 'boss_slayer' || id === 'speed_run' || id === 'ninja_master' || id === 'collector' || id === 'survivor' || id === 'explorer') return 'cat_basic';
+  return 'cat_battle';
 }
 
 export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
+  const { t } = useTranslation();
   const unlocked = useMemo(() => getUnlockedAchievements(), []);
 
   const grouped = useMemo(() => {
@@ -40,8 +42,8 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
   return (
     <div className="screen achievements-screen">
       <div className="screen-header">
-        <button className="btn-back" onClick={onBack}>← 返回</button>
-        <h2>成就</h2>
+        <button className="btn-back" onClick={onBack}>{t('common.back')}</button>
+        <h2>{t('common.achievements_title')}</h2>
         <div className="achievement-progress-summary">
           <span className="ach-count">{totalUnlocked} / {totalAchievements}</span>
           <div className="ach-progress-bar">
@@ -59,7 +61,7 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
           return (
             <div key={cat} className="ach-category">
               <div className="ach-category-header">
-                <span className="ach-category-name">{cat}</span>
+                <span className="ach-category-name">{t(`achievement.${cat}`)}</span>
                 <span className="ach-category-count">{catUnlocked}/{items.length}</span>
               </div>
               <div className="ach-grid">
@@ -72,12 +74,12 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
                     >
                       <div className="ach-card-icon">{isUnlocked ? ach.icon : '🔒'}</div>
                       <div className="ach-card-body">
-                        <div className="ach-card-name">{isUnlocked ? ach.name : '???'}</div>
+                        <div className="ach-card-name">{isUnlocked ? t(`data.achievement.${ach.id}.name`, { defaultValue: ach.name }) : t('achievement.locked_name')}</div>
                         <div className="ach-card-desc">
-                          {isUnlocked ? ach.description : '完成隐藏条件解锁'}
+                          {isUnlocked ? t(`data.achievement.${ach.id}.description`, { defaultValue: ach.description }) : t('achievement.locked_desc')}
                         </div>
                         {isUnlocked && (
-                          <div className="ach-card-condition">{ach.condition}</div>
+                          <div className="ach-card-condition">{t(`data.achievement.${ach.id}.condition`, { defaultValue: ach.condition })}</div>
                         )}
                       </div>
                       {isUnlocked && <div className="ach-check">✓</div>}

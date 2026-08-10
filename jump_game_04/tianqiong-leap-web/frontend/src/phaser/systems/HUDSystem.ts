@@ -200,7 +200,7 @@ export class HUDSystem {
 
     const wCfg = WEAPON_CONFIGS[this.scene.weaponSystem.currentWeapon];
     this.weaponIcon.setTexture(`pu-weapon-${this.scene.weaponSystem.currentWeapon}`);
-    this.weaponNameText.setText(wCfg.name);
+    this.weaponNameText.setText(i18n.t(`data.weapon.${this.scene.weaponSystem.currentWeapon}.name`, { defaultValue: wCfg.name }));
   }
 
   clear(): void {

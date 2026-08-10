@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { CHAPTER_DATA } from '../../constants/levels';
 
 interface PlanetSelectProps {
@@ -8,11 +9,12 @@ interface PlanetSelectProps {
 }
 
 export function PlanetSelect({ getChapterStars, isChapterUnlocked, onSelect, onBack }: PlanetSelectProps) {
+  const { t } = useTranslation();
   return (
     <div className="screen select-screen">
       <div className="screen-header">
         <button className="btn-back" onClick={onBack}>←</button>
-        <h2>选择星球</h2>
+        <h2>{t('common.select_planet')}</h2>
       </div>
       <div className="planet-grid">
         {CHAPTER_DATA.map((ch) => {
@@ -29,7 +31,7 @@ export function PlanetSelect({ getChapterStars, isChapterUnlocked, onSelect, onB
                 <div className="planet-badge" style={{ backgroundColor: colorHex + '30', color: colorHex }}>
                   {ch.chapter}
                 </div>
-                <span className="planet-name">{ch.name}</span>
+                <span className="planet-name">{t(`data.chapter_name.${ch.chapter}`, { defaultValue: ch.name })}</span>
               </div>
               <div className="planet-footer">
                 {unlocked ? (
@@ -42,7 +44,7 @@ export function PlanetSelect({ getChapterStars, isChapterUnlocked, onSelect, onB
                     <span className="star-count">{stars}/30</span>
                   </>
                 ) : (
-                  <span className="locked-text">未解锁</span>
+                  <span className="locked-text">{t('common.locked')}</span>
                 )}
               </div>
             </div>

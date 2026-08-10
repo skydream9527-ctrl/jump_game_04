@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PETS, PET_ELEMENT_COLORS, PET_ELEMENT_NAMES, getPetById, type PetDef, type PetInstance } from '../../constants/pets';
 import { RARITY_NAMES } from '../../constants/items';
 
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function PetSelect({ ownedPets, selectedPet, onSelect, onBack, standalone }: Props) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<string | null>(selectedPet);
   const [showUnowned, setShowUnowned] = useState(false);
 
@@ -31,18 +33,16 @@ export function PetSelect({ ownedPets, selectedPet, onSelect, onBack, standalone
       color: '#e0dcd4', overflow: 'auto', padding: '20px 0',
     }}>
       <h2 style={{ color: '#c8aa6e', fontSize: 20, fontWeight: 400, letterSpacing: 4, margin: '0 0 4px' }}>
-        {standalone ? '宠物' : '选择同行宠物'}
+        {standalone ? t('pet.standalone_title') : t('pet.select_title')}
       </h2>
       <p style={{ color: '#7a7060', fontSize: 12, margin: '0 0 20px' }}>
-        {standalone
-          ? '查看你的宠物伙伴'
-          : '宠物会跟随你进入关卡，提供被动增益和主动技能'}
+        {standalone ? t('pet.standalone_desc') : t('pet.select_desc')}
       </p>
 
       {/* 已拥有宠物 */}
       {ownedPetDefs.length > 0 && (
         <div style={{ width: '100%', maxWidth: 700, padding: '0 20px', marginBottom: 24 }}>
-          <div style={{ color: '#c8aa6e', fontSize: 13, marginBottom: 10, letterSpacing: 2 }}>我的宠物</div>
+          <div style={{ color: '#c8aa6e', fontSize: 13, marginBottom: 10, letterSpacing: 2 }}>{t('pet.my_pets')}</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
             {ownedPetDefs.map(({ instance, def }) => {
               const isSelected = selected === def.id;
@@ -64,24 +64,24 @@ export function PetSelect({ ownedPets, selectedPet, onSelect, onBack, standalone
                     <span style={{ fontSize: 32 }}>{def.icon}</span>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: hexColor(PET_ELEMENT_COLORS[def.element]) }}>
-                        {def.name}
+                        {t(`data.pet.${def.id}.name`, { defaultValue: def.name })}
                       </div>
                       <div style={{ fontSize: 9, color: '#7a7060' }}>
-                        {PET_ELEMENT_NAMES[def.element]}系 · Lv.{instance.level}
+                        {t(`data.pet_element.${def.element}`, { defaultValue: PET_ELEMENT_NAMES[def.element] })}系 · Lv.{instance.level}
                       </div>
                     </div>
                   </div>
                   <div style={{ fontSize: 10, color: '#a09880', marginTop: 6, lineHeight: 1.5 }}>
-                    被动：{def.passive.description}
+                    {t('pet.passive_label')}{t(`data.pet.${def.id}.passive_desc`, { defaultValue: def.passive.description })}
                   </div>
                   <div style={{ fontSize: 10, color: '#6bb8e8', marginTop: 2 }}>
-                    R: {def.active.name}
+                    R: {t(`data.pet.${def.id}.active_name`, { defaultValue: def.active.name })}
                   </div>
                   <div style={{ fontSize: 10, color: '#e8a06b', marginTop: 1 }}>
-                    T: {def.active2.name}
+                    T: {t(`data.pet.${def.id}.active2_name`, { defaultValue: def.active2.name })}
                   </div>
                   <div style={{ fontSize: 10, color: '#d46bff', marginTop: 1 }}>
-                    Y: {def.ultimate.name}
+                    Y: {t(`data.pet.${def.id}.ultimate_name`, { defaultValue: def.ultimate.name })}
                   </div>
                   {/* EXP bar */}
                   <div style={{ marginTop: 6, height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>
@@ -92,7 +92,7 @@ export function PetSelect({ ownedPets, selectedPet, onSelect, onBack, standalone
                     }} />
                   </div>
                   <div style={{ fontSize: 8, color: '#5a5a60', marginTop: 2 }}>
-                    EXP: {instance.exp} · 友好度: {instance.friendship}
+                    {t('pet.exp_label')} {instance.exp} · {t('pet.friendship_label')} {instance.friendship}
                   </div>
                 </div>
               );
@@ -117,7 +117,7 @@ export function PetSelect({ ownedPets, selectedPet, onSelect, onBack, standalone
               transform: showUnowned ? 'rotate(90deg)' : 'rotate(0deg)',
               fontSize: 10,
             }}>▶</span>
-            未获得 ({unownedPets.length})
+            {t('pet.unowned')} ({unownedPets.length})
           </div>
           {showUnowned && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, maxHeight: 400, overflow: 'auto' }}>
@@ -133,12 +133,12 @@ export function PetSelect({ ownedPets, selectedPet, onSelect, onBack, standalone
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: '#5a5a60' }}>???</div>
                       <div style={{ fontSize: 9, color: '#4a4a50' }}>
-                        {PET_ELEMENT_NAMES[def.element]}系 · {RARITY_NAMES[def.rarity]}
+                        {t(`data.pet_element.${def.element}`, { defaultValue: PET_ELEMENT_NAMES[def.element] })}系 · {t(`data.rarity.${def.rarity}`, { defaultValue: RARITY_NAMES[def.rarity] })}
                       </div>
                     </div>
                   </div>
                   <div style={{ fontSize: 10, color: '#4a4a50', marginTop: 6 }}>
-                    在商店中购买或通过关卡获得
+                    {t('pet.obtain_hint')}
                   </div>
                 </div>
               ))}
@@ -153,14 +153,14 @@ export function PetSelect({ ownedPets, selectedPet, onSelect, onBack, standalone
           padding: '8px 24px', borderRadius: 6, border: '1px solid rgba(200,170,110,0.2)',
           background: 'rgba(255,255,255,0.05)', color: '#a09880', fontSize: 12,
           cursor: 'pointer', fontFamily: 'inherit',
-        }}>返回</button>
+        }}>{t('common.back')}</button>
         <button onClick={() => onSelect(selected)} style={{
           padding: '8px 24px', borderRadius: 6,
           border: selected ? '1px solid rgba(107,184,232,0.4)' : '1px solid rgba(200,170,110,0.15)',
           background: selected ? 'rgba(107,184,232,0.15)' : 'rgba(255,255,255,0.03)',
           color: selected ? '#6bb8e8' : '#5a5a60', fontSize: 12,
           cursor: selected ? 'pointer' : 'default', fontFamily: 'inherit',
-        }}>{standalone ? '保存选择' : selected ? '确认选择' : '不带宠物'}</button>
+        }}>{standalone ? t('pet.save') : selected ? t('pet.confirm') : t('pet.no_pet')}</button>
       </div>
     </div>
   );

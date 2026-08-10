@@ -12,7 +12,7 @@ interface LevelSelectProps {
 
 export function LevelSelect({ chapter, isLevelUnlocked, getRecord, onSelect, onBack }: LevelSelectProps) {
   const { t } = useTranslation();
-  const chapterName = CHAPTER_NAMES[chapter] ?? t('level_select.unknown');
+  const chapterName = t(`data.chapter_name.${chapter}`, { defaultValue: CHAPTER_NAMES[chapter] ?? '' });
 
   return (
     <div className="screen select-screen">

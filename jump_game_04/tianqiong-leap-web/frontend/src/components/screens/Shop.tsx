@@ -73,10 +73,10 @@ export function Shop({ totalShards, unlockedCharacters, purchasedItems, onBack, 
                 {item.icon}
               </div>
               <div className="item-info">
-                <h3>{item.name}</h3>
-                <p className="item-desc">{item.description}</p>
+                <h3>{t(`data.shop_item.${item.id}.name`, { defaultValue: item.name })}</h3>
+                <p className="item-desc">{t(`data.shop_item.${item.id}.description`, { defaultValue: item.description })}</p>
                 {item.unlockCondition && (
-                  <p className="unlock-condition">{item.unlockCondition}</p>
+                  <p className="unlock-condition">{t(`data.shop_item.${item.id}.unlock_condition`, { defaultValue: item.unlockCondition })}</p>
                 )}
               </div>
               <div className="item-price">
