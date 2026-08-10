@@ -163,6 +163,27 @@ describe('recordLevelResult', () => {
     expect(parsed.records).toHaveLength(1);
     expect(parsed.records[0].bestScore).toBe(500);
   });
+
+  it('starsOverride 传入时直接使用（Boss 关固定 3 星）', () => {
+    const def = getDefaultSave();
+    // Boss 关 shards=0, lives=1，正常计算 stars=1，但传入 3
+    const newData = recordLevelResult(def, 1, 10, 1000, 0, 1, 3);
+    expect(newData.records[0].bestStars).toBe(3);
+  });
+
+  it('starsOverride 不传时按满血加星逻辑重算', () => {
+    const def = getDefaultSave();
+    // shards=2 → stars=2, lives>=3 → +1 → stars=3
+    const newData = recordLevelResult(def, 1, 1, 500, 2, 3);
+    expect(newData.records[0].bestStars).toBe(3);
+  });
+
+  it('starsOverride 与重算结果一致（同一来源）', () => {
+    const def = getDefaultSave();
+    const a = recordLevelResult(def, 1, 1, 500, 2, 3);
+    const b = recordLevelResult(def, 1, 1, 500, 2, 3, 3);
+    expect(a.records[0].bestStars).toBe(b.records[0].bestStars);
+  });
 });
 
 describe('isLevelUnlocked', () => {

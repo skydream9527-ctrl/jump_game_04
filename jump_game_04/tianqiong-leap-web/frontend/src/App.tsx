@@ -89,11 +89,11 @@ export default function App() {
     const onLevelComplete = (data: LevelCompletePayload) => {
       setCompleteData(data);
       setGameState('result');
-      save.recordResult(currentChapter, currentLevel, data.score, data.shards, data.lives);
+      const newData = save.recordResult(currentChapter, currentLevel, data.score, data.shards, data.lives, data.stars);
       // 通关后异步推送到云端（失败不打断游戏）
       // recordLevelResult 内部已 saveSave 写 localStorage，setTimeout(0) 时 localStorage 已最新
       setTimeout(() => { void save.pushToCloud(); }, 0);
-      const char = getCharacterById(save.saveData.selectedCharacter);
+      const char = getCharacterById(newData.selectedCharacter);
       addLeaderboardEntry({ name: char.displayName, score: data.score, chapter: currentChapter, level: currentLevel });
 
       // ── Core achievements ──
@@ -128,8 +128,8 @@ export default function App() {
       if (data.score >= 10000) tryUnlock('high_score');
 
       // ── Collection achievements (shards accumulate across runs) ──
-      const newTotal = save.saveData.totalShards + data.shards;
-      checkCollectionAchievements(newTotal);
+      // 用 recordResult 返回的最新数据，避免读取陈旧的 React state 闭包
+      checkCollectionAchievements(newData.totalShards);
     };
 
     const onStateChanged = (state: GameState) => {

@@ -413,7 +413,8 @@ export class PlayerSystem {
     }
 
     if (!isBoss && this.scene.distance >= this.scene.config.targetDistance) {
-      const stars = this.scene.shardsCollected >= 3 ? 3 : this.scene.shardsCollected >= 2 ? 2 : 1;
+      let stars = this.scene.shardsCollected >= 3 ? 3 : this.scene.shardsCollected >= 2 ? 2 : 1;
+      if (this.scene.lives >= 3 && stars < 3) stars++;
       this.scene.emitLevelComplete(stars);
     }
   }

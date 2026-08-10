@@ -13,8 +13,11 @@ export function useSaveData() {
     setSaveData(SaveManager.loadSave());
   }, []);
 
-  const recordResult = useCallback((chapter: number, level: number, score: number, shards: number, lives: number) => {
-    setSaveData(prev => SaveManager.recordLevelResult(prev, chapter, level, score, shards, lives));
+  const recordResult = useCallback((chapter: number, level: number, score: number, shards: number, lives: number, stars?: number): SaveData => {
+    const prev = SaveManager.loadSave();
+    const newData = SaveManager.recordLevelResult(prev, chapter, level, score, shards, lives, stars);
+    setSaveData(newData);
+    return newData;
   }, []);
 
   const unlockChar = useCallback((id: number, cost: number) => {

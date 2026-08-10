@@ -82,7 +82,9 @@ export async function pushCloudSave(playerId: string, data: SaveData): Promise<b
   }
 }
 
-// 合并策略：远端和本地取 max（关卡进度取 bestScore/bestStars 最大，碎片累加，角色/宠物取并集）
+// 合并策略：关卡取最好记录、角色/宠物取并集、选择项本地优先。
+// totalShards 取 max（非累加），两端独立玩不同关时碎片增量会丢失——
+// 已知限制：分布式余额合并无解，需操作日志才能精确合并。
 export function mergeSaves(local: SaveData, cloud: SaveData): SaveData {
   // records: 按 idx 合并，取 bestScore/bestStars/bestShards 最大，cleared 取 ||
   const recordMap = new Map<number, SaveData['records'][0]>();

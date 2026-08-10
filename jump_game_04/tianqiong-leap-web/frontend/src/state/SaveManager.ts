@@ -121,12 +121,18 @@ export function recordLevelResult(
   level: number,
   score: number,
   shardsCollected: number,
-  livesRemaining: number
+  livesRemaining: number,
+  starsOverride?: number
 ): SaveData {
   const idx = getLevelIndex(chapter, level);
-  // Bonus star for flawless (3 lives remaining)
-  let stars = shardsCollected >= 3 ? 3 : shardsCollected >= 2 ? 2 : 1;
-  if (livesRemaining >= 3 && stars < 3) stars++;
+  // 统一使用 PlayerSystem 计算的 stars（单一来源），无传入时按同逻辑重算
+  let stars: number;
+  if (starsOverride !== undefined) {
+    stars = starsOverride;
+  } else {
+    stars = shardsCollected >= 3 ? 3 : shardsCollected >= 2 ? 2 : 1;
+    if (livesRemaining >= 3 && stars < 3) stars++;
+  }
 
   const existingIdx = data.records.findIndex((r) => r.idx === idx);
   const existing = existingIdx >= 0 ? data.records[existingIdx] : null;
