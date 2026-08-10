@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { PHYSICS } from '../../constants/physics';
 import { getCharacterById } from '../../constants/characters';
-import { isMiniBossLevel } from '../../constants/levels';
-import { PLATFORM_TYPE_CONFIGS, type PlatformType } from '../../constants/platformtypes';
+import { isMiniBossLevel, type PlatformType } from '../../constants/levels';
+import { PLATFORM_TYPE_CONFIGS } from '../../constants/platformtypes';
 import { POWER_UP_SPAWN_CHANCE } from '../../constants/powerups';
 import { WEAPON_SPAWN_CHANCE } from '../../constants/weapons';
 import { ENEMY_CONFIGS, ENEMY_SPAWN_CHANCE, ELITE_SPAWN_CHANCE, MINI_BOSS_SPAWN_CHANCE, getAvailableEnemyTypes, type EnemyType } from '../../constants/enemies';
@@ -53,24 +53,18 @@ export class LevelSystem {
     plat.setDepth(1);
     plat.passed = false;
 
-    // Assign platform type based on chapter
-    const ch = this.scene.config.chapter;
+    // Assign platform type based on level config (data-driven)
+    const weights = this.scene.config.platformTypeWeights
+      ?? this.scene.chapterData.defaultPlatformTypeWeights;
     let pType: PlatformType = 'normal';
-    if (ch === 4 && Math.random() < PLATFORM_TYPE_CONFIGS.liquid_metal.spawnChance) {
-      pType = 'liquid_metal';
-    } else if (ch === 5 && Math.random() < PLATFORM_TYPE_CONFIGS.ice.spawnChance) {
-      pType = 'ice';
-    } else if (ch === 6 && Math.random() < PLATFORM_TYPE_CONFIGS.melting.spawnChance) {
-      pType = 'melting';
-    } else if (ch === 9 && Math.random() < PLATFORM_TYPE_CONFIGS.invisible.spawnChance) {
-      pType = 'invisible';
-    } else if (ch === 10) {
-      const roll = Math.random();
-      if (roll < 0.25) {
-        const sub = Math.random();
-        if (sub < 0.6) pType = 'invisible';       // Dark theme: mostly invisible
-        else if (sub < 0.8) pType = 'melting';
-        else pType = 'ice';
+    const roll = Math.random();
+    let acc = 0;
+    for (const [t, w] of Object.entries(weights)) {
+      if (w === undefined) continue;
+      acc += w;
+      if (roll < acc) {
+        pType = t as PlatformType;
+        break;
       }
     }
     plat.platformType = pType;

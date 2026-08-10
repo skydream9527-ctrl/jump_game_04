@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { PHYSICS } from '../../constants/physics';
 import { getCharacterById } from '../../constants/characters';
 import { getLevelConfig, getChapterData, type LevelConfig, type ChapterData } from '../../constants/levels';
-import type { PlatformType } from '../../constants/platformtypes';
+import type { PlatformType } from '../../constants/levels';
 import type { PowerUpType } from '../../constants/powerups';
 import { WEAPON_CONFIGS } from '../../constants/weapons';
 import { getItemById, type ItemDef } from '../../constants/items';

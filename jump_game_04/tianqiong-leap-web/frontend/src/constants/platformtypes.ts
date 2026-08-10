@@ -1,4 +1,4 @@
-export type PlatformType = 'normal' | 'ice' | 'melting' | 'invisible' | 'liquid_metal';
+import type { PlatformType } from './levels';
 
 export interface PlatformTypeConfig {
   type: PlatformType;
