@@ -13,6 +13,7 @@ import type { SaveData } from '../types/game';
 
 const PLAYER_ID_KEY = 'tianqiong_player_id';
 const PLAYER_NAME_KEY = 'tianqiong_player_name';
+const TOKEN_KEY = 'tianqiong_token';
 
 function makeSave(overrides: Partial<SaveData> = {}): SaveData {
   return { ...getDefaultSave(), ...overrides };
@@ -243,8 +244,9 @@ describe('pushCloudSave', () => {
     vi.unstubAllGlobals();
   });
 
-  it('mock fetch ok=true 返回 true，验证 snake_case body', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+  it('带 Authorization header，验证 snake_case body', async () => {
+    localStorage.setItem(TOKEN_KEY, 'test_token');
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({}) });
     vi.stubGlobal('fetch', fetchMock);
 
     const data = makeSave({
@@ -267,6 +269,9 @@ describe('pushCloudSave', () => {
 
     const init = callArgs[1] as RequestInit;
     expect(init.method).toBe('POST');
+    const headers = init.headers as Record<string, string>;
+    expect(headers['Authorization']).toBe('Bearer test_token');
+    expect(headers['Content-Type']).toBe('application/json');
     const body = JSON.parse(String(init.body));
     // snake_case 字段
     expect(body.total_shards).toBe(77);
@@ -282,14 +287,44 @@ describe('pushCloudSave', () => {
   });
 
   it('!res.ok 返回 false', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, json: async () => ({}) }));
+    localStorage.setItem(TOKEN_KEY, 'test_token');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500, json: async () => ({}) }));
     const ok = await pushCloudSave('test_player', getDefaultSave());
     expect(ok).toBe(false);
   });
 
   it('fetch 抛错返回 false', async () => {
+    localStorage.setItem(TOKEN_KEY, 'test_token');
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network')));
     const ok = await pushCloudSave('test_player', getDefaultSave());
     expect(ok).toBe(false);
+  });
+
+  it('401 时自动重新注册并重试一次成功', async () => {
+    localStorage.setItem(TOKEN_KEY, 'old_token');
+    const fetchMock = vi.fn();
+    // 第1次：save 提交返回 401
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({}) });
+    // 第2次：register 返回新 token
+    fetchMock.mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ token: 'new_token' }) });
+    // 第3次：重试 save 返回 ok
+    fetchMock.mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({}) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const ok = await pushCloudSave('test_player', getDefaultSave());
+    expect(ok).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+
+    // 第2次调用是 register
+    const registerUrl = String(fetchMock.mock.calls[1][0]);
+    expect(registerUrl).toContain('/api/save/test_player/register');
+
+    // 第3次调用（重试）带新 token
+    const retryInit = fetchMock.mock.calls[2][1] as RequestInit;
+    const retryHeaders = retryInit.headers as Record<string, string>;
+    expect(retryHeaders['Authorization']).toBe('Bearer new_token');
+
+    // 重试后 localStorage 的 token 已更新
+    expect(localStorage.getItem(TOKEN_KEY)).toBe('new_token');
   });
 });

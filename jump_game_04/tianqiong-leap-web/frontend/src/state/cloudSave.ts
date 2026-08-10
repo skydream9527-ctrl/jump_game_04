@@ -6,6 +6,7 @@ const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000';
 // player_id 持久化在 localStorage，首次随机生成
 const PLAYER_ID_KEY = 'tianqiong_player_id';
 const PLAYER_NAME_KEY = 'tianqiong_player_name';
+const TOKEN_KEY = 'tianqiong_token';
 
 export function getPlayerId(): string {
   let id = localStorage.getItem(PLAYER_ID_KEY);
@@ -22,6 +23,31 @@ export function setPlayerName(name: string): void {
 
 export function getPlayerName(): string {
   return localStorage.getItem(PLAYER_NAME_KEY) ?? '跃迁者';
+}
+
+function getToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+function setToken(token: string): void {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+export async function registerPlayer(playerId: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/save/${playerId}/register`, {
+      method: 'POST',
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (json.token) {
+      setToken(json.token);
+      return json.token as string;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 // camelCase SaveData → snake_case for backend
@@ -71,11 +97,33 @@ export async function fetchCloudSave(playerId: string): Promise<SaveData | null>
 
 export async function pushCloudSave(playerId: string, data: SaveData): Promise<boolean> {
   try {
+    let token = getToken();
+    if (!token) {
+      token = await registerPlayer(playerId);
+      if (!token) return false;
+    }
     const res = await fetch(`${API_BASE}/api/save/${playerId}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
       body: JSON.stringify(toBackendSave(data)),
     });
+    if (res.status === 401 || res.status === 403) {
+      // token 失效，重新注册后重试一次
+      token = await registerPlayer(playerId);
+      if (!token) return false;
+      const retryRes = await fetch(`${API_BASE}/api/save/${playerId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(toBackendSave(data)),
+      });
+      return retryRes.ok;
+    }
     return res.ok;
   } catch {
     return false;

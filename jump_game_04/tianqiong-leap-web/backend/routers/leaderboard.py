@@ -30,6 +30,13 @@ def check_rate_limit(client_ip: str) -> bool:
     return True
 
 
+# 各章节理论分数上限（粗略估算：距离×速度 + 碎片×100 + Boss500 + 星级×200）
+MAX_SCORE_BY_CHAPTER = {
+    1: 5000, 2: 6000, 3: 7000, 4: 8000, 5: 9000,
+    6: 10000, 7: 11000, 8: 12000, 9: 13000, 10: 15000,
+}
+
+
 def _load_unlocked() -> list[dict]:
     if not LEADERBOARD_FILE.exists():
         return []
@@ -84,6 +91,10 @@ async def submit_score(entry: LeaderboardSubmit, request: Request):
     client_ip = request.client.host if request.client else "unknown"
     if not check_rate_limit(client_ip):
         raise HTTPException(status_code=429, detail="提交过于频繁，请稍后再试")
+    # 服务端分数合理性校验
+    max_allowed = MAX_SCORE_BY_CHAPTER.get(entry.chapter, 999999)
+    if entry.score > max_allowed:
+        raise HTTPException(status_code=400, detail="分数异常，疑似作弊")
     with leaderboard_lock:
         entries = _load_unlocked()
         entries.append({

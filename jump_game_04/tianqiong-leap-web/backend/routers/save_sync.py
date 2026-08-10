@@ -1,8 +1,11 @@
 import json
 import re
 from pathlib import Path
-from fastapi import APIRouter, HTTPException
+from collections import defaultdict
+from time import time
+from fastapi import APIRouter, HTTPException, Request, Header
 from models import SaveData
+from auth import register_player, verify_token
 
 router = APIRouter(prefix="/api/save", tags=["save"])
 
@@ -21,6 +24,20 @@ def get_save_path(player_id: str) -> Path:
     return path
 
 
+# POST 限流：每 player_id 每分钟最多 10 次
+save_submit_history: dict[str, list[float]] = defaultdict(list)
+
+
+def check_save_rate_limit(player_id: str) -> bool:
+    now = time()
+    history = save_submit_history[player_id]
+    save_submit_history[player_id] = [t for t in history if now - t < 60]
+    if len(save_submit_history[player_id]) >= 10:
+        return False
+    save_submit_history[player_id].append(now)
+    return True
+
+
 @router.get("/{player_id}")
 async def get_save(player_id: str):
     path = get_save_path(player_id)
@@ -33,8 +50,22 @@ async def get_save(player_id: str):
         return {"save_data": None}
 
 
+@router.post("/{player_id}/register")
+async def register(player_id: str):
+    token = register_player(player_id)
+    return {"player_id": player_id, "token": token}
+
+
 @router.post("/{player_id}")
-async def post_save(player_id: str, save: SaveData):
+async def post_save(
+    player_id: str,
+    save: SaveData,
+    request: Request,
+    authorization: str | None = Header(None),
+):
+    if not check_save_rate_limit(player_id):
+        raise HTTPException(status_code=429, detail="存档同步过于频繁，请稍后再试")
+    verify_token(player_id, authorization)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     path = get_save_path(player_id)
     path.write_text(json.dumps(save.model_dump(), ensure_ascii=False, indent=2))

@@ -18,27 +18,40 @@ class LeaderboardSubmit(BaseModel):
     player_name: str = Field(max_length=16)
     chapter: int = Field(ge=1, le=10)
     level: int = Field(ge=1, le=10)
-    score: int = Field(ge=0)
+    score: int = Field(ge=0, le=999999)  # 合理上限，防异常大分数
     stars: int = Field(ge=0, le=3)
     shards_collected: int = Field(ge=0, le=3)
     character_id: int = Field(ge=0, le=3)
 
 
 class LevelRecord(BaseModel):
+    idx: int = 0
     cleared: bool = False
-    best_score: int = 0
-    best_stars: int = 0
-    best_shards: int = 0
+    bestScore: int = Field(ge=0)
+    bestStars: int = Field(ge=0, le=3)
+    bestShards: int = Field(ge=0, le=3)
+
+
+class InventoryItem(BaseModel):
+    itemId: str
+    quantity: int = Field(ge=0)
+
+
+class PetInstance(BaseModel):
+    petId: str
+    level: int = Field(ge=1)
+    exp: int = Field(ge=0)
+    friendship: int = Field(ge=0)
 
 
 class SaveData(BaseModel):
-    total_shards: int = 0
-    current_chapter: int = 1
-    current_level: int = 1
-    selected_character: int = 0
-    unlocked_characters: list[int] = [0]
-    records: list[dict] = []
-    inventory: list[dict] = []
+    total_shards: int = Field(ge=0)
+    current_chapter: int = Field(ge=1, le=10)
+    current_level: int = Field(ge=1, le=10)
+    selected_character: int = Field(ge=0, le=3)
+    unlocked_characters: list[int] = []
+    records: list[LevelRecord] = []
+    inventory: list[InventoryItem] = []
     equipped_items: list[str] = []
-    owned_pets: list[dict] = []
+    owned_pets: list[PetInstance] = []
     selected_pet: str | None = None
