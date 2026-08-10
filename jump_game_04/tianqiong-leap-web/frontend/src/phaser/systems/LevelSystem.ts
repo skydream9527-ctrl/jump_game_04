@@ -294,6 +294,9 @@ export class LevelSystem {
         }
         this.scene.playerSystem.jumpCount = 0;
 
+        // 角色被动技能：零号精准着陆 — 落地吸附到平台中心
+        this.scene.playerSystem.applyPreciseLanding(plat.x, plat.width);
+
         if (plat.platformType === 'ice' && this.scene.playerSystem.isGrounded) {
           this.scene.playerSystem.iceSlideVX = this.scene.speed * 1.5;
         }

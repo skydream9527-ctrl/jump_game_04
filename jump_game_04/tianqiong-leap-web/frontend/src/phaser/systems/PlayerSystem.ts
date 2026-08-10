@@ -9,6 +9,11 @@ import type { GameScene } from '../scenes/GameScene';
 
 const RUN_FRAMES = ['run1', 'run2', 'run3', 'run4'] as const;
 const PLAYER_SCREEN_X = 80;
+// 角色技能位移距离（px）
+const ENERGY_DASH_DISTANCE = 120;
+const VOID_SHIFT_DISTANCE = 100;
+// 推进冲刺速度倍率
+const PROPULSION_SPEED_MULT = 1.5;
 
 export class PlayerSystem {
   // public for system access (refactor in progress)
@@ -27,6 +32,10 @@ export class PlayerSystem {
   private animFrameIndex = 0;
   private animTimer = 0;
   private spinTween: Phaser.Tweens.Tween | null = null;
+  // ── 角色技能状态 ──
+  abilityCooldown = 0;     // 冷却剩余 ms
+  abilityActiveTimer = 0;  // 持续型技能剩余 ms（推进冲刺）
+  abilityInvincible = false; // 能量冲刺期间无敌
   private scene: GameScene;
 
   constructor(scene: GameScene) {
@@ -41,6 +50,9 @@ export class PlayerSystem {
     this.animFrameIndex = 0;
     this.animTimer = 0;
     this.wasGrounded = false;
+    this.abilityCooldown = 0;
+    this.abilityActiveTimer = 0;
+    this.abilityInvincible = false;
   }
 
   updateVisuals(normalized: number): void {
@@ -169,6 +181,8 @@ export class PlayerSystem {
 
   // public for system access (refactor in progress)
   fall(): void {
+    // 能量冲刺期间无敌
+    if (this.abilityInvincible) return;
     // Invincibility from items
     if (this.scene.invincibleTimer > 0) return;
 
@@ -309,6 +323,85 @@ export class PlayerSystem {
     this.scene.hudNeedsUpdate = true;
   }
 
+  // ── 角色特殊能力 ──
+  /** 激活角色主动技能（Shift 键）。被动技能（精准着陆）不由此触发。 */
+  activateAbility(): void {
+    const char = getCharacterById(this.scene.characterId);
+    const ab = char.ability;
+    if (!ab.type || ab.cooldown === 0) return;          // 被动或无能力
+    if (this.abilityCooldown > 0) return;                 // 冷却中
+    if (this.abilityActiveTimer > 0) return;               // 已激活中
+
+    this.abilityCooldown = ab.cooldown;
+
+    switch (ab.type) {
+      case 'energy_dash': {
+        // 瞬间向前位移 + 短暂无敌
+        this.scene.playerX += ENERGY_DASH_DISTANCE;
+        this.scene.distance += ENERGY_DASH_DISTANCE;
+        this.abilityInvincible = true;
+        this.abilityActiveTimer = ab.duration;
+        this.scene.particles.spawn(0x6bb8e8, 12, 6, 2);
+        this.scene.audio.powerup();
+        break;
+      }
+      case 'void_shift': {
+        // 瞬间传送到前方
+        this.scene.playerX += VOID_SHIFT_DISTANCE;
+        this.scene.distance += VOID_SHIFT_DISTANCE;
+        this.scene.particles.spawn(0xb060e0, 14, 5, 3);
+        this.scene.audio.powerup();
+        break;
+      }
+      case 'propulsion': {
+        // 速度 +50%，持续 3 秒
+        this.abilityActiveTimer = ab.duration;
+        this.scene.particles.spawn(0xff6030, 10, 4, 3);
+        this.scene.audio.powerup();
+        break;
+      }
+      case 'precise_landing':
+        break;  // 被动，不由此激活
+    }
+  }
+
+  /** 每帧更新技能状态（冷却倒计时、持续型技能效果）。 */
+  updateAbility(delta: number, normalized: number): void {
+    if (this.abilityCooldown > 0) {
+      this.abilityCooldown -= delta;
+      if (this.abilityCooldown < 0) this.abilityCooldown = 0;
+    }
+
+    if (this.abilityActiveTimer > 0) {
+      this.abilityActiveTimer -= delta;
+      if (this.abilityActiveTimer <= 0) {
+        this.abilityActiveTimer = 0;
+        this.abilityInvincible = false;
+      } else {
+        // 推进冲刺：持续加速
+        const char = getCharacterById(this.scene.characterId);
+        if (char.ability.type === 'propulsion') {
+          this.scene.playerX += this.scene.speed * (PROPULSION_SPEED_MULT - 1) * normalized;
+          this.scene.distance += this.scene.speed * (PROPULSION_SPEED_MULT - 1) * normalized;
+        }
+      }
+    }
+  }
+
+  /** 被动技能：零号精准着陆 — 落地时吸附到平台中心。由 LevelSystem 在落地时调用。 */
+  applyPreciseLanding(platformX: number, platformWidth: number): void {
+    const char = getCharacterById(this.scene.characterId);
+    if (char.ability.type !== 'precise_landing') return;
+    const center = platformX;
+    const halfW = platformWidth / 2;
+    // 仅当玩家在平台范围内才吸附（±halfW）
+    const dx = center - this.scene.playerX;
+    if (Math.abs(dx) < halfW) {
+      // 平滑吸附：移动差值的 60%，避免突兀瞬移
+      this.scene.playerX += dx * 0.6;
+    }
+  }
+
   checkWin(): void {
     if (this.scene.gameState !== 'playing') return;
 
@@ -328,5 +421,8 @@ export class PlayerSystem {
   clear(): void {
     this.iceSlideVX = 0;
     this.dead = false;
+    this.abilityCooldown = 0;
+    this.abilityActiveTimer = 0;
+    this.abilityInvincible = false;
   }
 }

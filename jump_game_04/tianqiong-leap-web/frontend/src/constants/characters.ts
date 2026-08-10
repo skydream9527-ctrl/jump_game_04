@@ -1,4 +1,14 @@
 // Ported from CharacterType.kt
+export type CharacterAbilityType = 'energy_dash' | 'precise_landing' | 'void_shift' | 'propulsion' | null;
+
+export interface CharacterAbility {
+  type: CharacterAbilityType;
+  name: string;
+  description: string;
+  cooldown: number;  // ms, 0 = passive/no cooldown
+  duration: number;  // ms, 0 = instant
+}
+
 export interface CharacterDef {
   id: number;
   displayName: string;
@@ -6,6 +16,7 @@ export interface CharacterDef {
   jumpMultiplier: number;
   speedMultiplier: number;
   specialAbility: string | null;
+  ability: CharacterAbility;  // 结构化能力定义（供逻辑层使用）
   unlockCost: number;
   bodyColor: string;
   accentColor: string;
@@ -22,7 +33,14 @@ export const CHARACTERS: CharacterDef[] = [
     subtitle: '人类精英特工',
     jumpMultiplier: 1.0,
     speedMultiplier: 1.0,
-    specialAbility: null,
+    specialAbility: '能量冲刺',
+    ability: {
+      type: 'energy_dash',
+      name: '能量冲刺',
+      description: '短距离高速冲刺，可穿越障碍物',
+      cooldown: 3000,
+      duration: 400,
+    },
     unlockCost: 0,
     bodyColor: '#1e3550',
     accentColor: '#3a5575',
@@ -38,6 +56,13 @@ export const CHARACTERS: CharacterDef[] = [
     jumpMultiplier: 1.0,
     speedMultiplier: 1.0,
     specialAbility: '精准着陆',
+    ability: {
+      type: 'precise_landing',
+      name: '精准着陆',
+      description: '落地时展开吸附场，减少滑行',
+      cooldown: 0,
+      duration: 0,
+    },
     unlockCost: 30,
     bodyColor: '#c0c0c0',
     accentColor: '#e0e0e0',
@@ -52,7 +77,14 @@ export const CHARACTERS: CharacterDef[] = [
     subtitle: '外星混血',
     jumpMultiplier: 1.08,
     speedMultiplier: 1.0,
-    specialAbility: null,
+    specialAbility: '虚空跃迁',
+    ability: {
+      type: 'void_shift',
+      name: '虚空跃迁',
+      description: '瞬间传送到前方短距离，可穿越障碍物',
+      cooldown: 4000,
+      duration: 0,
+    },
     unlockCost: 60,
     bodyColor: '#4a2080',
     accentColor: '#7040b0',
@@ -67,7 +99,14 @@ export const CHARACTERS: CharacterDef[] = [
     subtitle: '改造人战士',
     jumpMultiplier: 1.0,
     speedMultiplier: 1.08,
-    specialAbility: null,
+    specialAbility: '推进冲刺',
+    ability: {
+      type: 'propulsion',
+      name: '推进冲刺',
+      description: '启动全身推进器，移动速度提升50%',
+      cooldown: 5000,
+      duration: 3000,
+    },
     unlockCost: 100,
     bodyColor: '#3a2a10',
     accentColor: '#8a6a20',

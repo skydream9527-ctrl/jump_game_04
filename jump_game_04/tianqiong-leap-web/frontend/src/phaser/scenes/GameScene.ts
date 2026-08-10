@@ -163,6 +163,7 @@ export class GameScene extends Phaser.Scene {
   private qKey!: Phaser.Input.Keyboard.Key;
   private sKey!: Phaser.Input.Keyboard.Key;
   private downKey!: Phaser.Input.Keyboard.Key;
+  private shiftKey!: Phaser.Input.Keyboard.Key;
 
   // public for system access (refactor in progress)
   get cameraTargetX(): number {
@@ -206,6 +207,7 @@ export class GameScene extends Phaser.Scene {
     this.qKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
     this.sKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.S);
     this.downKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.DOWN);
+    this.shiftKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (this.gameState === 'playing') {
@@ -443,6 +445,9 @@ export class GameScene extends Phaser.Scene {
     if (Phaser.Input.Keyboard.JustDown(this.qKey)) {
       this.playerSystem.useConsumable();
     }
+    if (Phaser.Input.Keyboard.JustDown(this.shiftKey)) {
+      this.playerSystem.activateAbility();
+    }
     if (Phaser.Input.Keyboard.JustDown(this.escKey)) {
       this.pauseGame();
       return;
@@ -573,6 +578,7 @@ export class GameScene extends Phaser.Scene {
     this.playerSystem.checkWin();
 
     this.playerSystem.updateVisuals(normalized);
+    this.playerSystem.updateAbility(delta, normalized);
     this.petSystem.update(delta, normalized);
     this.particles.update(normalized);
     this.levelSystem.updatePlatformTypes();
