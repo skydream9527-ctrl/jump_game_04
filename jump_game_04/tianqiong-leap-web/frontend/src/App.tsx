@@ -6,6 +6,7 @@ import type { GameScreen, GameState } from './types/game';
 import type { GameOverPayload, LevelCompletePayload } from './types/events';
 import { useSaveData } from './hooks/useSaveData';
 import { isTestMode, enableTestMode, disableTestMode, purchaseItemToInventory } from './state/SaveManager';
+import { getPlayerName } from './state/cloudSave';
 import { getCharacterById, CHARACTERS } from './constants/characters';
 import { ACHIEVEMENTS, type Achievement } from './constants/achievements';
 import { unlockAchievement, getUnlockedAchievements } from './state/achievements';
@@ -87,6 +88,9 @@ export default function App() {
       setCompleteData(data);
       setGameState('result');
       save.recordResult(currentChapter, currentLevel, data.score, data.shards, data.lives);
+      // 通关后异步推送到云端（失败不打断游戏）
+      // recordLevelResult 内部已 saveSave 写 localStorage，setTimeout(0) 时 localStorage 已最新
+      setTimeout(() => { void save.pushToCloud(); }, 0);
       const char = getCharacterById(save.saveData.selectedCharacter);
       addLeaderboardEntry({ name: char.displayName, score: data.score, chapter: currentChapter, level: currentLevel });
 
@@ -261,10 +265,13 @@ export default function App() {
             <MainMenu
               totalShards={save.saveData.totalShards}
               testMode={testMode}
+              playerName={getPlayerName()}
+              syncStatus={save.syncStatus}
               onStartGame={() => { save.refresh(); setScreen('planet_select'); }}
               onCharacterSelect={() => { save.refresh(); setScreen('character_select'); }}
               onShop={() => { save.refresh(); setScreen('shop'); }}
               onLeaderboard={() => setShowLeaderboard(true)}
+              onCloudSync={() => { void save.syncCloud(); }}
               onInventory={() => { save.refresh(); setStandaloneView(true); setScreen('item_select'); }}
               onPet={() => { save.refresh(); setStandaloneView(true); setScreen('pet_select'); }}
               onAchievements={() => setScreen('achievements')}

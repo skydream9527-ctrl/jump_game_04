@@ -38,3 +38,7 @@ class SaveData(BaseModel):
     selected_character: int = 0
     unlocked_characters: list[int] = [0]
     records: list[dict] = []
+    inventory: list[dict] = []
+    equipped_items: list[str] = []
+    owned_pets: list[dict] = []
+    selected_pet: str | None = None

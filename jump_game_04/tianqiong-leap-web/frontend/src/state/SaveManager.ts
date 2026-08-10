@@ -8,7 +8,7 @@ import { CHARACTERS } from '../constants/characters';
 const SAVE_KEY = 'tianqiong_save';
 const TEST_MODE_KEY = 'tianqiong_test_mode';
 
-function getDefaultSave(): SaveData {
+export function getDefaultSave(): SaveData {
   return {
     totalShards: 0,
     currentChapter: 1,

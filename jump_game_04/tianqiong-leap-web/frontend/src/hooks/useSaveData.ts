@@ -1,9 +1,13 @@
 import { useState, useCallback } from 'react';
 import type { SaveData } from '../types/game';
 import * as SaveManager from '../state/SaveManager';
+import { fetchCloudSave, pushCloudSave, mergeSaves, getPlayerId } from '../state/cloudSave';
+
+export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error';
 
 export function useSaveData() {
   const [saveData, setSaveData] = useState<SaveData>(() => SaveManager.loadSave());
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
 
   const refresh = useCallback(() => {
     setSaveData(SaveManager.loadSave());
@@ -61,8 +65,49 @@ export function useSaveData() {
     setSaveData(prev => SaveManager.purchasePet(prev, petId, price) ?? prev);
   }, []);
 
+  // 拉取云端存档并与本地合并写入；云端无存档时不视为错误
+  const pullFromCloud = useCallback(async () => {
+    setSyncStatus('syncing');
+    const cloud = await fetchCloudSave(getPlayerId());
+    if (cloud === null) {
+      setSyncStatus('idle');
+      return;
+    }
+    const local = SaveManager.loadSave();
+    const merged = mergeSaves(local, cloud);
+    SaveManager.saveSave(merged);
+    refresh();
+    setSyncStatus('synced');
+  }, [refresh]);
+
+  // 推送本地存档到云端；内部直接读 localStorage 最新值，避免 React state 闭包
+  const pushToCloud = useCallback(async () => {
+    setSyncStatus('syncing');
+    const data = SaveManager.loadSave();
+    const ok = await pushCloudSave(getPlayerId(), data);
+    setSyncStatus(ok ? 'synced' : 'error');
+    return ok;
+  }, []);
+
+  // 完整同步：先拉取合并，再推回云端
+  const syncCloud = useCallback(async () => {
+    setSyncStatus('syncing');
+    const playerId = getPlayerId();
+    const cloud = await fetchCloudSave(playerId);
+    if (cloud) {
+      const local = SaveManager.loadSave();
+      const merged = mergeSaves(local, cloud);
+      SaveManager.saveSave(merged);
+      refresh();
+    }
+    const data = SaveManager.loadSave();
+    const ok = await pushCloudSave(playerId, data);
+    setSyncStatus(ok ? 'synced' : 'error');
+  }, [refresh]);
+
   return {
     saveData,
+    syncStatus,
     refresh,
     recordResult,
     unlockChar,
@@ -77,6 +122,9 @@ export function useSaveData() {
     selectPet,
     addPetExp,
     purchasePet,
+    pullFromCloud,
+    pushToCloud,
+    syncCloud,
     isLevelUnlocked: (ch: number, lv: number) => SaveManager.isLevelUnlocked(saveData, ch, lv),
     isChapterUnlocked: (ch: number) => SaveManager.isChapterUnlocked(saveData, ch),
     isCharacterUnlocked: (id: number) => SaveManager.isCharacterUnlocked(saveData, id),
