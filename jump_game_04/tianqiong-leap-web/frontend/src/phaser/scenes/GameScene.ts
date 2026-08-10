@@ -10,7 +10,6 @@ import { getPetById, type PetDef } from '../../constants/pets';
 import { EventBus } from '../EventBus';
 import { EVENTS, type StartLevelPayload } from '../../types/events';
 import type { GameState } from '../../types/game';
-import { generateAllTextures } from '../renderers/TextureFactory';
 import { AudioManager } from '../audio/AudioManager';
 import { ParticleSystem } from '../systems/ParticleSystem';
 import { BackgroundSystem } from '../systems/BackgroundSystem';
@@ -175,7 +174,6 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
-    generateAllTextures(this);
     this.audio = new AudioManager(this);
     this.particles = new ParticleSystem(this);
     this.background = new BackgroundSystem(this);

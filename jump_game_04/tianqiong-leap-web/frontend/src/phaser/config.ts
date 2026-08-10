@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { PHYSICS } from '../constants/physics';
+import { BootScene } from './scenes/BootScene';
 import { GameScene } from './scenes/GameScene';
 
 export function createPhaserConfig(parent: string): Phaser.Types.Core.GameConfig {
@@ -13,7 +14,7 @@ export function createPhaserConfig(parent: string): Phaser.Types.Core.GameConfig
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    scene: [GameScene],
+    scene: [BootScene, GameScene],
     audio: {
       disableWebAudio: false,
     },
