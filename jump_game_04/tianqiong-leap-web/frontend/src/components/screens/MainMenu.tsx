@@ -53,11 +53,11 @@ export function MainMenu({
     : t('menu.cloud_sync');
 
   return (
-    <div className="screen menu-screen">
+    <div className="screen menu-screen" role="menu" aria-label={t('menu.title')}>
       <div className="menu-content">
         <h1 className="game-title">{t('menu.title')}</h1>
         <p className="game-subtitle">TIANQIONG LEAP</p>
-        <div className="menu-divider" />
+        <div className="menu-divider" aria-hidden="true" />
         <button className="btn btn-primary" onClick={onStartGame}>{t('menu.play')}</button>
         <button className="btn btn-secondary" onClick={onCharacterSelect}>{t('menu.character_select')}</button>
         <button className="btn btn-secondary" onClick={onInventory}>{t('menu.inventory')}</button>
@@ -68,12 +68,13 @@ export function MainMenu({
           className="btn btn-secondary"
           onClick={onCloudSync}
           disabled={syncStatus === 'syncing'}
+          aria-label={`${t('menu.cloud_sync')} - ${syncLabel}`}
         >
           {syncLabel}
         </button>
         <button className="btn btn-secondary" onClick={onAchievements}>{t('menu.achievements')}</button>
         <div className="shard-display">
-          <span className="shard-icon">★</span>
+          <span className="shard-icon" aria-hidden="true">★</span>
           <span>{totalShards} {t('menu.shard_unit')}</span>
         </div>
         <div className="player-info" style={{ marginTop: 8, fontSize: 11, opacity: 0.7 }}>

@@ -41,24 +41,26 @@ export function Shop({ totalShards, unlockedCharacters, purchasedItems, onBack, 
   };
 
   return (
-    <div className="screen shop-screen">
+    <div className="screen shop-screen" role="navigation" aria-label={t('shop.title')}>
       <div className="screen-header">
-        <button className="btn-back" onClick={onBack}>{t('shop.back')}</button>
+        <button className="btn-back" onClick={onBack} aria-label={t('shop.back')}>{t('shop.back')}</button>
         <h2>{t('shop.title')}</h2>
         <div className="shard-display">
-          <span className="shard-icon">★</span>
+          <span className="shard-icon" aria-hidden="true">★</span>
           <span>{totalShards}</span>
         </div>
       </div>
 
-      <div className="shop-tabs">
+      <div className="shop-tabs" role="tablist" aria-label={t('shop.title')}>
         {tabs.map(tab => (
           <button
             key={tab.type}
             className={`tab-btn ${activeTab === tab.type ? 'active' : ''}`}
             onClick={() => setActiveTab(tab.type)}
+            role="tab"
+            aria-selected={activeTab === tab.type}
           >
-            <span className="tab-icon">{tab.icon}</span>
+            <span className="tab-icon" aria-hidden="true">{tab.icon}</span>
             {t(tab.labelKey)}
           </button>
         ))}

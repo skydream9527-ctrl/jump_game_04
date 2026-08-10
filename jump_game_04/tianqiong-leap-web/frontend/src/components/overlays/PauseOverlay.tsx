@@ -10,10 +10,10 @@ interface PauseOverlayProps {
 export function PauseOverlay({ onResume, onRestart, onBackToLevels, onBackToMenu }: PauseOverlayProps) {
   const { t } = useTranslation();
   return (
-    <div className="overlay">
+    <div className="overlay" role="dialog" aria-modal="true" aria-label={t('pause.title')}>
       <div className="overlay-panel">
         <h2 className="panel-title">{t('pause.title')}</h2>
-        <div className="panel-divider" />
+        <div className="panel-divider" aria-hidden="true" />
         <div className="panel-actions">
           <button className="btn btn-primary" onClick={onResume}>{t('pause.resume')}</button>
           <button className="btn btn-secondary" onClick={onRestart}>{t('pause.restart')}</button>

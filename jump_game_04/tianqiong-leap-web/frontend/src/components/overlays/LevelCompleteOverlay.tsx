@@ -25,12 +25,12 @@ export function LevelCompleteOverlay({
   const canAdvance = chapter < 10 || level < 10;
 
   return (
-    <div className="overlay">
+    <div className="overlay" role="dialog" aria-modal="true" aria-label={t('level_complete.title')}>
       <div className="overlay-panel wide">
         <h2 className="panel-title">{t('level_complete.title')}</h2>
-        <div className="star-row large">
+        <div className="star-row large" aria-label={`${stars} / 3`} role="img">
           {[1, 2, 3].map(i => (
-            <span key={i} className={i <= stars ? 'star-filled' : 'star-empty'}>★</span>
+            <span key={i} className={i <= stars ? 'star-filled' : 'star-empty'} aria-hidden="true">★</span>
           ))}
         </div>
         <p className="panel-score">{t('level_complete.score')}: {score.toLocaleString()}</p>

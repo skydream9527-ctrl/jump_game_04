@@ -31,6 +31,13 @@
   user-select: none;
 }
 
+/* 输入框/文本区域允许选择（覆盖全局 user-select: none） */
+input,
+textarea,
+[contenteditable] {
+  user-select: text;
+}
+
 html, body {
   width: 100%;
   height: 100%;
@@ -65,5 +72,14 @@ html, body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-neon-gold);
+}
+
+/* ==================== Responsive Font Sizing ==================== */
+@media (max-width: 640px) {
+  html { font-size: 14px; }
+}
+
+@media (max-width: 480px) {
+  html { font-size: 12px; }
 }
 

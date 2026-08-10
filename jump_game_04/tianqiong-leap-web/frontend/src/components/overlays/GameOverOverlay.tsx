@@ -10,13 +10,13 @@ interface GameOverOverlayProps {
 export function GameOverOverlay({ score, bestScore, onRestart, onBackToLevels }: GameOverOverlayProps) {
   const { t } = useTranslation();
   return (
-    <div className="overlay">
+    <div className="overlay" role="dialog" aria-modal="true" aria-label={t('game_over.title')}>
       <div className="overlay-panel">
         <h2 className="panel-title">{t('game_over.title')}</h2>
-        <div className="panel-divider" />
+        <div className="panel-divider" aria-hidden="true" />
         <p className="panel-score">{t('game_over.score')}: {score.toLocaleString()}</p>
         <p className="panel-best">{t('game_over.best')}: {bestScore.toLocaleString()}</p>
-        <div className="star-row large">
+        <div className="star-row large" aria-hidden="true">
           <span className="star-empty">★</span>
           <span className="star-empty">★</span>
           <span className="star-empty">★</span>
