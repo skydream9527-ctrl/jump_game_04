@@ -5,6 +5,8 @@ import { getBossConfig, type BossPhase, type BossAttack } from '../../constants/
 import type { GameScene } from '../scenes/GameScene';
 
 const HUD_DEPTH = 100;
+const VULNERABLE_WINDOW_MS = 2200;  // 攻击后暴露弱点的窗口期（2.2秒）
+const VULNERABLE_FLASH_RATE = 90;   // 弱点闪烁间隔（ms，越小闪得越快）
 
 interface Boss {
   sprite: Phaser.GameObjects.Image;
@@ -15,6 +17,8 @@ interface Boss {
   currentAttack: number;
   attackCooldown: number;
   invulnerable: boolean;
+  vulnerableTimer: number;     // 攻击后暴露弱点的窗口期剩余时间（ms）
+  vulnerabilityFlash: number;  // 弱点闪烁视觉计时器
 }
 
 export class BossSystem {
@@ -45,7 +49,9 @@ export class BossSystem {
       attackTimer: 2000,
       currentAttack: 0,
       attackCooldown: 0,
-      invulnerable: false,
+      invulnerable: true,
+      vulnerableTimer: 0,
+      vulnerabilityFlash: 0,
     };
 
     this.bossHpBar = this.scene.add.graphics();
@@ -81,11 +87,29 @@ export class BossSystem {
       this.executeBossAttack(attack.pattern, speedMult);
     }
 
+    // ── 弱点窗口期机制 ──
+    // 攻击进行中：无敌（玩家无法踩到）
+    // 攻击刚结束：暴露弱点 VULNERABLE_WINDOW_MS 毫秒，可被踩
+    // 弱点窗口结束：恢复无敌，直到下次攻击结束
     if (b.attackCooldown > 0) {
       b.attackCooldown -= delta;
-      b.invulnerable = false; // vulnerable during/after attack
+      b.invulnerable = true;                       // 攻击中无敌
+      b.vulnerableTimer = VULNERABLE_WINDOW_MS;     // 预置：攻击结束即进入弱点期
+      b.vulnerabilityFlash = 0;
+      b.sprite.clearTint();                         // 攻击中正常显示
     } else {
-      b.invulnerable = b.phase !== 'vulnerable';
+      // 攻击已结束，进入弱点窗口倒计时
+      if (b.vulnerableTimer > 0) {
+        b.vulnerableTimer -= delta;
+        b.invulnerable = false;                     // 弱点期可被打
+        // 闪烁视觉：用 tint 在橙黄和正常间快速切换，提示玩家"现在可踩"
+        b.vulnerabilityFlash += delta;
+        const flashOn = Math.floor(b.vulnerabilityFlash / VULNERABLE_FLASH_RATE) % 2 === 0;
+        b.sprite.setTint(flashOn ? 0xffee88 : 0xffffff);
+      } else {
+        b.invulnerable = true;                       // 窗口结束，恢复无敌
+        b.sprite.clearTint();
+      }
     }
 
     b.sprite.y = PHYSICS.CANVAS_HEIGHT / 2 + Math.sin(this.scene.time.now * 0.002) * 15;
@@ -98,6 +122,11 @@ export class BossSystem {
       const hitH = bossCfg.height * 0.4;
       if (dx * dx < hitW * hitW && dy * dy < hitH * hitH && !b.invulnerable) {
         b.hp--;
+        // 命中后立刻结束弱点窗口，Boss 恢复无敌并短暂后撤再反击
+        b.vulnerableTimer = 0;
+        b.invulnerable = true;
+        b.sprite.clearTint();
+        b.attackTimer = Math.max(b.attackTimer, 900);  // 至少 0.9s 后再攻击
         this.scene.playerSystem.playerVY = PHYSICS.JUMP_FORCE * 0.7;
         this.scene.particles.spawn(0xff0000, 6, 4, 3);
         this.scene.score += 100;
