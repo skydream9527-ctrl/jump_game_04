@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { setPlayerName } from '../../state/cloudSave';
 import type { SyncStatus } from '../../hooks/useSaveData';
 
@@ -33,10 +34,11 @@ export function MainMenu({
   onAchievements,
   onToggleTestMode,
 }: MainMenuProps) {
+  const { t, i18n } = useTranslation();
   const [displayName, setDisplayName] = useState(playerName);
 
   const handleRename = () => {
-    const newName = window.prompt('请输入玩家名（用于云存档标识，最多 16 字符）', displayName);
+    const newName = window.prompt(t('menu.rename_prompt'), displayName);
     if (newName && newName.trim()) {
       const trimmed = newName.trim().slice(0, 16);
       setPlayerName(trimmed);
@@ -45,23 +47,23 @@ export function MainMenu({
   };
 
   const syncLabel =
-    syncStatus === 'syncing' ? '同步中...'
-    : syncStatus === 'synced' ? '✓ 已同步'
-    : syncStatus === 'error' ? '✗ 同步失败，点击重试'
-    : '☁ 云同步';
+    syncStatus === 'syncing' ? t('menu.sync_syncing')
+    : syncStatus === 'synced' ? t('menu.sync_synced')
+    : syncStatus === 'error' ? t('menu.sync_error')
+    : t('menu.cloud_sync');
 
   return (
     <div className="screen menu-screen">
       <div className="menu-content">
-        <h1 className="game-title">天穹跃迁</h1>
+        <h1 className="game-title">{t('menu.title')}</h1>
         <p className="game-subtitle">TIANQIONG LEAP</p>
         <div className="menu-divider" />
-        <button className="btn btn-primary" onClick={onStartGame}>开始游戏</button>
-        <button className="btn btn-secondary" onClick={onCharacterSelect}>角色选择</button>
-        <button className="btn btn-secondary" onClick={onInventory}>储物袋</button>
-        <button className="btn btn-secondary" onClick={onPet}>宠物</button>
-        <button className="btn btn-secondary" onClick={onShop}>商店</button>
-        <button className="btn btn-secondary" onClick={onLeaderboard}>排行榜</button>
+        <button className="btn btn-primary" onClick={onStartGame}>{t('menu.play')}</button>
+        <button className="btn btn-secondary" onClick={onCharacterSelect}>{t('menu.character_select')}</button>
+        <button className="btn btn-secondary" onClick={onInventory}>{t('menu.inventory')}</button>
+        <button className="btn btn-secondary" onClick={onPet}>{t('menu.pet')}</button>
+        <button className="btn btn-secondary" onClick={onShop}>{t('menu.shop')}</button>
+        <button className="btn btn-secondary" onClick={onLeaderboard}>{t('menu.leaderboard')}</button>
         <button
           className="btn btn-secondary"
           onClick={onCloudSync}
@@ -69,13 +71,13 @@ export function MainMenu({
         >
           {syncLabel}
         </button>
-        <button className="btn btn-secondary" onClick={onAchievements}>🏆 成就</button>
+        <button className="btn btn-secondary" onClick={onAchievements}>{t('menu.achievements')}</button>
         <div className="shard-display">
           <span className="shard-icon">★</span>
-          <span>{totalShards} 星核碎片</span>
+          <span>{totalShards} {t('menu.shard_unit')}</span>
         </div>
         <div className="player-info" style={{ marginTop: 8, fontSize: 11, opacity: 0.7 }}>
-          <span>玩家：</span>
+          <span>{t('menu.player_label')}</span>
           <button
             onClick={handleRename}
             style={{
@@ -96,8 +98,40 @@ export function MainMenu({
           onClick={onToggleTestMode}
           style={{ marginTop: 8, fontSize: 11, opacity: 0.7 }}
         >
-          {testMode ? '🔓 测试模式（已开启）' : '🔒 测试模式'}
+          {testMode ? t('menu.test_mode_off') : t('menu.test_mode_on')}
         </button>
+        <div className="lang-switch" style={{ marginTop: 8, display: 'flex', gap: 6, justifyContent: 'center' }}>
+          <button
+            onClick={() => i18n.changeLanguage('zh')}
+            style={{
+              background: i18n.language === 'zh' ? '#6bb8e8' : 'none',
+              border: '1px solid #6bb8e8',
+              color: 'inherit',
+              cursor: 'pointer',
+              fontSize: 11,
+              padding: '2px 8px',
+              borderRadius: 4,
+              opacity: 0.85,
+            }}
+          >
+            {t('lang.zh')}
+          </button>
+          <button
+            onClick={() => i18n.changeLanguage('en')}
+            style={{
+              background: i18n.language === 'en' ? '#6bb8e8' : 'none',
+              border: '1px solid #6bb8e8',
+              color: 'inherit',
+              cursor: 'pointer',
+              fontSize: 11,
+              padding: '2px 8px',
+              borderRadius: 4,
+              opacity: 0.85,
+            }}
+          >
+            {t('lang.en')}
+          </button>
+        </div>
       </div>
     </div>
   );

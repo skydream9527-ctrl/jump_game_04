@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SHOP_ITEMS, type ShopItem } from '../../constants/shop';
 import { isItemPurchased } from '../../state/SaveManager';
 import { CHARACTERS } from '../../constants/characters';
@@ -12,13 +13,14 @@ interface ShopProps {
 }
 
 export function Shop({ totalShards, unlockedCharacters, purchasedItems, onBack, onPurchase }: ShopProps) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<ShopItem['type']>('character');
 
-  const tabs: { type: ShopItem['type']; label: string; icon: string }[] = [
-    { type: 'character', label: '角色', icon: '👤' },
-    { type: 'weapon', label: '武器', icon: '🔫' },
-    { type: 'powerup', label: '道具', icon: '🛡️' },
-    { type: 'consumable', label: '消耗品', icon: '💊' },
+  const tabs: { type: ShopItem['type']; labelKey: string; icon: string }[] = [
+    { type: 'character', labelKey: 'shop.tab_character', icon: '👤' },
+    { type: 'weapon', labelKey: 'shop.tab_weapon', icon: '🔫' },
+    { type: 'powerup', labelKey: 'shop.tab_powerup', icon: '🛡️' },
+    { type: 'consumable', labelKey: 'shop.tab_consumable', icon: '💊' },
   ];
 
   const filteredItems = SHOP_ITEMS.filter(item => item.type === activeTab);
@@ -41,8 +43,8 @@ export function Shop({ totalShards, unlockedCharacters, purchasedItems, onBack, 
   return (
     <div className="screen shop-screen">
       <div className="screen-header">
-        <button className="btn-back" onClick={onBack}>← 返回</button>
-        <h2>商店</h2>
+        <button className="btn-back" onClick={onBack}>{t('shop.back')}</button>
+        <h2>{t('shop.title')}</h2>
         <div className="shard-display">
           <span className="shard-icon">★</span>
           <span>{totalShards}</span>
@@ -57,7 +59,7 @@ export function Shop({ totalShards, unlockedCharacters, purchasedItems, onBack, 
             onClick={() => setActiveTab(tab.type)}
           >
             <span className="tab-icon">{tab.icon}</span>
-            {tab.label}
+            {t(tab.labelKey)}
           </button>
         ))}
       </div>
@@ -79,9 +81,9 @@ export function Shop({ totalShards, unlockedCharacters, purchasedItems, onBack, 
               </div>
               <div className="item-price">
                 {item.price === 0 ? (
-                  <span className="free-badge">免费</span>
+                  <span className="free-badge">{t('shop.free')}</span>
                 ) : owned ? (
-                  <span className="owned-badge">✓ 已拥有</span>
+                  <span className="owned-badge">{t('shop.owned')}</span>
                 ) : (
                   <button
                     className={`btn-purchase ${canAfford(item.price) ? '' : 'disabled'}`}

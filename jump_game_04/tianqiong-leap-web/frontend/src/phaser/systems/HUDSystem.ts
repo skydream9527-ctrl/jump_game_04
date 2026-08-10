@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import i18n from '../../i18n';
 import { PHYSICS } from '../../constants/physics';
 import { getLevelDisplayName } from '../../constants/levels';
 import { WEAPON_CONFIGS } from '../../constants/weapons';
@@ -84,7 +85,7 @@ export class HUDSystem {
     this.energyBar.setDepth(HUD_DEPTH);
     this.energyFill.setDepth(HUD_DEPTH + 1);
 
-    this.energyLabel = this.scene.add.text(PHYSICS.CANVAS_WIDTH - padding - 80, padding + 48, '忍术 [E]', {
+    this.energyLabel = this.scene.add.text(PHYSICS.CANVAS_WIDTH - padding - 80, padding + 48, i18n.t('hud.ninja_label'), {
       fontSize: '10px',
       color: '#9e9486',
       fontFamily: 'sans-serif',
@@ -116,7 +117,7 @@ export class HUDSystem {
       ? `  R: ${this.scene.selectedPet.active.name}  T: ${this.scene.selectedPet.active2.name}  Y: ${this.scene.selectedPet.ultimate.name}`
       : '';
     const hint = this.scene.add.text(padding, PHYSICS.CANVAS_HEIGHT - padding - 10,
-      `SPACE/点击: 跳跃  E: 忍术${hasConsumable ? '  Q: 使用道具' : ''}${petHint}  自动射击`, {
+      `${i18n.t('hud.control_jump')}  ${i18n.t('hud.control_ninja')}${hasConsumable ? `  ${i18n.t('hud.control_item')}` : ''}${petHint}  ${i18n.t('hud.control_autofire')}`, {
       fontSize: '10px',
       color: '#9e9486',
       fontFamily: 'sans-serif',
@@ -126,7 +127,7 @@ export class HUDSystem {
     this.weaponIcon = this.scene.add.image(padding + 14, PHYSICS.CANVAS_HEIGHT - padding - 30, 'pu-weapon-pistol');
     this.weaponIcon.setDisplaySize(20, 20);
     this.weaponIcon.setDepth(HUD_DEPTH);
-    this.weaponNameText = this.scene.add.text(padding + 30, PHYSICS.CANVAS_HEIGHT - padding - 38, '手枪', {
+    this.weaponNameText = this.scene.add.text(padding + 30, PHYSICS.CANVAS_HEIGHT - padding - 38, i18n.t('hud.weapon_default'), {
       fontSize: '11px',
       color: '#ffd980',
       fontFamily: 'sans-serif',
@@ -175,9 +176,9 @@ export class HUDSystem {
     this.drawEnergyBar();
 
     if (this.scene.hasShield) {
-      this.energyLabel.setText('忍术 [E]  🛡');
+      this.energyLabel.setText(i18n.t('hud.ninja_shield'));
     } else {
-      this.energyLabel.setText('忍术 [E]');
+      this.energyLabel.setText(i18n.t('hud.ninja_label'));
     }
 
     // Update pre-allocated power-up icon pool

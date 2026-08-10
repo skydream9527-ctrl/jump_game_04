@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PhaserGame } from './phaser/PhaserGame';
 import { EventBus } from './phaser/EventBus';
 import { EVENTS } from './types/events';
@@ -28,6 +29,7 @@ import { AchievementToast } from './components/overlays/AchievementToast';
 import './App.css';
 
 export default function App() {
+  const { t } = useTranslation();
   const [screen, setScreen] = useState<GameScreen>('menu');
   const [selectedChapter, setSelectedChapter] = useState(1);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
@@ -399,7 +401,7 @@ export default function App() {
 
       {/* Back button in game */}
       {showGame && (gameState === 'playing' || gameState === 'paused') && (
-        <button className="btn-back-game" onClick={handleBackToMenu}>← 菜单</button>
+        <button className="btn-back-game" onClick={handleBackToMenu}>{t('common.back_to_menu_short')}</button>
       )}
 
       {/* Leaderboard overlay */}

@@ -1,0 +1,75 @@
+{
+  "menu": {
+    "title": "Tianqiong Leap",
+    "play": "Play",
+    "character_select": "Character",
+    "inventory": "Inventory",
+    "pet": "Pet",
+    "shop": "Shop",
+    "leaderboard": "Leaderboard",
+    "achievements": "🏆 Achievements",
+    "cloud_sync": "☁ Cloud Sync",
+    "sync_syncing": "Syncing...",
+    "sync_synced": "✓ Synced",
+    "sync_error": "✗ Sync failed, tap to retry",
+    "player_label": "Player: ",
+    "rename_prompt": "Enter a player name (used as cloud-save identifier, max 16 chars)",
+    "shard_unit": "Shards",
+    "test_mode_on": "🔒 Test Mode",
+    "test_mode_off": "🔓 Test Mode (On)"
+  },
+  "shop": {
+    "title": "Shop",
+    "back": "← Back",
+    "tab_character": "Character",
+    "tab_weapon": "Weapon",
+    "tab_powerup": "Power-up",
+    "tab_consumable": "Consumable",
+    "free": "Free",
+    "owned": "✓ Owned"
+  },
+  "level_select": {
+    "chapter": "Chapter {{n}}",
+    "unknown": "Unknown"
+  },
+  "game_over": {
+    "title": "Game Over",
+    "score": "Score",
+    "best": "Best",
+    "retry": "Retry",
+    "back_to_levels": "Back to Levels"
+  },
+  "pause": {
+    "title": "Paused",
+    "resume": "Resume",
+    "restart": "Restart",
+    "back_to_levels": "Back to Levels",
+    "back_to_menu": "Back to Menu"
+  },
+  "level_complete": {
+    "title": "Level Clear!",
+    "score": "Score",
+    "shards": "Shards",
+    "lives": "Lives",
+    "next_level": "Enter Level {{n}}",
+    "next_chapter": "Enter Chapter {{n}}",
+    "all_clear": "All Cleared!",
+    "back_to_levels": "Back to Levels"
+  },
+  "hud": {
+    "ninja_label": "Ninja [E]",
+    "ninja_shield": "Ninja [E]  🛡",
+    "control_jump": "SPACE/Click: Jump",
+    "control_ninja": "E: Ninja",
+    "control_item": "Q: Use Item",
+    "control_autofire": "Auto-fire",
+    "weapon_default": "Pistol"
+  },
+  "common": {
+    "back_to_menu_short": "← Menu"
+  },
+  "lang": {
+    "zh": "中文",
+    "en": "English"
+  }
+}

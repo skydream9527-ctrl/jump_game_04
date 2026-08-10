@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { CHAPTER_NAMES, isBossLevel } from '../../constants/levels';
 import type { LevelRecord } from '../../types/game';
 
@@ -10,14 +11,15 @@ interface LevelSelectProps {
 }
 
 export function LevelSelect({ chapter, isLevelUnlocked, getRecord, onSelect, onBack }: LevelSelectProps) {
-  const chapterName = CHAPTER_NAMES[chapter] ?? '未知';
+  const { t } = useTranslation();
+  const chapterName = CHAPTER_NAMES[chapter] ?? t('level_select.unknown');
 
   return (
     <div className="screen select-screen">
       <div className="screen-header">
         <button className="btn-back" onClick={onBack}>←</button>
         <div>
-          <div className="chapter-label">第{chapter}章</div>
+          <div className="chapter-label">{t('level_select.chapter', { n: chapter })}</div>
           <h2>{chapterName}</h2>
         </div>
       </div>

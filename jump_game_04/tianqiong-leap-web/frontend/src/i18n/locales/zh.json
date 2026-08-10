@@ -1,0 +1,75 @@
+{
+  "menu": {
+    "title": "天穹跃迁",
+    "play": "开始游戏",
+    "character_select": "角色选择",
+    "inventory": "储物袋",
+    "pet": "宠物",
+    "shop": "商店",
+    "leaderboard": "排行榜",
+    "achievements": "🏆 成就",
+    "cloud_sync": "☁ 云同步",
+    "sync_syncing": "同步中...",
+    "sync_synced": "✓ 已同步",
+    "sync_error": "✗ 同步失败，点击重试",
+    "player_label": "玩家：",
+    "rename_prompt": "请输入玩家名（用于云存档标识，最多 16 字符）",
+    "shard_unit": "星核碎片",
+    "test_mode_on": "🔒 测试模式",
+    "test_mode_off": "🔓 测试模式（已开启）"
+  },
+  "shop": {
+    "title": "商店",
+    "back": "← 返回",
+    "tab_character": "角色",
+    "tab_weapon": "武器",
+    "tab_powerup": "道具",
+    "tab_consumable": "消耗品",
+    "free": "免费",
+    "owned": "✓ 已拥有"
+  },
+  "level_select": {
+    "chapter": "第{{n}}章",
+    "unknown": "未知"
+  },
+  "game_over": {
+    "title": "游戏结束",
+    "score": "得分",
+    "best": "最高记录",
+    "retry": "重新开始",
+    "back_to_levels": "返回关卡选择"
+  },
+  "pause": {
+    "title": "暂停",
+    "resume": "继续游戏",
+    "restart": "重新开始",
+    "back_to_levels": "返回关卡选择",
+    "back_to_menu": "返回主菜单"
+  },
+  "level_complete": {
+    "title": "关卡通关！",
+    "score": "得分",
+    "shards": "碎片",
+    "lives": "剩余生命",
+    "next_level": "进入第{{n}}关",
+    "next_chapter": "进入第{{n}}章",
+    "all_clear": "恭喜通关全部！",
+    "back_to_levels": "返回关卡选择"
+  },
+  "hud": {
+    "ninja_label": "忍术 [E]",
+    "ninja_shield": "忍术 [E]  🛡",
+    "control_jump": "SPACE/点击: 跳跃",
+    "control_ninja": "E: 忍术",
+    "control_item": "Q: 使用道具",
+    "control_autofire": "自动射击",
+    "weapon_default": "手枪"
+  },
+  "common": {
+    "back_to_menu_short": "← 菜单"
+  },
+  "lang": {
+    "zh": "中文",
+    "en": "English"
+  }
+}
