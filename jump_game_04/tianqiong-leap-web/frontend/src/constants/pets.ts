@@ -380,7 +380,7 @@ export const PETS: PetDef[] = [
     passive: { type: 'defense_boost', value: 0.18, description: '18% 概率免疫伤害' },
     active: { name: '双炮水击', cooldown: 12000, duration: 0, type: 'dual_cannon', value: 7, description: '双管水炮齐射，伤害 7 点' },
     active2: { name: '双炮水击·改', cooldown: 9000, duration: 0, type: 'dual_cannon_2', value: 6, description: '双炮水击的快速版本' },
-    ultimate: { name: '高压水炮阵', cooldown: 45000, duration: 6000, type: 'cannon阵列', value: 3, description: '6秒内持续发射水炮，每秒伤害 3' },
+    ultimate: { name: '高压水炮阵', cooldown: 45000, duration: 6000, type: 'cannon_array', value: 3, description: '6秒内持续发射水炮，每秒伤害 3' },
   },
   {
     id: 'pet_vaporeon',
@@ -801,7 +801,7 @@ export const PETS: PetDef[] = [
     passive: { type: 'bad_dreams', value: 1, description: '敌人每秒自动掉血 1 点' },
     active: { name: '暗黑洞', cooldown: 16000, duration: 5000, type: 'dark_void', value: 1, description: '释放黑暗空间，全屏敌人沉睡 5 秒' },
     active2: { name: '暗黑洞·改', cooldown: 13000, duration: 5000, type: 'dark_void_2', value: 1, description: '暗黑洞的快速版本' },
-    ultimate: { name: '噩梦侵蚀', cooldown: 60000, duration: 8000, type: 'nightmare侵蚀', value: 3, description: '8秒内敌人持续掉血且无法行动' },
+    ultimate: { name: '噩梦侵蚀', cooldown: 60000, duration: 8000, type: 'nightmare_corrupt', value: 3, description: '8秒内敌人持续掉血且无法行动' },
   },
   {
     id: 'pet_spiritomb',

@@ -122,7 +122,7 @@ export class PetSystem {
       case 'ice_crash':
       case 'absolute_zero':
       case 'eternal_frost':
-      case 'nightmare侵蚀':
+      case 'nightmare_corrupt':
       case 'creation':
         for (const e of this.scene.enemySystem.enemies) {
           e.hp -= skill.value;
@@ -235,7 +235,7 @@ export class PetSystem {
       case 'storm':
       case 'thunder_storm':
       case 'ice_dance':
-      case 'cannon阵列':
+      case 'cannon_array':
       case 'nightmare':
       case 'foxfire':
         for (const e of this.scene.enemySystem.enemies) {

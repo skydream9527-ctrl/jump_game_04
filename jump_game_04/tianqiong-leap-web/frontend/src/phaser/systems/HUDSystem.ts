@@ -113,8 +113,9 @@ export class HUDSystem {
     }
 
     const hasConsumable = this.scene.equippedItems.some(i => i.category === 'consumable');
-    const petHint = this.scene.selectedPet
-      ? `  R: ${this.scene.selectedPet.active.name}  T: ${this.scene.selectedPet.active2.name}  Y: ${this.scene.selectedPet.ultimate.name}`
+    const pet = this.scene.selectedPet;
+    const petHint = pet
+      ? `  R: ${i18n.t('data.pet.' + pet.id + '.active_name', { defaultValue: pet.active.name })}  T: ${i18n.t('data.pet.' + pet.id + '.active2_name', { defaultValue: pet.active2.name })}  Y: ${i18n.t('data.pet.' + pet.id + '.ultimate_name', { defaultValue: pet.ultimate.name })}`
       : '';
     const hint = this.scene.add.text(padding, PHYSICS.CANVAS_HEIGHT - padding - 10,
       `${i18n.t('hud.control_jump')}  ${i18n.t('hud.control_ninja')}${hasConsumable ? `  ${i18n.t('hud.control_item')}` : ''}${petHint}  ${i18n.t('hud.control_autofire')}`, {
